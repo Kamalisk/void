@@ -1,0 +1,328 @@
+
+body {
+	background-color : #2f2f2f;
+	font-family : "verdana";
+	font-size : 0.8em!important;
+	color : #afafaf;
+}
+
+h2, h3, h4 {
+	padding : 0.1em;
+	margin : 0.1em;
+}
+
+
+p {
+	padding : 0;
+	padding-left : 0.5em;
+	margin : 0.1em;
+}
+
+nav.primary {
+	display : inline-block;
+	margin : 0;
+	padding : 0;
+}
+
+ul.primary_menu {
+	display : inline-block;
+	margin : 0;
+	padding : 0;
+}
+li.menu_item {
+	display : inline-block;
+	margin : 0;
+	padding : 0;
+}
+
+/* Generic styles for use all over the place */
+
+.friendly {
+	color : green;
+}
+.enemy {
+	color : red;
+}
+
+.data_block {
+	width : 100%;
+}
+.data_block th {
+	text-align : right;
+	background-color : grey;
+	color : black;
+	width : 40%;
+	padding : 0.3em;
+}
+.data_block td {
+	text-align : left;
+	padding : 0.3em;
+}
+.data_block img {
+	vertical-align : middle;
+}
+
+/* tooltips */
+
+.tooltip {
+	display : none;
+}
+
+.tooltipsy {
+    padding: 10px;
+    max-width: 200px;
+    color : #afafaf;
+    background-color: #2f2f2f;
+    border: 2px solid #6f6f6f;
+    border-radius : 4px;
+}
+
+/* generic dialog */
+ .dialog {
+	border-radius : 10px;	
+}
+
+
+#main_header {
+	position : absolute;
+	top : 0px;
+	left : 0px;
+	right : 0px;
+	height : 35px;
+	border-bottom : solid grey 2px;
+	
+	
+	overflow : hidden;
+}
+#main_header h1 {
+	font-size : 1.4em;
+	padding-left : 0.4em;
+	margin : 0.1em;
+	display : inline-block;
+}
+
+div#player_resources {
+	display : inline-block;	
+	padding : 0.3em;
+}
+
+#view_container {
+	overflow : hidden;
+	position : absolute;
+	
+	top : 35px;
+	bottom : 5px;
+	right : 5px;
+	left : 5px;
+	
+	
+}
+
+#main_loading{
+	position : absolute;
+	z-index : 10;
+	width : 100%;
+	height : 100%;
+	text-align : center;
+	background-color : white;
+	top : 0;
+	bottom : 0;
+	left : 0;
+	right : 0;
+}
+#galactic_map {
+	width : 1400px;
+	height : 1400px;
+	position : absolute;
+	cursor : pointer;
+	background : url('../images/back2.png') repeat;
+	filter: alpha(Opacity=60);
+	opacity: 0.6;
+}
+#galactic_map_overlay {
+	width : 1400px;
+	height : 1400px;
+	position : absolute;
+	cursor : pointer;
+}
+#galactic_map_objects {
+	width : 1400px;
+	height : 1400px;
+	position : absolute;
+	cursor : pointer;
+}
+#galactic_map_mini_container {
+	position : absolute;
+	bottom : 0px;
+	height : 200px;
+	left : 0;
+	right : 0;
+	border-top : solid red 2px;
+}
+#galactic_map_mini {
+	background-color : #3f3f3f;
+	position : absolute;
+}
+#galactic_map_mini_overlay {
+	
+	position : absolute;
+}
+#galactic_map_container {
+	overflow : hidden;
+	position : absolute;
+	border-radius : 10px;
+	top : 35px;
+	left : 5px;
+	bottom : 5px;
+	right : 350px;
+	border : solid #6f6f6f 2px;
+	border-radius : 0px 0px 10px 10px;
+	background-color : black;
+	background : url('../images/back3.png') repeat;
+}
+#galactic_map_panel {
+	overflow : hidden;
+	position : absolute;
+	border-radius : 10px;
+	top : 35px;
+	bottom : 5px;
+	right : 5px;
+	width : 340px;
+	border : solid #6f6f6f 2px;
+	border-radius : 0px 0px 10px 10px;
+}
+
+#galactic_map_context_menu {
+	display : none;
+	position : absolute;
+	
+	background-color : #4f4f4f;
+	border : solid #222222 2px;
+}
+
+
+
+
+.map_panel_header {
+	font-size : 2em;
+	color : #cf4040;
+	background-color : #444444;
+	border-bottom : dashed #cf9090 1px;
+	margin : 0;
+}
+
+.map_panel_content {
+	padding : 0.3em;
+	overflow : auto;
+	position : absolute;
+	top : 38px;
+	bottom : 202px;
+	right : 1px;
+	left : 1px;
+	
+}
+	
+	
+	
+.context_menu_container {
+	border-radius : 5px;
+	padding : 0.1em;
+	border : solid #333333 1px;
+}
+
+.context_menu {
+	list-style-type : none;
+	padding : 0;
+	margin : 0;
+}
+
+.context_menu_item {
+	padding : 0.5em;
+	border-radius : 5px;
+	cursor : pointer;
+}	
+.context_menu_item:hover {
+	background-color : #6498cd;
+}	
+
+	
+	
+
+/* system view */	
+
+
+#system_view_window {
+	position : absolute;
+	top : 1em;
+	bottom : 1em;
+	left : 1em;
+	right : 1em;
+	border : solid white 2px;
+	background : #232323;
+	z-index 100;
+	display : none;
+}
+
+.system_view_planet_list {
+	list-style-type : none;
+	padding : 0.2em;
+	margin : 0;
+	border : solid grey 1px;
+}
+.system_view_planet {
+	padding : 0.8em;
+	margin : 0;
+	display : inline-block;
+	width : 110px;
+}
+.planet_class_output {
+	list-style-type : none;
+	margin : 0;
+	padding : 0;
+}
+.planet_class_output li {
+	margin : 0;
+	padding : 0;
+	display : inline-block;
+	width : 50px;
+}
+
+
+/* research view */
+
+.tech_tree_item {
+	padding : 0.3em;
+	display : block;
+	width : 300px;
+	height : 50px; 	
+	border : solid pink 2px;
+	margin : 0;
+	position : relative;
+}
+.tech_tree_item:hover {
+	border : solid red 2px;
+	cursor : pointer;
+}
+
+.tech_rewards {
+	width : 100%;
+	border-top : dotted pink 2px;
+}
+
+.tier_1 {
+	left : 50px;
+}
+.tier_2 {
+	left : 450px;
+}
+.tier_3 {
+	left : 850px;
+}
+.tier_4 {
+	left : 1250px;
+}
+
+.current_tech {
+	border : solid green 2px;
+	background : url("../images/planets/class_m.png") no-repeat;	
+}
