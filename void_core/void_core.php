@@ -216,6 +216,7 @@ class VOID {
 		$ship_class = new VOID_SHIP_CLASS();
 		$ship_class->id = 2;
 		$ship_class->name = "Colony";
+		$ship_class->add_special("colony");
 		$ship_class->work_required = 50;
 		$tech->add_ship_class($ship_class);
 		$this->ship_classes[$ship_class->id] = $ship_class;

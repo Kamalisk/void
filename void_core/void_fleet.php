@@ -83,6 +83,22 @@ class VOID_FLEET {
 		}
 	}
 	
+	public function get_special(){
+		if (count($this->ships)){
+			$special = [];
+			foreach($this->ships as &$ship){
+				if ($list = $ship->get_special()){
+					foreach($list as $item){
+						$special[$item] = $item;
+					}
+				}
+			}
+			return $special;
+		}else {
+			return false;
+		}
+	}
+	
 }
 
 
@@ -123,6 +139,7 @@ class VOID_FLEET_VIEW extends VOID_VIEW {
 		if ($this->owner == $player_id){
 			$this->orders = $fleet->orders;
 		}
+		//$this->special = $fleet->get_special();
 		
 	}
 	
@@ -175,6 +192,10 @@ class VOID_SHIP {
 		}
 	}
 	
+	public function get_special($special=""){
+		return $this->class->get_special();
+	}
+	
 }
 
 class VOID_SHIP_VIEW {
@@ -225,6 +246,16 @@ class VOID_SHIP_CLASS {
 	
 	function add_special($special){
 		$this->special[$special] = $special;
+	}
+	
+	function get_special($special=""){
+		if ($special){
+			// if parameter set then check if a special type is test
+			return isset($this->special[$special]);
+		}else {
+			// otherwise return the data as an array
+			return $this->special;
+		}		
 	}
 	
 	

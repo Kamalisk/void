@@ -340,7 +340,17 @@ function show_map_panel_system(hex){
 		});
 	}
 	
+	if (hex.your_fleets){
+		$.each(hex.your_fleets, function(){
+			if (this.ships && this.ships){
+				$.each(this.ships, function (){
+					this.class = ship_class_cache[this.class_id];
+				});
+			}
+		});		
+	}
 	
+	redraw_overlay();
 	
 	append_template('galactic_map_panel_system_template',hex, "galactic_map_panel_content");
 	var html = fetch_template('galactic_map_panel_system_template',hex);
@@ -390,8 +400,7 @@ function show_system_view(x, z){
 		});
 	}
 	
-	var html = fetch_template('system_view_template',hex);	
-	
+	var html = fetch_template('system_view_template',hex);		
 	$("#system_view_window").append(html);
 	$("#system_view_window").show();			
 }
@@ -600,7 +609,7 @@ function reset_game(){
 
 function fetch_game_data(){
 	// call a function to the remote server to get all the game data.
-	if (location.search){
+	if (location.search){		
 		$.get("main.php"+location.search,{},handle_fetch_game_data);
 	}else {
 		$.get("main.php",{'player_id':1},handle_fetch_game_data);

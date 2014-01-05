@@ -107,17 +107,23 @@
 	
 	<script id="galactic_map_panel_fleet_template" type="text/x-handlebars-template">
 		<h3 class="map_panel_header">{{id}} ({{x}}, {{z}})</h3>
+		<h4>Actions</h4>
 		<p>
 		<button type="button" onclick="start_fleet_order_mode('{{id}}')">Move Fleet</button>
 		<button type="button" onclick="add_fleet_colonise_order()">Colonise</button>
+		<button type="button" onclick="add_fleet_colonise_order()">Cancel All Orders</button>
 		</p>
+		<h4>Ships</h4>
 		{{#if ships}}
+			
 			<ul>
 			{{#each ships}}
 			<li>{{id}} {{shields}} {{hull}}</li>
 			{{/each}}
 			</ul>
-			{{/if}}
+		{{else}}
+			None
+		{{/if}}
 	</script>
 	
 	<script id="galactic_map_panel_system_template" type="text/x-handlebars-template">
@@ -225,10 +231,11 @@
 				<ul>
 				{{#each your_fleets}}
 				<li>Fleet {{id}} ({{used_capacity}}/{{capacity}})
+				<button onclick="show_map_panel_fleet('{{id}}');">View Fleet</button>
 				{{#if ships}}
 				<ul>
 				{{#each ships}}
-				<li>{{id}} {{shields}} {{hull}}</li>
+				<li>{{class.name}} {{shields}} {{hull}}</li>
 				{{/each}}
 				</ul>
 				{{/if}}
@@ -376,9 +383,7 @@
 	
 	
 	<script>
-		$(document).ready(function() {
-			
-		}
+
 	</script>
 	
 	
