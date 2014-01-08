@@ -12,6 +12,20 @@ function void_unique_id(){
 }
 
 
+class VOID_LOG {
+	static $game_id;
+	
+	static function init($player_id){
+		file_put_contents("log/test.player".$player_id.".log", "");
+	}
+	
+	static function write($player_id, $text){
+		if ($player_id){
+			file_put_contents("log/test.player".$player_id.".log", $text."\n", FILE_APPEND);
+		}
+	}
+}
+
 class VOID_PLAYER {
 	public $name;
 	public $id;
@@ -35,6 +49,7 @@ class VOID_PLAYER {
 		$this->research_pool = 0;
 		$this->credits_pool = 0;
 		$this->current_tech = false;
+		VOID_LOG::init($id);
 	}
 	
 	public function set_color($color){
@@ -55,6 +70,7 @@ class VOID_PLAYER {
 			echo "tech has arrived \n";
 			$this->current_tech->progress = $this->current_tech->progress - $work;
 			if ($this->current_tech->progress <= 0){
+				VOID_LOG::write($this->id, "Research has completed on ".$this->current_tech->class->name);
 				$this->tech[$this->current_tech->class->id] = $this->current_tech;
 				$this->add_new_ship_classes($this->current_tech->class);
 				unset($this->available_tech[$this->current_tech->class->id]);
@@ -198,6 +214,7 @@ class VOID {
 	
 	function __construct(){
 		$this->map = new VOID_MAP();
+		VOID_LOG::$game_id = 1;
 	}
 	
 	public function setup($width, $height){
@@ -218,6 +235,8 @@ class VOID {
 		$ship_class->name = "Colony";
 		$ship_class->add_special("colony");
 		$ship_class->work_required = 50;
+		$ship_class->weapon_count = 0;
+		$ship_class->weapon_damage = 0;
 		$tech->add_ship_class($ship_class);
 		$this->ship_classes[$ship_class->id] = $ship_class;
 		
@@ -225,6 +244,8 @@ class VOID {
 		$ship_class->id = 3;
 		$ship_class->name = "Attack";
 		$ship_class->work_required = 30;
+		$ship_class->weapon_count = 3;
+		$ship_class->weapon_damage = 15;
 		$this->ship_classes[$ship_class->id] = $ship_class;
 		
 		$tech = $this->tech_tree->get_tech(2);
@@ -271,7 +292,7 @@ class VOID {
 			$this->ship_classes = unserialize(file_get_contents("test.ship_classes.void"));
 		}
 		if (file_exists("test.ship_classes.void")){
-			$this->ship_classes = unserialize(file_get_contents("test.ship_classes.void"));
+			//$this->ship_classes = unserialize(file_get_contents("test.ship_classes.void"));
 		}
 	}
 	public function save(){
@@ -349,10 +370,16 @@ class VOID {
 						$continue = true;
 					}else if ($order->type == "colonise"){
 						$sector = $this->map->get_sector($fleet->x, $fleet->z);
-						if ($sector->system){
-							$sector->system->colonise($this->core);
-							$sector->system->owner = $fleet->owner;
+						if ($sector->system && $fleet->get_special("colony")){
+							$sector->system->colonise($this->players[$fleet->owner], $this->core);
+							if ($fleet->remove_special("colony")){
+								// delete the fleet!
+								$sector->clean_up();
+							}
+							//$sector->system->owner = $fleet->owner;
 						}
+					}else {
+						 $fleet->put_order($order);
 					}
 				}
 			}

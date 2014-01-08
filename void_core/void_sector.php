@@ -356,6 +356,10 @@ class VOID_COMBAT {
 			$players[$fleet->owner] = $fleet->owner;
 		}
 		
+		foreach($players as $player){
+			VOID_LOG::write($player, "Combat occured in sector X");
+		}
+		
 		foreach($this->fleets as &$fleet){
 			foreach($fleet->ships as &$ship){
 				$this->ship_index[$ship->id] = $ship;

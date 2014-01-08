@@ -683,6 +683,7 @@ function create_fake_game_data(){
 
 function handle_fetch_game_data(data){
 	if (data){
+		fleet_orders = new Object();
 		hex_map = data.map.sectors;
 		player = data.player;
 		players = data.players;

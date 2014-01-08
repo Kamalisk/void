@@ -64,10 +64,12 @@ class VOID_FLEET {
 	}
 	
 	public function get_order($tick=0){
-		
 		if ($this->orders){
 			return array_shift($this->orders);
 		}
+	}
+	public function put_order($order){
+		array_unshift($this->orders, $order);		
 	}
 	
 	public function reset_movement_points(){
@@ -98,6 +100,20 @@ class VOID_FLEET {
 			return false;
 		}
 	}
+	
+	public function remove_special($special){
+		if (count($this->ships) && $special){
+			foreach($this->ships as $key => &$ship){
+				if ($ship->get_special($special)){
+					unset($this->ships[$key]);
+					if (count($this->ships) <= 0){
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	} 
 	
 }
 
@@ -238,7 +254,7 @@ class VOID_SHIP_CLASS {
 	function __construct(){
 		$this->special = [];
 		$this->weapon_type = "laser";
-		$this->weapon_count = 2;
+		$this->weapon_count = 1;
 		$this->weapon_damage = 10;
 		$this->work_required = 10;
 		$this->rush_cost = 100;

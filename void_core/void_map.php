@@ -101,7 +101,7 @@ class VOID_MAP {
 			$this->sectors[$key]->home = $player->id;
 			$player->home = array('x'=> $this->sectors[$key]->x, 'z'=>$this->sectors[$key]->z);
 			$this->sectors[$key]->set_system_owner($player->id);
-			$this->sectors[$key]->system->colonise($core);
+			$this->sectors[$key]->system->colonise($player, $core);
 			//$this->sectors[$key]->system->influence_per_turn = mt_rand(5,10);
 			
 			//$this->sectors[$key]->system->add_order();

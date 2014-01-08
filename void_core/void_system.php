@@ -281,10 +281,11 @@ class VOID_SYSTEM {
 		return $view;
 	}
 	
-	public function colonise($core){
+	public function colonise($owner, $core){
 		$key = array_rand($this->planets);
 		$planet =& $this->planets[$key];
 		$planet->colonise();
+		$this->owner = $owner->id;
 		$this->population = 1;
 		$this->influence_level = 1;
 		$this->influence_per_turn = $this->population;
@@ -293,6 +294,7 @@ class VOID_SYSTEM {
 		$this->docked_fleet = new VOID_FLEET();
 		$this->docked_fleet->capacity = 10;
 		$core->fleets[$this->docked_fleet->id] = $this->docked_fleet;
+		VOID_LOG::write($owner->id, "System was colonised");
 	}
 	
 	public function add_order($type, $target){

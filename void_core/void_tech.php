@@ -59,27 +59,27 @@ class VOID_TECH_TREE {
 		$tech = new VOID_TECH(1, "Space Flight", 10);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(2, "Geothermal Frakking", 10);
+		$tech = new VOID_TECH(2, "Geothermal Frakking", 100);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(3, "Xenobiology", 10);
+		$tech = new VOID_TECH(3, "Xenobiology", 100);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(4, "Laser Cutting", 10);
+		$tech = new VOID_TECH(4, "Laser Cutting", 100);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(5, "Subspace Commuincations", 10);
+		$tech = new VOID_TECH(5, "Subspace Commuincations", 100);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(6, "Lukas Destruction", 20);
+		$tech = new VOID_TECH(6, "Lukas Destruction Field", 200);
 		$tech->add_req(4);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(7, "Banana Power", 20);
+		$tech = new VOID_TECH(7, "Banana Powered Engines", 200);
 		$tech->add_req(2);
 		$tech->add_req(3);
 		$this->add_tech($tech);
