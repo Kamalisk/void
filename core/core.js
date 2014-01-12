@@ -49,6 +49,8 @@ var system_orders = new Object();
 
 var first_load = false;
 
+var waiting_for_players = false;
+
 $(document).ready(function (){
 	
 	fetch_game_data();
@@ -682,7 +684,7 @@ function create_fake_game_data(){
 }
 
 function handle_fetch_game_data(data){
-	if (data){
+	if (data){		
 		fleet_orders = new Object();
 		hex_map = data.map.sectors;
 		player = data.player;
@@ -694,11 +696,28 @@ function handle_fetch_game_data(data){
 		initialize_map(data.map.map_width, data.map.map_height);
 		update_interface();
 		redraw_overlay();
-		$("#end_turn_button").attr("disabled", false);
+		if (!player.done){
+			$("#end_turn_button").attr("disabled", false);
+		}else {
+			status_check();
+			$("#end_turn_button").attr("disabled", true);
+		}
 		$('#main_loading').hide();
 	}
 }	
 
+function status_check(){
+	$.get("main.php"+location.search,{'action':'status'},handle_status_check);	
+}
+function handle_status_check(data){
+	if (data && data.player){
+		if (data.player.done == false){
+			fetch_game_data();
+			return;
+		}
+	}
+	setTimeout(status_check, 4000);
+}
 
 function end_turn(){
 	// send all committed orders to the server
@@ -708,8 +727,8 @@ function end_turn(){
 	current_tech = null;
 }
 
-function handle_end_turn(){
-	fetch_game_data();
+function handle_end_turn(data){
+	handle_status_check(data);
 }
 
 

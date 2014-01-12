@@ -18,6 +18,9 @@ if (isset($_GET['player_id'])){
 
 if (isset($_POST['action'])){
 	$void->handle_input($_POST, $player_id);
+	$void->dump_status($player_id);
+}else if (isset($_GET['action']) && $_GET['action'] == "status"){
+	$void->dump_status($player_id);
 }else {
 	//$void->setup(20, 20);
 	$void->dump_map($player_id);

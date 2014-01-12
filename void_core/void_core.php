@@ -1,6 +1,7 @@
 <?
 
 include_once("void_data.php");
+include_once("void_player.php");
 include_once("void_tech.php");
 include_once("void_sector.php");
 include_once("void_system.php");
@@ -25,98 +26,6 @@ class VOID_LOG {
 		}
 	}
 }
-
-class VOID_PLAYER {
-	public $name;
-	public $id;
-	public $home;
-	public $resources;
-	public $color;
-	
-	public $research_pool;
-	public $research_per_turn;
-	public $credits_pool;
-	public $credits_per_turn;
-	
-	public $tech;
-	public $available_tech;
-	public $current_tech;
-	
-	public $available_ship_classes;
-	
-	function __construct($id){
-		$this->id = $id;
-		$this->research_pool = 0;
-		$this->credits_pool = 0;
-		$this->current_tech = false;
-		VOID_LOG::init($id);
-	}
-	
-	public function set_color($color){
-		$this->color = $color;
-	}
-	
-	public function set_tech($tech_tree){
-		$techs = $tech_tree->get_starting_tech();
-		foreach($techs as &$tech){
-			$this->tech[$tech->id] = new VOID_TECH_ITEM($tech);
-			$this->add_new_ship_classes($tech);
-		}
-		$this->update_available_tech($tech_tree);
-	}
-	
-	public function update_research($work, $tech_tree){
-		if ($this->current_tech){
-			echo "tech has arrived \n";
-			$this->current_tech->progress = $this->current_tech->progress - $work;
-			if ($this->current_tech->progress <= 0){
-				VOID_LOG::write($this->id, "Research has completed on ".$this->current_tech->class->name);
-				$this->tech[$this->current_tech->class->id] = $this->current_tech;
-				$this->add_new_ship_classes($this->current_tech->class);
-				unset($this->available_tech[$this->current_tech->class->id]);
-				$this->current_tech = false;
-				$this->update_available_tech($tech_tree);
-			}
-		}
-		
-	}
-	
-	
-	public function add_new_ship_classes($tech){
-		foreach($tech->ship_classes as &$class){
-			$this->available_ship_classes[$class->id] = $class;
-		}
-	}
-	
-	public function update_available_tech($tech_tree){
-		foreach($tech_tree->items as &$tech){
-			if (isset($this->tech[$tech->id])){
-				continue;
-			}
-			$count = 0;
-			foreach($tech->requirements as $req){
-				if (isset($this->tech[$req])){
-					$count++;
-				}
-			}
-			if ($count >= $tech->get_req_count()){
-				$this->available_tech[$tech->id] = new VOID_TECH_ITEM($tech);
-				if (!$this->current_tech){
-					$this->current_tech = $this->available_tech[$tech->id];
-				}
-			}
-		}
-		
-		
-		
-	}
-	
-}
-
-
-
-
-
 
 
 
@@ -258,10 +167,11 @@ class VOID {
 		
 		$this->map = new VOID_MAP();
 		$this->players = [];
-		for($i = 1; $i < 12; $i++){
+		for($i = 1; $i < 3; $i++){
 			$this->players[$i] = new VOID_PLAYER($i);
 			$this->players[$i]->name = "Player ".$i;
 			$this->players[$i]->set_tech($this->tech_tree);
+			$this->players[$i]->done = false;
 		}
 		
 		$this->map->generate($width, $height, $this);
@@ -317,6 +227,32 @@ class VOID {
 		$return['tech_tree'] = $this->tech_tree->dump();
 		//$this->map->players = $this->players;
 		echo json_encode($return, JSON_NUMERIC_CHECK);
+	}
+	
+	public function dump_status($player_id){
+		global $void_planet_classes;
+		global $void_sector_classes;
+		
+		header("Content-type: application/json");
+		$return = array();		
+		$return['players'] = $this->players;
+		$return['player'] = $this->players[$player_id];		
+		//$this->map->players = $this->players;
+		echo json_encode($return, JSON_NUMERIC_CHECK);
+	}
+	
+	public function reset_player_state(){
+		foreach($this->players as &$player){
+			$player->done = false;
+		}
+	}
+	public function are_players_finished(){
+		foreach($this->players as &$player){
+			if (!$player->done){
+				return false;
+			}
+		}
+		return true;
 	}
 	
 	// resolve all orders and game events
@@ -404,7 +340,6 @@ class VOID {
 		foreach($this->players as &$player){
 			$player->credits_per_turn = 0;
 			$player->research_per_turn = 0;
-			
 		}
 		
 		foreach($temp_systems as &$system){
@@ -425,11 +360,17 @@ class VOID {
 		}
 				
 		$this->map->update_map();
+		
+		$this->reset_player_state();
+		
 		//$this->save();
 	}
 	
 	public function handle_input($input, $player_id){
 		if (isset($input['action'])){
+			$player = $this->players[$player_id];
+			
+			
 			if ($input['action'] == "end_turn"){
 				
 				if (isset($_POST['fleet_orders'])){
@@ -473,11 +414,17 @@ class VOID {
 					}
 				}
 				
+				$player->done = true;
+				
 				// if all players have ended their turn.
 				// process a turn
 				// (this might need to be in a regularly run cron job)
 				// for now it is run every time someone ends their turn
-				$this->process_turn();
+				if ($this->are_players_finished()){
+					$this->process_turn();
+				}else {
+					
+				}				
 			} else if ($input['action'] == "reset"){
 				
 					$this->map = new VOID_MAP();
