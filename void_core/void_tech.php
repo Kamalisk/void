@@ -107,6 +107,7 @@ class VOID_TECH {
 	public $tier;
 	
 	public $ship_classes;
+	public $structure_classes;
 	
 	function __construct($id, $name, $cost){
 		$this->id = $id;
@@ -116,6 +117,7 @@ class VOID_TECH {
 		$this->progress = $cost;
 		$this->cost = $cost;
 		$this->ship_classes = [];	
+		$this->structure_classes = [];	
 	}
 	public function add_req($id){
 		$this->requirements[$id] = $id;
@@ -143,6 +145,9 @@ class VOID_TECH {
 	}
 	public function add_ship_class($ship_class){
 		$this->ship_classes[] = $ship_class;
+	}
+	public function add_structure_class($structure_class){
+		$this->structure_classes[] = $structure_class;
 	}
 }
 

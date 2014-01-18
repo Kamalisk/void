@@ -32,7 +32,7 @@
 		<p>Loading...</p>
 	</div>
 	<div id="main_header">
-		<h1>Super Special Space Hex Adventure</h1>
+		<h1 title="Super Special Space Hex Adventure">SSSHA</h1>
 		<nav class="primary">
 			<ul class="primary_menu">
 		    <!--<li class="active menu_item"><a href="#">Galactic Map</a></li>
@@ -55,6 +55,11 @@
 	<div id="view_container">
 	<div id="tactical_view" class="view">
 		<div id="galactic_map_container">
+			<div id="galactic_map_dragger" style="position : absolute; top : 0; left : 0; right : 0; bottom : 0; z-index : 1000;"></div>
+			<canvas id="galactic_map_view_1" width="2000px" height="2000px" style="position : absolute; background-color : red;"></canvas>	
+			<canvas id="galactic_map_view_2" width="1000px" height="1000px"></canvas>		
+		</div>
+		<div id="galactic_map_container_other" style="display : none;">
 			<canvas id="galactic_map" width="1200px" height="1200px"></canvas>
 			<canvas id="galactic_map_objects" width="1200px" height="1200px"></canvas>
 			<canvas class="dragger" id="galactic_map_overlay" width="1200px" height="1200px"></canvas>
@@ -168,6 +173,18 @@
 			</tr>
 			
 			{{#if friendly}}
+			<tr>
+				<th>Structures</th>
+				<td>
+				{{#if system.structures}}
+				<ul>
+				{{#each system.structures}}<li>{{name}}</li>{{/each}}
+				</ul>
+				{{else}}
+				<p>Empty</p>
+				{{/if}}
+				</td>
+			</tr>
 			<tr>
 				<th>System Queue	
 				</th>
@@ -378,6 +395,13 @@
     </span>
     <div class="tooltip" id="player-research-tooltip">
 			{{current_tech.progress}} / {{current_tech.class.cost}}  +{{research_per_turn}}
+		</div>
+		<span  class="tooltip-template" data-tooltip-id="player-morale-tooltip">
+    <img src="images/happy.png"> <span class="{{#compare morale "<" 0}}negative{{/compare}}{{#compare morale ">" 0}}positive{{/compare}}"> {{morale}} </span>
+    </span>
+    <div class="tooltip" id="player-morale-tooltip">
+			Negative morale reduces growth in all your systems. 
+			
 		</div>
 	</script>
 	

@@ -49,7 +49,9 @@ class VOID_SECTOR_VIEW {
 		
 		if (isset($sector->state[$player_id])){
 			$this->class_id = $sector->class['id'];
-			$this->owner = $sector->owner;
+			if ($sector->owner){
+				$this->owner = $sector->owner->id;
+			}
 			$this->type = $sector->type;
 			if ($sector->system){
 				$this->system = $sector->system->dump($player_id);
@@ -58,12 +60,12 @@ class VOID_SECTOR_VIEW {
 			$this->star = $sector->star;
 			$this->friendly = $sector->friendly;
 			$this->enemy = $sector->enemy;
-			if ($sector->owner && $sector->owner == $player_id){
+			if ($sector->owner && $sector->owner->id == $player_id){
 				$this->friendly = 1;
 			}else {
 				$this->friendly = 0;
 			}
-			if ($sector->owner && $sector->owner != $player_id){
+			if ($sector->owner && $sector->owner->id != $player_id){
 				$this->enemy = 1;
 			}else {
 				$this->enemy = 0;
@@ -80,7 +82,7 @@ class VOID_SECTOR_VIEW {
 			}
 			
 			
-			if ($sector->owner && $sector->owner == $player_id){
+			if ($sector->owner && $sector->owner->id == $player_id){
 				if (isset($sector->system)){
 					$this->populated = true;
 					$this->space_dock = array();
@@ -295,8 +297,8 @@ class VOID_SECTOR {
 		//}
 	}
 	
-	public function set_system_owner($player_id){
-		$this->system->owner = $player_id;
+	public function set_system_owner($player){
+		$this->system->owner = $player;
 	}
 	
 	public function update_owner(){

@@ -11,8 +11,8 @@ function get_adjacent_hex(hex, direction){
 // converts hex.x and hex.z to pixel coords.x and coords.y 
 // will give the center point of the hex
 function pixel_to_hex(x,y){
-	x = x / map_scale;
-	y = y / map_scale;
+	x = (x - map_scroll_offset.x) / map_scale;
+	y = (y - map_scroll_offset.y) / map_scale;
 	var q = (1/3*Math.sqrt(3) * (x-hex_size) - 1/3 * (y-hex_size)) / hex_size
 	var r = 2/3 * (y-hex_size) / hex_size
 	var z = 0 - q - r;
@@ -27,8 +27,8 @@ function hex_to_pixel(hex){
 	var x = hex_size * Math.sqrt(3) * (i + j/2);
 	var y = hex_size * 3/2 * j;
 	// offset the hex position (currently by the size of a hex)
-	x = x + hex_size;
-	y = y + hex_size;
+	x = x + hex_size + map_scroll_offset.x;
+	y = y + hex_size + map_scroll_offset.y;
 	return {'x': x, 'y': y};
 }
 

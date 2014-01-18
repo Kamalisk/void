@@ -100,8 +100,9 @@ class VOID_MAP {
 			}
 			$this->sectors[$key]->home = $player->id;
 			$player->home = array('x'=> $this->sectors[$key]->x, 'z'=>$this->sectors[$key]->z);
-			$this->sectors[$key]->set_system_owner($player->id);
+			$this->sectors[$key]->set_system_owner($player);
 			$this->sectors[$key]->system->colonise($player, $core);
+			
 			//$this->sectors[$key]->system->influence_per_turn = mt_rand(5,10);
 			
 			//$this->sectors[$key]->system->add_order();
@@ -113,6 +114,8 @@ class VOID_MAP {
 			$player->credits_per_turn = $this->sectors[$key]->system->get_credits_income();
 			$player->research_per_turn = $this->sectors[$key]->system->get_research_income();
 			
+			$player->apply_morale($this->sectors[$key]->system->get_morale());
+			
 			// create new fleet
 			$fleet = new VOID_FLEET();
 			$core->fleets[$fleet->id] = $fleet; 
@@ -121,12 +124,17 @@ class VOID_MAP {
 			$fleet->add_ship($ship);
 			$this->sectors[$key]->add_fleet($fleet);
 			
+			$structure = new VOID_STRUCTURE($core->structure_classes[1]);
+			$this->sectors[$key]->system->add_structure($structure);
+			
 			//$key = array_rand($this->sectors,1);
 			//$ship = new VOID_SHIP($ship_classes[1], $player->id);
 			//$this->sectors[$key]->add_ship($ship, $core);
 			
 		}
+		
 		$this->update_map();
+		
 	}
 	
 	// run through all objects on the map
@@ -142,13 +150,14 @@ class VOID_MAP {
 		// run through each sector and apply 
 		// sensor range and influence to all sectors
 		foreach($this->sectors as &$sector){
-			if ($sector->system){
+			if ($sector->system && isset($sector->system->owner) ){
 				// you always "own" your home system
-				$sector->owner = $sector->system->owner;
-				$sector->add_state($sector->system->owner, "friendly", 1);
-				$sector->add_state($sector->system->owner, "unknown", 0);
-				$sector->add_state($sector->system->owner, "influence", $sector->system->influence_level);
-				$sector->add_state($sector->system->owner, "sensor_power", 1);
+				
+				$sector->owner = $sector->system->owner;				
+				$sector->add_state($sector->system->owner->id, "friendly", 1);
+				$sector->add_state($sector->system->owner->id, "unknown", 0);
+				$sector->add_state($sector->system->owner->id, "influence", $sector->system->influence_level);
+				$sector->add_state($sector->system->owner->id, "sensor_power", 1);
 				
 				$neighbours = $sector->get_neighbours();
 				if ($sector->system->influence_level >= 10){
@@ -168,8 +177,8 @@ class VOID_MAP {
 					
 						if (isset($this->sectors['x'.$x.'z'.$z])){
 							$n =& $this->sectors['x'.$x.'z'.$z];
-							$n->add_state($sector->system->owner, "sensor_power", 1);
-							$n->add_state($sector->system->owner, "influence", $sector->system->influence_level/$ring);
+							$n->add_state($sector->system->owner->id, "sensor_power", 1);
+							$n->add_state($sector->system->owner->id, "influence", $sector->system->influence_level/$ring);
 						}
 						
 					}

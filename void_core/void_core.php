@@ -115,6 +115,7 @@ class VOID {
 	public $map;
 	
 	public $ship_classes = array();
+	public $structure_classes = array();
 	
 	public $fleets;
 	public $systems;
@@ -160,7 +161,11 @@ class VOID {
 		$tech = $this->tech_tree->get_tech(2);
 		$tech->add_ship_class($ship_class);
 		
-		
+		$structure_class = new VOID_STRUCTURE_CLASS();
+		$structure_class->id = 1;
+		$structure_class->name = "Captial";
+		$tech->add_structure_class($structure_class);
+		$this->structure_classes[$structure_class->id] = $structure_class;
 		
 		
 		$starting_tech = $this->tech_tree->get_starting_tech();
@@ -244,9 +249,12 @@ class VOID {
 	public function reset_player_state(){
 		foreach($this->players as &$player){
 			$player->done = false;
+			//$player->done = false;
 		}
 	}
 	public function are_players_finished(){
+		// for now return true, so turn can be processed quickly for testing
+		return true;
 		foreach($this->players as &$player){
 			if (!$player->done){
 				return false;
@@ -340,18 +348,21 @@ class VOID {
 		foreach($this->players as &$player){
 			$player->credits_per_turn = 0;
 			$player->research_per_turn = 0;
+			$player->update_morale(0);
 		}
 		
-		foreach($temp_systems as &$system){
-			$system->update();
+		foreach($temp_systems as &$system){			
 			$player =& $this->players[$system->owner];
+			$system->update($player);
 			$credits_per_turn = $system->get_credits_income();
 			$player->credits_pool += $credits_per_turn;
 			$player->credits_per_turn += $credits_per_turn;
 			
 			$research_per_turn = $system->get_research_income();
 			$player->research_pool += $research_per_turn;
-			$player->research_per_turn += $research_per_turn;			
+			$player->research_per_turn += $research_per_turn;	
+			
+			$player->apply_morale($system->get_morale($player));
 		}
 		
 		foreach($this->players as &$player){
@@ -414,7 +425,7 @@ class VOID {
 					}
 				}
 				
-				$player->done = true;
+				//$player->done = true;
 				
 				// if all players have ended their turn.
 				// process a turn

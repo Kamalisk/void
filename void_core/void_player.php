@@ -13,6 +13,8 @@ class VOID_PLAYER {
 	public $credits_pool;
 	public $credits_per_turn;
 	
+	public $morale;
+	
 	public $tech;
 	public $available_tech;
 	public $current_tech;
@@ -25,6 +27,7 @@ class VOID_PLAYER {
 		$this->id = $id;
 		$this->research_pool = 0;
 		$this->credits_pool = 0;
+		$this->morale = 0;
 		$this->current_tech = false;
 		VOID_LOG::init($id);
 	}
@@ -38,6 +41,7 @@ class VOID_PLAYER {
 		foreach($techs as &$tech){
 			$this->tech[$tech->id] = new VOID_TECH_ITEM($tech);
 			$this->add_new_ship_classes($tech);
+			$this->add_new_structure_classes($tech);
 		}
 		$this->update_available_tech($tech_tree);
 	}
@@ -50,6 +54,7 @@ class VOID_PLAYER {
 				VOID_LOG::write($this->id, "Research has completed on ".$this->current_tech->class->name);
 				$this->tech[$this->current_tech->class->id] = $this->current_tech;
 				$this->add_new_ship_classes($this->current_tech->class);
+				$this->add_new_structure_classes($this->current_tech->class);
 				unset($this->available_tech[$this->current_tech->class->id]);
 				$this->current_tech = false;
 				$this->update_available_tech($tech_tree);
@@ -62,6 +67,11 @@ class VOID_PLAYER {
 	public function add_new_ship_classes($tech){
 		foreach($tech->ship_classes as &$class){
 			$this->available_ship_classes[$class->id] = $class;
+		}
+	}
+	public function add_new_structure_classes($tech){
+		foreach($tech->structure_classes as &$class){
+			$this->available_structure_classes[$class->id] = $class;
 		}
 	}
 	
@@ -83,10 +93,15 @@ class VOID_PLAYER {
 				}
 			}
 		}
-		
-		
-		
 	}
+	
+	public function update_morale($morale){
+		$this->morale = $morale;
+	}
+	public function apply_morale($morale){
+		$this->morale = $this->morale + $morale;
+	}
+	
 	
 }
 

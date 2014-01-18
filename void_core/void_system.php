@@ -1,5 +1,48 @@
 <?
 
+
+class VOID_STRUCTURE {
+	public $class;
+	public $planet_id;
+	
+	function __construct($class){
+		$this->planet_id = 0;
+		$this->class = $class;
+	}
+	
+	function dump($player_id){
+		return new VOID_STRUCTURE_VIEW($this, $player_id);
+	}
+	
+}
+
+class VOID_STRUCTURE_VIEW {
+	public $class_id;	
+	public $name;
+	
+	function __construct($structure, $player_id){
+		$this->class_id = $structure->class->id;
+		$this->name = $structure->class->name;
+	}		
+}
+
+class VOID_STRUCTURE_CLASS {
+	public $id;
+	public $name;
+	
+	public $food_per_turn = 0;
+	public $research_per_turn = 0;
+	public $credits_per_turn = 0;
+	public $production_per_turn = 0;
+	
+	public $upkeep = 0;
+	
+	function __construct(){
+
+	}	
+}
+
+
 class VOID_QUEUE {
 	public $items;
 
@@ -112,11 +155,12 @@ class VOID_SYSTEM_VIEW {
 	public $id;
 	
 	public $build_queue;
+	public $structures;
 	
 	function __construct($system, $player_id){
 		$this->id = $system->id;
-		$this->owner = $system->owner;
-		if ($this->owner){
+		if ($system->owner){
+			$this->owner = $system->owner->id;
 			$this->influence_pool = $system->influence_pool;
 			$this->influence_per_turn = $system->influence_per_turn;
 			$this->influence_level = $system->influence_level;
@@ -134,6 +178,11 @@ class VOID_SYSTEM_VIEW {
 		if ($system->planets){
 			foreach($system->planets as &$planet){
 				$this->planets[] = $planet->dump($player_id);
+			}
+		}
+		if ($system->structures){
+			foreach($system->structures as &$structure){
+				$this->structures[] = $structure->dump($player_id);
 			}
 		}
 		$this->population = $system->population;
@@ -172,6 +221,7 @@ class VOID_SYSTEM {
 	public $id;
 	
 	public $docked_fleet;
+	public $structures;
 	
 	public function __construct($x, $z){
 		$this->x = $x;
@@ -187,15 +237,24 @@ class VOID_SYSTEM {
 		$this->production_per_turn = 0;
 		
 		$this->build_queue = new VOID_QUEUE();
+		$this->structures = [];
 	}
 	
 	public function add_planet($planet){
 		$this->planets[] = $planet;
 	}
 	
+	public function add_structure($structure){
+		// should check to see if it already exists etc..
+		$this->structures[] = $structure;
+	}
+	
 	public function update(){
 		
 		$this->food_per_turn = $this->get_food_income();
+		if ($player->morale < 0){
+			$this->food_per_turn = $this->food_per_turn / 10;
+		}
 		$this->production_per_turn = $this->get_production_income();
 		
 		$this->influence_growth_threshold = ($this->influence_level+1) * 3;
@@ -275,6 +334,14 @@ class VOID_SYSTEM {
 		return $output;
 	}
 	
+	public function get_morale(){
+		$morale = 0;
+		$morale = $morale - $this->population;
+		$morale = $morale - 3;
+		// apply any buildings or empire modifiers here!
+		return $morale;
+	}
+	
 	
 	public function dump($player_id){
 		$view = new VOID_SYSTEM_VIEW($this, $player_id);
@@ -282,10 +349,11 @@ class VOID_SYSTEM {
 	}
 	
 	public function colonise($owner, $core){
+		
 		$key = array_rand($this->planets);
 		$planet =& $this->planets[$key];
 		$planet->colonise();
-		$this->owner = $owner->id;
+		$this->owner = $owner;
 		$this->population = 1;
 		$this->influence_level = 1;
 		$this->influence_per_turn = $this->population;
