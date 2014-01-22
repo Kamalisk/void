@@ -54,15 +54,17 @@
 	
 	<div id="view_container">
 	<div id="tactical_view" class="view">
-		<div id="galactic_map_container">
-			<div id="galactic_map_dragger" style="position : absolute; top : 0; left : 0; right : 0; bottom : 0; z-index : 1000;"></div>
-			<canvas id="galactic_map_view_1" width="2000px" height="2000px" style="position : absolute; background-color : red;"></canvas>	
-			<canvas id="galactic_map_view_2" width="1000px" height="1000px"></canvas>		
+		<div id="galactic_map_container" style="position : absolute;">
+			<div id="galactic_map_dragger"></div>
+			<canvas id="galactic_map_hexes" width="2000px" height="2000px"></canvas>
+			<canvas id="galactic_map_objects" width="2000px" height="2000px"></canvas>		
+			<canvas id="galactic_map_overlay"></canvas>
+			
 		</div>
 		<div id="galactic_map_container_other" style="display : none;">
-			<canvas id="galactic_map" width="1200px" height="1200px"></canvas>
-			<canvas id="galactic_map_objects" width="1200px" height="1200px"></canvas>
-			<canvas class="dragger" id="galactic_map_overlay" width="1200px" height="1200px"></canvas>
+			<canvas id="galactic_map2" width="1200px" height="1200px"></canvas>
+			<canvas id="galactic_map_objects2" width="1200px" height="1200px"></canvas>
+			<canvas class="dragger" id="galactic_map_overlay2" width="1200px" height="1200px"></canvas>
 		</div>
 		<div id="galactic_map_panel">
 			<div id="galactic_map_panel_content" style="display : none">
