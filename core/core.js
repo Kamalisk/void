@@ -16,7 +16,7 @@ var hex_neighbors = [
 	[0,  +1],  [-1, +1],  [ -1, 0] 
 ];
 
-var map_scale = 0.7;
+var map_scale = 0.5;
 var map_height = 1400;
 var map_width = 1400;
 var map_viewport = new Object();	
@@ -115,6 +115,7 @@ function initialize_map(width, height){
 	//map_height = map_height * map_scale;
 	//map_width = map_width * map_scale;
 	
+	/*
 	$('#galactic_map').attr("width",map_width);
 	$('#galactic_map').attr("height",map_height);
 	$('#galactic_map').css("width",map_width*map_scale);
@@ -129,7 +130,7 @@ function initialize_map(width, height){
 	$('#galactic_map_objects').attr("height",map_height);
 	$('#galactic_map_objects').css("width",map_width*map_scale);
 	$('#galactic_map_objects').css("height",map_height*map_scale);
-	
+	*/
 	$('#galactic_map_mini').attr("width",map_width);
 	$('#galactic_map_mini').attr("height",map_height);
 	$('#galactic_map_mini').css("width",200*map_ratio);
@@ -140,9 +141,10 @@ function initialize_map(width, height){
 	$('#galactic_map_mini_overlay').css("width",200*map_ratio);
 	$('#galactic_map_mini_overlay').css("height","200");
 	
+	
 	// calculate current view port
-	map_viewport.startX = $('#galactic_map_container').scrollLeft();
-	map_viewport.startY = $('#galactic_map_container').scrollTop();
+	//map_viewport.startX = $('#galactic_map_container').scrollLeft();
+	//map_viewport.startY = $('#galactic_map_container').scrollTop();
 	map_viewport.endX = map_viewport.startX + $('#galactic_map_container').width;
 	map_viewport.endY = map_viewport.startY + $('#galactic_map_container').height;
 	map_viewport.width = $('#galactic_map_container').width();
@@ -154,34 +156,41 @@ function initialize_map(width, height){
 	map_viewport.factorWidth = map_width / 200;
 	map_viewport.factorHeight = map_height / 200;
 	
-	
-	
-	
 	map_context_menu_type = "default";
 	map_right_click = "";
 	
 	draw_minimap_overlay();
 	
-	$('#galactic_map_container').bind('scroll',function(event){
-		draw_minimap_overlay();
-	});
+	//$('#galactic_map_container').bind('scroll',function(event){
+		//draw_minimap_overlay();
+	//});
 	
 	//alert(map_viewport.startX);
 	
-	map_scroll_offset = {"x":0, "y":0};
+	var map_buffer = 400;
 	
+	map_scroll_offset = {"x":map_buffer, "y":map_buffer};
 	
-	$("#galactic_map_view_1").css({"top": -800 , "left": -800 });
-		
-	//$('#galactic_map_view_1').attr("width", $('#galactic_map_container').width() * 2 / map_scale);
-	//$('#galactic_map_view_1').attr("height", $('#galactic_map_container').height() * 3 / map_scale);
+	$("#galactic_map_hexes").css({"top": -map_buffer , "left": -map_buffer });
+	$("#galactic_map_overlay").css({"top": -map_buffer , "left": -map_buffer });
+	$("#galactic_map_objects").css({"top": -map_buffer , "left": -map_buffer });
 	
-	//$('#galactic_map_view_1').css("width", $('#galactic_map_container').width() * 2 );
-	//$('#galactic_map_view_1').css("height", $('#galactic_map_container').height() * 3 * map_scale);
+	$('#galactic_map_overlay').attr("width",$('#galactic_map_container').width() + map_buffer*2);
+	$('#galactic_map_overlay').attr("height",$('#galactic_map_container').height() + map_buffer*2);
+	$('#galactic_map_overlay').css("width",$('#galactic_map_container').width() + map_buffer*2);
+	$('#galactic_map_overlay').css("height",$('#galactic_map_container').height() + map_buffer*2);
 	
+	$('#galactic_map_objects').attr("width",$('#galactic_map_container').width() + map_buffer*2);
+	$('#galactic_map_objects').attr("height",$('#galactic_map_container').height() + map_buffer*2);
+	$('#galactic_map_objects').css("width",$('#galactic_map_container').width() + map_buffer*2);
+	$('#galactic_map_objects').css("height",$('#galactic_map_container').height() + map_buffer*2);
 	
-	draw_map("galactic_map");
-	draw_map("galactic_map_view", true);
+	$('#galactic_map_hexes').attr("width", $('#galactic_map_container').width() + map_buffer*2);
+	$('#galactic_map_hexes').attr("height", $('#galactic_map_container').height() + map_buffer*2);
+	$('#galactic_map_hexes').css("width", $('#galactic_map_container').width() + map_buffer*2 );
+	$('#galactic_map_hexes').css("height", $('#galactic_map_container').height() + map_buffer*2 );
+	
+	draw_map("galactic_map", true);
 	
 	if (first_load){
 		return;
@@ -190,44 +199,79 @@ function initialize_map(width, height){
 	first_load = true;
 	scroll_in_progress = false;	
 	
+	var view_port_width = $("#galactic_map_container").width();
+	var map_surface_width = $("#galactic_map_hexes").width();
+	var view_port_height = $("#galactic_map_container").height();
+	var map_surface_height = $("#galactic_map_hexes").height();
+	
+	
+	
+	
 	$('#galactic_map_dragger').bind('mousedown',function(event){
+		mouse_down_event = event;
 		scroll_in_progress = {
 			"x": event.pageX, "y": event.pageY,
-			"target_x": $("#galactic_map_view_1").position().left, "target_y": $("#galactic_map_view_1").position().top
-		};
+			"target_x": $("#galactic_map_hexes").position().left, "target_y": $("#galactic_map_hexes").position().top
+		};		
 		event.preventDefault();
 	});
 	$('#galactic_map_dragger').bind('mouseup',function(event){
 		scroll_in_progress = false;
+		if (Math.abs(mouse_down_event.pageX - event.pageX) < 10 && Math.abs(mouse_down_event.pageY - event.pageY) < 10 && event.button == 0){
+			var offset_x = $("#galactic_map_hexes").position().left + map_scroll_offset.x;
+			var offset_y = $("#galactic_map_hexes").position().top  + map_scroll_offset.y;
+			var click_x = event.pageX - $(this).offset().left;// + offset_x/hex_size/2;
+			var click_y = event.pageY - $(this).offset().top;// + offset_y/hex_size/2;
+			//console.log(offset_x);
+			click_to_hex(click_x - offset_x , click_y - offset_y , 'click', event);
+			
+		}
+		mouse_down_event = null;
 	});
+	
+	$('#galactic_map_dragger').bind('wheel',function(event){
+		console.log(event);
+		map_scale = map_scale * 0.8;
+		draw_map("galactic_map");
+		redraw_overlay();
+	});
+	
 	$('#galactic_map_dragger').bind('mousemove',function(event){
+		
+		//console.log(event);
 		if (scroll_in_progress){
-			// move the map!
-			//if (Math.abs(event.pageX - scroll_in_progress.x > 1) || Math.abs(event.pageY - scroll_in_progress.y > 1) ){
-				var x = (event.pageX - scroll_in_progress.x);
-				var y = (event.pageY  - scroll_in_progress.y);
-				var new_x = scroll_in_progress.target_x + x;
-				var new_y = scroll_in_progress.target_y + y;
-				
-				var oldX = $("#galactic_map_view_1").css("left");
-				var oldY = $("#galactic_map_view_1").css("top");
+			// move the map!			
+			var x = (event.pageX  - scroll_in_progress.x);
+			var y = (event.pageY  - scroll_in_progress.y);
+			
+			var new_x = scroll_in_progress.target_x + x;
+			var new_y = scroll_in_progress.target_y + y;
 
-				$("#galactic_map_view_1").css({"top": new_y , "left": new_x });
+			var oldX = $("#galactic_map_hexes").css("left");
+			var oldY = $("#galactic_map_hexes").css("top");
+
+			$("#galactic_map_hexes").css({"top": new_y , "left": new_x });
+			$("#galactic_map_overlay").css({"top": new_y , "left": new_x });
+			$("#galactic_map_objects").css({"top": new_y , "left": new_x });
+			
+			if (new_x < (view_port_width - map_surface_width ) || new_x > 0 || new_y < (view_port_height - map_surface_height ) || new_y > 0){
+				map_scroll_offset.x = map_scroll_offset.x + (new_x + map_buffer)/map_scale;
+				map_scroll_offset.y = map_scroll_offset.y + (new_y + map_buffer)/map_scale;
+				$("#galactic_map_overlay").css({"top": -map_buffer , "left": -map_buffer });
+				$("#galactic_map_hexes").css({"top": -map_buffer , "left": -map_buffer });
+				$("#galactic_map_objects").css({"top": -map_buffer , "left": -map_buffer });
+				scroll_in_progress = {
+					"x": event.pageX, "y": event.pageY,
+					"target_x": $("#galactic_map_hexes").position().left, "target_y": $("#galactic_map_hexes").position().top
+				};
 				
-				if (new_x < -1200 || new_x > 0 || new_y < -1200 | new_y > 0){
-					map_scroll_offset.x = map_scroll_offset.x + new_x + 800;
-					map_scroll_offset.y = map_scroll_offset.y + new_y + 800;
-					$("#galactic_map_view_1").css({"top": -800 , "left": -800 });
-					scroll_in_progress = {
-						"x": event.pageX, "y": event.pageY,
-						"target_x": $("#galactic_map_view_1").position().left, "target_y": $("#galactic_map_view_1").position().top
-					};
-					
-					draw_map("galactic_map_view", true);
-				}
-				event.preventDefault();
-				//scroll_in_progress = {"x": event.pageX, "y": event.pageY };
-			//}
+				draw_map("galactic_map");
+				redraw_overlay();
+			}
+			
+			event.preventDefault();
+			//scroll_in_progress = {"x": event.pageX, "y": event.pageY };
+		//}
 		}
 	});
 	$('#galactic_map_dragger').bind('mouseout',function(event){
@@ -249,7 +293,7 @@ function initialize_map(width, height){
 			//click_to_hex(event.pageX - $(this).offset().left, event.pageY - $(this).offset().top, 'click', event);
 	});
 	$('#galactic_map_overlay').bind('mousemove',function(event){
-			click_to_hex(event.pageX - $(this).offset().left, event.pageY - $(this).offset().top, event);
+			
 	});
 	
 	$('#galactic_map_overlay').bind('dblclick',function(event){
@@ -285,7 +329,7 @@ function initialize_map(width, height){
 	
 	
 	// Set drag scroll on first descendant of class dragger on both selected elements
-	$('#galactic_map_container').dragscrollable({dragSelector: '.dragger:first', acceptPropagatedEvent: false});
+	//$('#galactic_map_container').dragscrollable({dragSelector: '.dragger:first', acceptPropagatedEvent: false});
 	
 	// Set drag scroll on first descendant of class dragger on both selected elements
 	//$('#galactic_map_mini_container').dragscrollable({dragSelector: '.dragger:first', acceptPropagatedEvent: false});
@@ -294,8 +338,8 @@ function initialize_map(width, height){
 	if (player && player.home){
 		var coords = hex_to_pixel(player.home);
 		
-		$('#galactic_map_container').scrollLeft((coords.x * map_scale - ($('#galactic_map_container').width()/2)));
-		$('#galactic_map_container').scrollTop((coords.y  * map_scale - ($('#galactic_map_container').height()/2)));
+		//$('#galactic_map_container').scrollLeft((coords.x * map_scale - ($('#galactic_map_container').width()/2)));
+		//$('#galactic_map_container').scrollTop((coords.y  * map_scale - ($('#galactic_map_container').height()/2)));
 	}
 	
 }
@@ -343,8 +387,8 @@ function end_minimap_drag(x, y){
 }
 function minimap_move(x, y){
 	if (minimap_drag){
-		$('#galactic_map_container').scrollLeft(x*map_viewport.factorWidth*map_scale - ($('#galactic_map_container').width() / 2));
-		$('#galactic_map_container').scrollTop(y*map_viewport.factorHeight*map_scale - ($('#galactic_map_container').height() / 2));
+		//$('#galactic_map_container').scrollLeft(x*map_viewport.factorWidth*map_scale - ($('#galactic_map_container').width() / 2));
+		//$('#galactic_map_container').scrollTop(y*map_viewport.factorHeight*map_scale - ($('#galactic_map_container').height() / 2));
 		draw_minimap_overlay();
 	}
 }
@@ -653,6 +697,7 @@ function get_hex(x, z){
 function click_to_hex(x, y, param, event){
 	
 	var coords = pixel_to_hex(x,y);
+	console.log(coords);
 	if (param == "click"){
 		if (panel_view == "fleet" && fleet_order_mode == true){
 			
@@ -857,6 +902,9 @@ function draw_hex(canvas, x, y, size, color, fill, layer){
 function redraw_overlay(){
 	
 	var canvas = document.getElementById("galactic_map_overlay");
+	var overlay_ctx = canvas.getContext('2d');
+	overlay_ctx.save();
+	overlay_ctx.scale(map_scale,map_scale);
 	$(canvas).clearCanvas();
 	if (hex_highlighted && hex_map['x'+hex_highlighted.x+'z'+hex_highlighted.z]){
 		var coords = hex_to_pixel(hex_highlighted);
@@ -921,7 +969,7 @@ function redraw_overlay(){
 		}
 	}
 	
-	
+	overlay_ctx.restore();
 	
 }
 
@@ -969,44 +1017,31 @@ function redraw_map_section(x, y){
 	var x = hex_size * Math.sqrt(3) * (i + j/2);
 	var y = hex_size * 3/2 * j;
 	draw_hex(canvas, x+hex_size,  y+hex_size, hex_size, "orange", "none");
-	
 
-	
 }
 
 
-function draw_map(map_id, blah){
-	if (blah && blah == true){
-		var canvas = document.getElementById("galactic_map_view_1");
-		//var canvas_overlay = document.getElementById(map_id+"_overlay");
-		//var canvas_objects = document.getElementById(map_id+"_objects");
-		$(canvas_overlay).clearCanvas();
-		$(canvas).clearCanvas();
-		var ctx = canvas.getContext('2d');
-		ctx.save();
-		
-		for(key in hex_map){
-			var hex = hex_map[key];
-			// first pre-compute the pixel coordinates of the hexes to save computing them lots later
-			var coords = hex_to_pixel(hex);
-			hex.pixel_x = coords.x;
-			hex.pixel_y = coords.y;
-			draw_map_tile(canvas, hex);
-			//draw_map_tile(mini_canvas, hex, true);
-		}
-		
-		return;
-	}
-	var canvas = document.getElementById(map_id);
+function draw_map(map_id, first){
+
+	var canvas = document.getElementById(map_id+"_hexes");
 	var canvas_overlay = document.getElementById(map_id+"_overlay");
 	var canvas_objects = document.getElementById(map_id+"_objects");
-	$(canvas_overlay).clearCanvas();
+
+	//$(canvas_overlay).clearCanvas();
+	$(canvas_objects).clearCanvas();
 	$(canvas).clearCanvas();
 	var ctx = canvas.getContext('2d');
+	var objects_ctx = canvas_objects.getContext('2d');
+	var overlay_ctx = canvas_overlay.getContext('2d');
 	ctx.save();
+	objects_ctx.save();
 	
 	var mini_canvas = $('#galactic_map_mini');
 	var mini_canvas_overlay = $('#galactic_map_mini_overlay');
+	
+	ctx.scale(map_scale,map_scale);
+	objects_ctx.scale(map_scale,map_scale);
+	
 	
 	for(key in hex_map){
 		var hex = hex_map[key];
@@ -1015,13 +1050,17 @@ function draw_map(map_id, blah){
 		hex.pixel_x = coords.x;
 		hex.pixel_y = coords.y;
 		draw_map_tile(canvas, hex);
-		draw_map_tile(mini_canvas, hex, true);
+		if (first){
+			draw_map_tile(mini_canvas, hex, true);
+		}
 	}
 	
 	for(key in hex_map){
 		var hex = hex_map[key];
 		draw_tile_overlay(canvas, hex);
-		draw_tile_overlay(mini_canvas, hex, true);
+		if (first){
+			draw_tile_overlay(mini_canvas, hex, true);
+		}
 	}
 	
 	// draw objects
@@ -1066,7 +1105,7 @@ function draw_map(map_id, blah){
 			  text: hex.system.population
 			});
 			if (hex.system.owner){
-				$("canvas").drawEllipse({
+				$(canvas_objects).drawEllipse({
 				  strokeStyle : players[hex.system.owner].color.border, 
 				  strokeWidth : 4,
 				  x: hex.pixel_x, y: hex.pixel_y,
@@ -1077,6 +1116,7 @@ function draw_map(map_id, blah){
 	}
 	
 	ctx.restore();
+	objects_ctx.restore();
 }
 
 function draw_tile_overlay(canvas, map_tile, small){

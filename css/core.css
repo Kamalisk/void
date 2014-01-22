@@ -139,6 +139,9 @@ div#player_resources {
 	filter: alpha(Opacity=60);
 	opacity: 0.6;
 }
+
+
+
 #galactic_map_overlay {
 	width : 1400px;
 	height : 1400px;
