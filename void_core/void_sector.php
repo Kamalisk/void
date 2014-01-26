@@ -46,8 +46,9 @@ class VOID_SECTOR_VIEW {
 		$this->unknown = $sector->unknown;
 		$this->x = $sector->x;
 		$this->z = $sector->z;
-		
+		$this->movement_cost = 2;
 		if (isset($sector->state[$player_id])){
+			$this->movement_cost = $sector->class['movement_cost'];
 			$this->class_id = $sector->class['id'];
 			if ($sector->owner){
 				$this->owner = $sector->owner->id;
@@ -96,10 +97,16 @@ class VOID_SECTOR_VIEW {
 		}else if (isset($sector->fog_state[$player_id])){
 			// return the state as fog of war saw it
 			$this->fog = 1;
-			$this->owner = $sector->fog_state[$player_id]['owner'];
+			if (isset($sector->fog_state[$player_id]['owner'])){
+				$this->owner = $sector->fog_state[$player_id]['owner']->id;
+			}else {
+				$this->owner = "";
+			}
+
 			$this->star = $sector->star;
 			$this->type = $sector->type;
 			$this->class_id = $sector->class['id'];
+			$this->movement_cost = $sector->class['movement_cost'];
 			//$this = $sector->fog_state[$player_id]['view'];
 		}else {
 			$this->unknown = 1;
@@ -138,7 +145,7 @@ class VOID_SECTOR {
 		$this->type = "space";
 		$this->home = 0;
 		$this->fog_state = [];
-		
+		$this->set_type(1);
 	}
 	
 	// adds a planet to the system
@@ -290,11 +297,7 @@ class VOID_SECTOR {
 		global $void_sector_classes;
 		$this->class = $void_sector_classes[$class_id];
 		$this->type = $this->class['type'];
-		
-		global $void_sector_types;
-		//if (isset($void_sector_types[$type])){
-			$this->movement_cost = 1;//$void_sector_types[$type]['movement_cost'];
-		//}
+		$this->movement_cost = $void_sector_classes[$class_id]['movement_cost'];
 	}
 	
 	public function set_system_owner($player){
@@ -307,7 +310,9 @@ class VOID_SECTOR {
 			return true;
 		}
 		$current_highest = false;
-		if ($this->owner && $this->state[$this->owner->id]){
+		
+		// wtf error here, undefined index, impossible??
+		if ($this->owner && isset($this->state[$this->owner->id])){
 			$highest_influence = $this->state[$this->owner->id]->influence;
 		}else {
 			$highest_influence = 1;

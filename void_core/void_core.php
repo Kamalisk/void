@@ -137,6 +137,7 @@ class VOID {
 		$ship_class = new VOID_SHIP_CLASS();
 		$ship_class->id = 1;
 		$ship_class->name = "Scout";
+		$ship_class->movement_capacity = 3;
 		$tech->add_ship_class($ship_class);
 		$this->ship_classes[$ship_class->id] = $ship_class;
 		
@@ -164,15 +165,34 @@ class VOID {
 		$structure_class = new VOID_STRUCTURE_CLASS();
 		$structure_class->id = 1;
 		$structure_class->name = "Captial";
+		$structure_class->set_unique("empire");
+		$structure_class->set_modifier("food", "10");
+		$structure_class->set_modifier("morale", "10");
+		$tech = $this->tech_tree->get_tech(1);
 		$tech->add_structure_class($structure_class);
 		$this->structure_classes[$structure_class->id] = $structure_class;
 		
+		$structure_class = new VOID_STRUCTURE_CLASS();
+		$structure_class->id = 2;
+		$structure_class->name = "Farm";
+		$this->structure_classes[$structure_class->id] = $structure_class;
+		
+		$tech = $this->tech_tree->get_tech(2);
+		$tech->add_structure_class($structure_class);
+		
+		$structure_class = new VOID_STRUCTURE_CLASS();
+		$structure_class->id = 2;
+		$structure_class->name = "Bank";
+		$this->structure_classes[$structure_class->id] = $structure_class;
+		
+		$tech = $this->tech_tree->get_tech(3);
+		$tech->add_structure_class($structure_class);
 		
 		$starting_tech = $this->tech_tree->get_starting_tech();
 		
 		$this->map = new VOID_MAP();
 		$this->players = [];
-		for($i = 1; $i < 2; $i++){
+		for($i = 1; $i < 12; $i++){
 			$this->players[$i] = new VOID_PLAYER($i);
 			$this->players[$i]->name = "Player ".$i;
 			$this->players[$i]->set_tech($this->tech_tree);
@@ -181,6 +201,8 @@ class VOID {
 		
 		$this->map->generate($width, $height, $this);
 		$this->map->populate($this);
+		
+		
 		
 		//$this->map->generate_views($this->players);		
 	}
@@ -253,6 +275,7 @@ class VOID {
 		}
 	}
 	public function are_players_finished(){
+		return true;
 		// for now return true, so turn can be processed quickly for testing		
 		foreach($this->players as &$player){
 			if (!$player->done){
@@ -304,25 +327,37 @@ class VOID {
 						$sector1 = $this->map->get_sector($fleet->x, $fleet->z);
 						$sector2 = $this->map->get_sector($order->x, $order->z);
 						if ($sector1 && $sector2){
-							$fleet->movement_points--;
-							//$sector2->add_fleet($fleet);
-							//$sector1->remove_fleet($fleet);
-							$fleet->move($order->x, $order->z, $this);
-							$combat_sectors[] =& $sector2;
+							
+							if ($fleet->movement_points >= $sector2->movement_cost){								
+								$fleet->movement_points = $fleet->movement_points - $sector2->movement_cost;
+								//$sector2->add_fleet($fleet);
+								//$sector1->remove_fleet($fleet);
+								$fleet->move($order->x, $order->z, $this);
+								$combat_sectors[] =& $sector2;
+							}else {
+								$fleet->movement_points = 0;
+								if ($sector2->movement_cost > $fleet->movement_capacity){
+									$fleet->reset_orders();									
+								}else {
+									$fleet->put_order($order);
+								}
+							}
 						}
 						$continue = true;
 					}else if ($order->type == "colonise"){
 						$sector = $this->map->get_sector($fleet->x, $fleet->z);
 						if ($sector->system && $fleet->get_special("colony")){
 							$sector->system->colonise($this->players[$fleet->owner], $this->core);
+							$fleet->movement_points = 0;
 							if ($fleet->remove_special("colony")){
 								// delete the fleet!
 								$sector->clean_up();
-							}
+							}							
 							//$sector->system->owner = $fleet->owner;
 						}
 					}else {
-						 $fleet->put_order($order);
+						$fleet->movement_points = 0;
+						$fleet->put_order($order);
 					}
 				}
 			}
@@ -346,26 +381,33 @@ class VOID {
 		// resolve income from all systems
 		foreach($this->players as &$player){
 			$player->credits_per_turn = 0;
-			$player->research_per_turn = 0;
-			$player->update_morale(0);
-		}
-		
-		foreach($temp_systems as &$system){			
+			$player->research_per_turn = 0;			
+		}		
+			
+		foreach($temp_systems as &$system){
 			$player =& $this->players[$system->owner->id];
-			$system->update($player);
+			$system->apply();
+			$system->update();
+			
 			$credits_per_turn = $system->get_credits_income();
 			$player->credits_pool += $credits_per_turn;
 			$player->credits_per_turn += $credits_per_turn;
 			
 			$research_per_turn = $system->get_research_income();
 			$player->research_pool += $research_per_turn;
-			$player->research_per_turn += $research_per_turn;	
-			
-			$player->apply_morale($system->get_morale($player));
+			$player->research_per_turn += $research_per_turn;				
 		}
 		
 		foreach($this->players as &$player){
-			
+			$player->update_morale(0);
+		}
+				
+		foreach($temp_systems as &$system){
+			$player = $system->owner;			
+			$player->apply_morale($system->get_morale($player));
+		}
+		
+		foreach($this->players as &$player){			
 			$player->update_research($player->research_per_turn, $this->tech_tree);
 		}
 				

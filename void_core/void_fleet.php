@@ -31,10 +31,26 @@ class VOID_FLEET {
 		if (count($this->ships) < $this->capacity){
 			$this->ships[] = $ship;
 			$this->owner = $ship->owner;
+			$this->update_fleet_stats();
 			return true;
 		}else {
 			return false;
 		}
+	}
+	
+	public function update_fleet_stats(){
+		$lowest_movement_points = 0;
+		if (count($this->ships)){			
+			foreach($this->ships as &$ship){
+				if (!$lowest_movement_points){
+					$lowest_movement_points = $ship->class->movement_capacity;
+				}
+				if ($ship->class->movement_points < $lowest_movement_points){
+					$lowest_movement_points = $ship->class->movement_capacity;
+				}
+			}			
+		}
+		$this->movement_capacity = $lowest_movement_points;
 	}
 	
 	public function reset_orders(){
@@ -73,7 +89,7 @@ class VOID_FLEET {
 	}
 	
 	public function reset_movement_points(){
-		$this->movement_points = 2;
+		$this->movement_points = $this->movement_capacity;
 	}
 	
 	public function clean_up(){
@@ -244,7 +260,7 @@ class VOID_SHIP_CLASS {
 	public $weapon_type;
 	public $weapon_count;
 	
-	public $movement_points;
+	public $movement_capacity;
 	
 	public $special;
 	
@@ -258,6 +274,7 @@ class VOID_SHIP_CLASS {
 		$this->weapon_damage = 10;
 		$this->work_required = 10;
 		$this->rush_cost = 100;
+		$this->movement_capacity = 2;
 	}
 	
 	function add_special($special){

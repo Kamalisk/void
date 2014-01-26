@@ -464,6 +464,7 @@ function render_research(){
 	var temp_obj = new Object();
 	temp_obj['tech_tree'] = tech_tree;
 	temp_obj['player'] = player;
+	temp_obj['tiers'] = {};
 	$.each(tech_tree.items, function(){
 		this.player_has = null;
 		if (player.tech[this.id]){
@@ -478,6 +479,10 @@ function render_research(){
 		}else {
 			this.player_current = false;
 		}
+		if (!temp_obj['tiers'][this.tier]){
+			temp_obj['tiers'][this.tier] = [];
+		}
+		temp_obj['tiers'][this.tier].push(this);
 	});
 	append_template("tech_tree_template",temp_obj,"tech_tree_items");
 }
@@ -627,7 +632,7 @@ function end_fleet_order_mode(id){
 function add_fleet_order(start, end){
 	// add path of hexes to order list
 	
-	var path = get_path_between_hexes(start, end);
+	var path = get_path_between_hexes(start, end, fleet_cache[fleet_selected].movement_capacity);
 	if (path){
 		for (var i = 0; i < path.length ; i++){
 			if (path[i]){
@@ -942,58 +947,78 @@ function redraw_overlay(){
 	
 	var fleet_order_turn_counter = 0;
 	var fleet_order_movement_counter = 0;
+	var last_hex = null;
 	// draw the current fleet orders
 	if (panel_view == "fleet" && fleet_selected && fleet_orders && fleet_orders[fleet_selected]){
 		
 			$.each(fleet_orders[fleet_selected], function (key2, value){
 				if (value.type == "move"){
+					var hex = get_hex(value.x, value.z);
 					var coords = hex_to_pixel(value, map_scroll_offset);
-					fleet_order_movement_counter++;
-					if(fleet_order_movement_counter > fleet_cache[fleet_selected].movement_points){
+					fleet_order_movement_counter += hex.movement_cost;
+										
+					if(fleet_order_movement_counter > fleet_cache[fleet_selected].movement_capacity - fleet_order_movement_counter){
 						fleet_order_movement_counter = 0;
-						fleet_order_turn_counter++;
-						//console.log(fleet_cache[fleet_selected]);
+						fleet_order_turn_counter++;						
 					}
 					if (fleet_order_turn_counter <= 0){
 						draw_hex(canvas, coords.x,  coords.y, hex_size, "orange", "rgba(240, 150, 40, 0.2)");
 					}else {
 						draw_hex(canvas, coords.x,  coords.y, hex_size, "yellow", "rgba(240, 240, 40, 0.2)");
 					}
+					$(canvas).drawText({
+					  fillStyle: "black",
+					  strokeStyle: "black",
+					  strokeWidth: 2,
+					  x: coords.x, y: coords.y+20,
+					  fontSize: "14pt",
+					  fontFamily: "Verdana, sans-serif",
+					  text: fleet_order_turn_counter+1
+					});
+					last_hex = coords;
 				}else if (value.type == "colonise"){
 					var coords = hex_to_pixel(value, map_scroll_offset);
 					draw_hex(canvas, coords.x,  coords.y, hex_size-5, "pink", "rgba(240, 150, 40, 0.2)");
 				}
 			});
 	
-	}
+	}	
 	
 	if (panel_view == "fleet" && fleet_selected && fleet_order_mode && fleet_order_start_hex && hex_highlighted && get_hex(hex_highlighted.x,hex_highlighted.z) ){
-		var path = get_path_between_hexes(fleet_order_start_hex, hex_highlighted);
+		var path = get_path_between_hexes(fleet_order_start_hex, hex_highlighted, fleet_cache[fleet_selected].movement_capacity);
 		//console.log(hex_highlighted);
-		//var path = false;
+		//var path = false;		
 		if (path){
 			for (var i = 0; i < path.length; i++){
 				if (path[i]){
 					var coords = hex_to_pixel(path[i], map_scroll_offset);
 					
-					fleet_order_movement_counter++;
-					if(fleet_order_movement_counter > fleet_cache[fleet_selected].movement_points){
+					fleet_order_movement_counter += path[i].movement_cost;
+															
+					if(fleet_order_movement_counter > fleet_cache[fleet_selected].movement_capacity - fleet_order_movement_counter){
 						fleet_order_movement_counter = 0;
-						fleet_order_turn_counter++;
-						console.log(fleet_cache[fleet_selected]);
-					}
-					
+						fleet_order_turn_counter++;								
+					}						
+					last_hex = coords;
 					if (fleet_order_turn_counter <= 0){
 						draw_hex(canvas, coords.x,  coords.y, hex_size, "orange", "rgba(255, 150, 40, 0.5)");
 					}else {
 						draw_hex(canvas, coords.x,  coords.y, hex_size, "yellow", "rgba(255, 255, 40, 0.5)");
 					}
-
+					$(canvas).drawText({
+					  fillStyle: "black",
+					  strokeStyle: "black",
+					  strokeWidth: 2,
+					  x: coords.x, y: coords.y+20,
+					  fontSize: "14pt",
+					  fontFamily: "Verdana, sans-serif",
+					  text: fleet_order_turn_counter+1
+					});			
 				}
 			}
 		}
 	}
-	
+
 	overlay_ctx.restore();
 	
 }
@@ -1002,7 +1027,7 @@ function redraw_overlay(){
 function draw_minimap_overlay(){
 	$("#galactic_map_mini_overlay").clearCanvas();
 	$("#galactic_map_mini_overlay").drawRect({
-	  'x': -map_scroll_offset.x - $("#galactic_map_hexes").position().left, 'y': -map_scroll_offset.y - $("#galactic_map_hexes").position().top,
+	  'x': -map_scroll_offset.x + (-$("#galactic_map_hexes").position().left - map_buffer)/map_scale, 'y': -map_scroll_offset.y + (-$("#galactic_map_hexes").position().top)/map_scale - map_buffer,
 	  width: $('#galactic_map_container').width() / map_scale,
 	  height: $('#galactic_map_container').height() / map_scale,
 	  strokeStyle : "white",

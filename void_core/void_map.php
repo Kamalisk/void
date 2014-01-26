@@ -114,7 +114,7 @@ class VOID_MAP {
 			$player->credits_per_turn = $this->sectors[$key]->system->get_credits_income();
 			$player->research_per_turn = $this->sectors[$key]->system->get_research_income();
 			
-			$player->apply_morale($this->sectors[$key]->system->get_morale());
+			
 			
 			// create new fleet
 			$fleet = new VOID_FLEET();
@@ -126,6 +126,10 @@ class VOID_MAP {
 			
 			$structure = new VOID_STRUCTURE($core->structure_classes[1]);
 			$this->sectors[$key]->system->add_structure($structure);
+			
+			$player->apply_morale($this->sectors[$key]->system->get_morale());
+			$this->sectors[$key]->system->update();
+			
 			
 			//$key = array_rand($this->sectors,1);
 			//$ship = new VOID_SHIP($ship_classes[1], $player->id);

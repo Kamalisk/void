@@ -94,22 +94,39 @@
 	
 	<script id="tech_tree_template" type="text/x-handlebars-template">
 		<div>
-		{{#each tech_tree.items}}
-		<div class="tech_tree_item tier_{{tier}} tech_{{id}} {{#if this.player_current}}current_tech{{/if}}" onclick="select_tech({{id}})">
-		<h4>{{id}} {{name}} {{cost}} {{tier}}</h4>
-		<div class="tech_rewards">
-		{{#if this.player_has}}
-			You have this tech!
-		{{/if}}
-		{{#if this.player_available}}
-			You can research this tech. Progress: {{this.player_available.progress}}
-		{{/if}}
-		{{#each ship_classes}}
-		Ship: {{name}}
+		
+		{{#each tiers}}
+			<div class="tech_tier tech_tier_{{@key}}">
+			{{#each this}}
+				<div class="tech_tree_item tier_{{tier}} tech_{{id}} {{#if this.player_current}}current_tech{{/if}}" onclick="select_tech({{id}})">
+					<h4>{{name}}</h4>
+					
+					{{#if this.player_available}}
+						<p>This tech is available to research.</p>
+						<p>{{this.player_available.progress}} research points needed</p>
+					{{else}}
+						{{#if this.player_has}}
+						This tech has been researched
+						{{else}}
+						<p>{{cost}} research points needed</p>
+						{{/if}}
+						
+					{{/if}}			
+					<div class="tech_rewards">
+					
+					
+					{{#each ship_classes}}
+					<span><img src="images/fleet_f.png"> {{name}}</span>
+					{{/each}}
+					{{#each structure_classes}}
+					<span><img src="images/fleet_f.png"> {{name}}</span>
+					{{/each}}
+					</div>
+				</div>
+			{{/each}}
+			</div>
 		{{/each}}
-		</div>
-		</div>
-		{{/each}}
+		
 		</div>	
 	</script>
 	
@@ -428,7 +445,10 @@
     <img src="images/happy.png"> <span class="{{#compare morale "<" 0}}negative{{/compare}}{{#compare morale ">" 0}}positive{{/compare}}"> {{morale}} </span>
     </span>
     <div class="tooltip" id="player-morale-tooltip">
-			Negative morale reduces growth in all your systems. 
+			{{#compare morale "<" 0}}
+			<p></p>
+			{{/compare}}
+			<p>
 			
 		</div>
 	</script>

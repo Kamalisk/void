@@ -37,9 +37,28 @@ class VOID_STRUCTURE_CLASS {
 	
 	public $upkeep = 0;
 	
+	public $empire_unique;
+	
+	public $modifiers;
+	
 	function __construct(){
-
-	}	
+		$this->empire_unique = false;
+		$this->modifiers = [];
+	}
+	
+	function get_modifier($type){
+		if (isset($this->modifiers[$type])){
+			return $this->modifiers[$type];
+		}
+	}
+	function set_modifier($type, $value){
+		//possibly handle custom function handlers for unique effects?
+		$this->modifiers[$type] = $value;
+	}
+	
+	function set_unique($type="empire"){
+		$this->empire_unique = true;
+	}
 }
 
 
@@ -249,34 +268,29 @@ class VOID_SYSTEM {
 		$this->structures[] = $structure;
 	}
 	
-	public function update(){
-		
+	public function update(){		
 		$this->food_per_turn = $this->get_food_income();
-		if ($this->owner->morale < 0){
-			$this->food_per_turn = $this->food_per_turn / 10;
-		}
 		$this->production_per_turn = $this->get_production_income();
-		
-		$this->influence_growth_threshold = ($this->influence_level+1) * 3;
-		
-		// first update per turn values 
+		$this->influence_growth_threshold = ($this->influence_level+1) * 3;	
+		$this->influence_per_turn = $this->population;
+		$this->food_growth_threshold = pow(2, $this->population);
+	}
+	
+	public function apply(){
 		$this->influence_pool += $this->influence_per_turn;
 		if ($this->influence_pool >= $this->influence_growth_threshold ){
 			$this->influence_pool = 0;
 			$this->influence_level++;
 			$this->influence_growth_threshold = ($this->influence_level+1) * 3;
 		}
-		
-		$this->food_growth_threshold = pow(2, $this->population);
 		$this->food_pool += $this->food_per_turn;
 		if ($this->food_pool >= $this->food_growth_threshold ){
-			$this->population++;
-			$this->food_growth_threshold = pow(2, $this->population);
-			$this->food_per_turn = $this->get_food_income();
-			$this->food_pool = 0;
-			$this->influence_per_turn = $this->population;
-		}
+			$this->population++;			
+			$this->food_pool = 0;			
+			$this->update();
+		}		
 	}
+	
 	
 	public function update_planets(){
 		foreach($this->planets as &$planet){
@@ -293,10 +307,21 @@ class VOID_SYSTEM {
 		foreach($this->planets as &$planet){
 			if ($planet->terraformed){
 				$output += $planet->get_food_output() * $this->population * $planet->development;
-			}
-			
+			}			
 		}
-		return $output;
+		
+		if ($this->structures){
+			foreach($this->structures as $structure){
+				$modifier = $structure->class->get_modifier("food");
+				if ($modifier){
+					$output += $modifier;
+				}
+			}
+		}
+		if ($this->owner->morale < 0){
+			$output = $output / 10;
+		}		
+		return ceil($output);
 	}
 	
 	public function get_credits_income(){
@@ -339,6 +364,16 @@ class VOID_SYSTEM {
 		$morale = $morale - $this->population;
 		$morale = $morale - 3;
 		// apply any buildings or empire modifiers here!
+		
+		if ($this->structures){
+			foreach($this->structures as $structure){
+				$modifier = $structure->class->get_modifier("morale");
+				if ($modifier){
+					$morale += $modifier;
+				}
+			}
+		}
+		
 		return $morale;
 	}
 	
@@ -354,11 +389,10 @@ class VOID_SYSTEM {
 		$planet =& $this->planets[$key];
 		$planet->colonise();
 		$this->owner = $owner;
+		
 		$this->population = 1;
 		$this->influence_level = 1;
-		$this->influence_per_turn = $this->population;
-		$this->food_per_turn = $this->get_food_income();
-		$this->production_per_turn = $this->get_production_income();
+		$this->update();
 		$this->docked_fleet = new VOID_FLEET();
 		$this->docked_fleet->capacity = 10;
 		$core->fleets[$this->docked_fleet->id] = $this->docked_fleet;

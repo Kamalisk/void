@@ -1,3 +1,13 @@
+
+function get_hex(x, z){
+	if (hex_map['x'+x+'z'+z]){
+		return hex_map['x'+x+'z'+z];
+	}
+	return false;
+}
+
+
+
 // get the hex object of an adjacent hex to the one given and in a given direction
 // 0 is NW. 1 is NE. 2 is E. 3 is SE. 4 is SW. 5 is W.
 function get_adjacent_hex(hex, direction){
@@ -67,7 +77,7 @@ function hex_distance(hex1, hex2) {
         + Math.abs(hex1.z + hex1.x - hex2.z - hex2.x)) / 2);
 }
 
-function get_path_between_hexes(hex1, hex2){
+function get_path_between_hexes(hex1, hex2, cost_threshold){
 	// init the open and closed arrays for storing traversed hexes
 	var open_list = new Object;
 	var closed_list = new Object;
@@ -77,10 +87,13 @@ function get_path_between_hexes(hex1, hex2){
 	hex1.h = 0;
 	// add start space to open list
 	open_list['x'+hex1.x+'z'+hex1.z] = hex1;
-	
+	console.log(cost_threshold);
+	if (hex_map['x'+hex2.x+'z'+hex2.z].movement_cost > cost_threshold){	
+		return false;
+	}
 	for(var limit = 0; limit < 1000; limit++){
 		// first find the lowest (f) ranking hex in open to look at
-		var lowest_f = 1000;
+		var lowest_f = 10000;
 		var lowest_f_hex = null;
 		for (key in open_list){
 			var hex = open_list[key];
@@ -114,15 +127,21 @@ function get_path_between_hexes(hex1, hex2){
 		
 		for (var i = 0; i < 6; i++){
 			var adjacent_hex = get_adjacent_hex(lowest_f_hex, i);
-			var g_cost = lowest_f_hex.g + 10; // add cost of existing hex to the movement cost to get to the adjacent hex, currently set to 10
-			/*
-			if (adjacent_hex.star == 1){
-				g_cost = g_cost + 10;
+			if (!adjacent_hex){
+				continue;
+			}
+			var g_cost = lowest_f_hex.g + 10; // add cost of existing hex to the movement cost to get to the adjacent hex, currently set to 10			
+			
+			if (adjacent_hex){
+				g_cost = g_cost + adjacent_hex.movement_cost * 10 ;
+			}
+			if (adjacent_hex.movement_cost > cost_threshold){
+				continue;
 			}
 			if (adjacent_hex.unknown == 1){
-				g_cost = g_cost + 20;
+				g_cost = g_cost + 10;
 			}
-			
+			/*
 			if (hex_hover_history && hex_hover_history.length > 0){
 				for (var key = 0; key < hex_hover_history.length; key++){
 					var history_hex = hex_hover_history[key];
@@ -161,7 +180,7 @@ function get_path_between_hexes(hex1, hex2){
 					}
 				}
 				*/
-				adjacent_hex.f = g_cost + (distance * 10);
+				adjacent_hex.f = g_cost + (distance * 20);
 				adjacent_hex.h = distance;
 				
 				adjacent_hex.parent_hex = lowest_f_hex;
