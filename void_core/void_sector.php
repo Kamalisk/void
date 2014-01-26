@@ -301,14 +301,14 @@ class VOID_SECTOR {
 		$this->system->owner = $player;
 	}
 	
-	public function update_owner(){
+	public function update_owner($core){
 		if (isset($this->system->owner)){
 			$this->owner = $this->system->owner;
 			return true;
 		}
 		$current_highest = false;
-		if ($this->owner && $this->state[$this->owner]){
-			$highest_influence = $this->state[$this->owner]->influence;
+		if ($this->owner && $this->state[$this->owner->id]){
+			$highest_influence = $this->state[$this->owner->id]->influence;
 		}else {
 			$highest_influence = 1;
 		}
@@ -323,7 +323,7 @@ class VOID_SECTOR {
 		//echo " -- ".$this->owner."  (".$this->x.", ".$this->z.") ";
 		if ($current_highest){
 			//echo "wtf ".$current_highest." ---";
-			$this->owner = $current_highest;
+			$this->owner = $core->players[$current_highest];
 		}
 		//echo "\n";
 	}

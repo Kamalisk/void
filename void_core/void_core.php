@@ -369,7 +369,7 @@ class VOID {
 			$player->update_research($player->research_per_turn, $this->tech_tree);
 		}
 				
-		$this->map->update_map();
+		$this->map->update_map($this);
 		
 		$this->reset_player_state();
 		

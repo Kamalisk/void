@@ -861,9 +861,11 @@ function handle_fetch_game_data(data){
 		update_interface();
 		redraw_overlay();
 		if (!player.done){
+			$("#end_turn_button").html('<img src="images/ajax-loader.png" style="visibility: hidden;"> End Turn ');
 			$("#end_turn_button").attr("disabled", false);
 		}else {
 			status_check();
+			$("#end_turn_button").html('<img src="images/ajax-loader.png"> End Turn ');
 			$("#end_turn_button").attr("disabled", true);
 		}
 		$('#main_loading').hide();
@@ -886,6 +888,7 @@ function handle_status_check(data){
 function end_turn(){
 	// send all committed orders to the server
 	$("#end_turn_button").attr("disabled", true);
+	$("#end_turn_button").html('<img src="images/ajax-loader.png"> End Turn ');
 	$.post("main.php"+location.search,{'action':'end_turn', 'fleet_orders':fleet_orders, 'system_orders':system_orders, 'current_tech':current_tech},handle_end_turn);
 	system_orders = new Object();
 	current_tech = null;
@@ -1088,7 +1091,7 @@ function draw_map(map_id, first, custom_offset){
 		var coords = hex_to_pixel(hex, offset);
 		hex.pixel_x = coords.x;
 		hex.pixel_y = coords.y;
-		if (hex.pixel_x > bound.lower_x && hex.pixel_y > bound.lower_y && hex.pixel_x < bound.upper_x && hex.pixel_y < bound.upper_y){
+		if ( first || (hex.pixel_x > bound.lower_x && hex.pixel_y > bound.lower_y && hex.pixel_x < bound.upper_x && hex.pixel_y < bound.upper_y) ){
 			hexes_to_draw.push(hex);
 		}
 	}

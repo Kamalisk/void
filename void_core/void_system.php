@@ -390,8 +390,8 @@ class VOID_SYSTEM {
 			// create the created item. 
 			if ($item->type == "build"){
 				$ship_class = $item->data;
-				$ship = new VOID_SHIP($ship_class, $this->owner);
-				if ($fleet = $sector->get_primary_fleet($this->owner) ){
+				$ship = new VOID_SHIP($ship_class, $this->owner->id);
+				if ($fleet = $sector->get_primary_fleet($this->owner->id) ){
 					//print_r($fleet);
 					if ($fleet->add_ship($ship)){
 						//echo "did we get here?";

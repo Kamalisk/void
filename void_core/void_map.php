@@ -133,14 +133,14 @@ class VOID_MAP {
 			
 		}
 		
-		$this->update_map();
+		$this->update_map($core);
 		
 	}
 	
 	// run through all objects on the map
 	// calculate who controls each hex
 	// update vision for all players
-	public function update_map(){
+	public function update_map($core){
 		
 		// first reset the map state for all players
 		foreach($this->sectors as &$sector){
@@ -214,7 +214,7 @@ class VOID_MAP {
 		// run through all sectors and calculate who "owns" each sector
 		foreach($this->sectors as &$sector){
 			
-			$sector->update_owner();			
+			$sector->update_owner($core);			
 			$sector->update_fog();
 		}
 
