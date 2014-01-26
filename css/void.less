@@ -112,6 +112,11 @@ button:active {
 
 /* Generic styles for use all over the place */
 
+.loading {
+	padding-left : 20px;
+	background-image : url();
+}
+
 .friendly {
 	color : green;
 }
@@ -162,7 +167,7 @@ button:active {
 
 /* generic dialog */
  .dialog {
-	border-radius : 10px;	
+	background : rgba(100,100,100, 0.8);
 }
 
 
@@ -228,6 +233,7 @@ div#player_resources {
 	right : 0px;
 	bottom : 0px;
 	z-index : 1000;
+	cursor : pointer;
 }
 
 #galactic_map_hexes {
@@ -362,13 +368,13 @@ div.window_control .close_window {
 
 #system_view_window {
 	position : absolute;
-	top : 1em;
-	bottom : 1em;
-	left : 1em;
-	right : 1em;
+	top : 0em;
+	bottom : 0em;
+	left : 0em;
+	right : 0em;
 	border : solid white 2px;
 	background : #232323;
-	z-index 100;
+	z-index : 10000;
 	display : none;
 }
 
@@ -376,13 +382,15 @@ div.window_control .close_window {
 	list-style-type : none;
 	padding : 0.2em;
 	margin : 0;
-	border : solid grey 2px;
-	border-radius : 5px;
+	border-top : solid grey 2px;
+	border-bottom : solid grey 2px;
+	
 	background : url('../images/back2.png') repeat;
+	text-align : center;
 }
 .system_view_planet {
 	padding : 0.8em;
-	margin : 0;
+	margin : 0.3em;
 	display : inline-block;
 	width : 110px;
 }
@@ -437,3 +445,12 @@ div.window_control .close_window {
 	border : solid green 2px;
 	background : url("../images/planets/class_m.png") no-repeat;	
 }
+
+
+
+/* resources */
+
+.food, .credits, .production, .research {
+	font-weight : bold;
+}
+

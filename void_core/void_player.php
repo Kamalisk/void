@@ -48,7 +48,7 @@ class VOID_PLAYER {
 	
 	public function update_research($work, $tech_tree){
 		if ($this->current_tech){
-			echo "tech has arrived \n";
+			
 			$this->current_tech->progress = $this->current_tech->progress - $work;
 			if ($this->current_tech->progress <= 0){
 				VOID_LOG::write($this->id, "Research has completed on ".$this->current_tech->class->name);

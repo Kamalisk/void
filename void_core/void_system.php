@@ -252,7 +252,7 @@ class VOID_SYSTEM {
 	public function update(){
 		
 		$this->food_per_turn = $this->get_food_income();
-		if ($player->morale < 0){
+		if ($this->owner->morale < 0){
 			$this->food_per_turn = $this->food_per_turn / 10;
 		}
 		$this->production_per_turn = $this->get_production_income();

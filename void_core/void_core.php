@@ -172,7 +172,7 @@ class VOID {
 		
 		$this->map = new VOID_MAP();
 		$this->players = [];
-		for($i = 1; $i < 3; $i++){
+		for($i = 1; $i < 2; $i++){
 			$this->players[$i] = new VOID_PLAYER($i);
 			$this->players[$i]->name = "Player ".$i;
 			$this->players[$i]->set_tech($this->tech_tree);
@@ -253,8 +253,7 @@ class VOID {
 		}
 	}
 	public function are_players_finished(){
-		// for now return true, so turn can be processed quickly for testing
-		return true;
+		// for now return true, so turn can be processed quickly for testing		
 		foreach($this->players as &$player){
 			if (!$player->done){
 				return false;
@@ -352,7 +351,7 @@ class VOID {
 		}
 		
 		foreach($temp_systems as &$system){			
-			$player =& $this->players[$system->owner];
+			$player =& $this->players[$system->owner->id];
 			$system->update($player);
 			$credits_per_turn = $system->get_credits_income();
 			$player->credits_pool += $credits_per_turn;
@@ -425,7 +424,7 @@ class VOID {
 					}
 				}
 				
-				//$player->done = true;
+				$player->done = true;
 				
 				// if all players have ended their turn.
 				// process a turn
@@ -437,12 +436,8 @@ class VOID {
 					
 				}				
 			} else if ($input['action'] == "reset"){
-				
 					$this->map = new VOID_MAP();
-				
-					
-				
-					$this->setup(30,20);
+					$this->setup(60,40);
 					//$this->save();
 			}
 		}

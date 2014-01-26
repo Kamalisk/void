@@ -6,7 +6,7 @@
 	<script type="text/javascript" src="core/jcanvas.js"></script>
 	<script type="text/javascript" src="core/scrollsync.js"></script>
 	<script type="text/javascript" src="core/dragscrollable.js"></script>
-	
+	<script type="text/javascript" src="core/jquery.mousewheel.js"></script>
 	
 	<script type="text/javascript" src="core/jquery-ui-1.10.3.custom.min.js"></script>
 	
@@ -57,7 +57,9 @@
 		<div id="galactic_map_container" style="position : absolute;">
 			<div id="galactic_map_dragger"></div>
 			<canvas id="galactic_map_hexes" width="2000px" height="2000px"></canvas>
-			<canvas id="galactic_map_objects" width="2000px" height="2000px"></canvas>		
+			<canvas id="galactic_map_objects" width="2000px" height="2000px"></canvas>
+			<canvas id="galactic_map_buffer_hexes" width="2000px" height="2000px" style="display : none;"></canvas>				
+			<canvas id="galactic_map_buffer_objects" width="2000px" height="2000px" style="display : none;"></canvas>				
 			<canvas id="galactic_map_overlay"></canvas>
 			
 		</div>
@@ -137,11 +139,21 @@
 		<h3 class="map_panel_header">Sector {{x}}, {{z}}</h3>
 		<div class="map_panel_content">
 		
-		{{#if friendly}}
-		<button class="wide_button" type="button" onclick="show_system_view({{x}}, {{z}} );"><img src="images/research_small.png">System Management</button>
+		
+		
+		{{#if system}}
+		<button class="wide_button" type="button" onclick="show_system_view({{x}}, {{z}} );"><img src="images/research_small.png"> View System</button>		
 		{{/if}}
 		
+		
 		<table class="data_block">
+			
+			{{#if type}}
+				<tr>
+				<th>Type</th>
+				<td>{{class.name}}</td>
+				</tr>
+			{{/if}}
 			<tr> 
 				<th>Owner</th>
 				{{#if friendly}}
@@ -191,16 +203,21 @@
 				<th>System Queue	
 				</th>
 				<td>
-				<select id="system_panel_build_ship_class_id">
-				{{#each owner_object.available_ship_classes}}
-					<option value="{{id}}">{{name}}</option>
-				{{/each}}
-				</select>
-				<button type="button" onclick="build_ship($('#system_panel_build_ship_class_id').val());">Build Ship</button>
 				
 				{{#if system.build_queue.items}}
 				<ul>
-				{{#each system.build_queue.items}}<li>{{target.name}} {{#if turns}} ({{turns}} turns){{/if}}</li>{{/each}}
+				{{#with system.build_queue.items.[0]}}
+				<li>				
+				<span class="tooltip-template" data-tooltip-id="ship-class-tooltip">{{target.name}} {{#if turns}} ({{turns}} turns){{/if}}</span>
+				
+				<div class="tooltip" id="ship-class-tooltip">
+					{{#with target}} {{> ship_class}} {{/with}}
+				</div>
+				
+				</li>
+				{{/with}}
+				<li>{{system.build_queue.items.length}} total items</li>
+		
 				</ul>
 				{{else}}
 				<p>Empty</p>
@@ -308,6 +325,15 @@
 			{{#if terraformed}}Terraformed{{else}}Uninhabited{{/if}}
 	</script>
 	
+	<script id="ship_class_template" type="text/x-handlebars-template">			
+			<ul class="ship_class">
+				<li>Class name: {{name}}</li>
+				<li>Weapons: {{weapon_count}}x{{weapon_damage}} ({{weapon_type}})</li>
+				<li>Production cost: {{work_required}}</li>
+				<li>Special: {{special}}</li>
+			</ul>
+	</script>
+	
 	<script id="system_view_template" type="text/x-handlebars-template">
 		<div id="system_view">
 		<h2>System at {{x}}, {{z}} (size {{system.population}})</h2>
@@ -316,8 +342,7 @@
 		<button class="close_window" onclick="$('#system_view_window').hide();">Return to Map</button>
 		</div>
 		
-		{{#if system.planets}}
-		<h4>Planets</h4>	
+		{{#if system.planets}}		
 		<ul class="system_view_planet_list">
 		{{#each system.planets}}
 			<li class="system_view_planet class{{class}}">
@@ -327,32 +352,33 @@
 		</ul>
 		{{/if}}
 		
-		<h4>Output</h4>	
-		<p>
-		<img src="images/food.png" alt="Food" title="Food"> {{system.food_per_turn}}
-		<img src="images/production.png" alt="Production" title="Production"> {{system.production_per_turn}}
-		<img src="images/research.png" alt="Research" title="Research"> {{system.research_per_turn}}
-		<img src="images/credits.png" alt="Credits" title="Credits"> {{system.credits_per_turn}}
-		<img src="images/influence.png" alt="Influence" title="Influence"> {{system.influence_per_turn}}</p>
-		
-		<h4>System Queue
-		<select id="system_panel_build_ship_class_id">
-		{{#each owner_object.available_ship_classes}}
-			<option value="{{id}}">{{name}}</option>
-		{{/each}}
-		</select>
-		<button type="button" onclick="build_ship($('#system_panel_build_ship_class_id').val());">Build Ship</button>
-		</h4>	
-		
-		
-		{{#if system.build_queue.items}}
-		<ul>
-		{{#each system.build_queue.items}}<li>{{target.name}} {{#if turns}} ({{turns}} turns){{/if}}</li>{{/each}}
-		</ul>
-		{{else}}
-		<p>Empty</p>
+		{{#if system.owner}}
+			<h4>Output</h4>	
+			<p>
+			<img src="images/food.png" alt="Food" title="Food"> {{system.food_per_turn}}
+			<img src="images/production.png" alt="Production" title="Production"> {{system.production_per_turn}}
+			<img src="images/research.png" alt="Research" title="Research"> {{system.research_per_turn}}
+			<img src="images/credits.png" alt="Credits" title="Credits"> {{system.credits_per_turn}}
+			<img src="images/influence.png" alt="Influence" title="Influence"> {{system.influence_per_turn}}</p>
+			
+			<h4>System Queue
+			<select id="system_panel_build_ship_class_id">
+			{{#each owner_object.available_ship_classes}}
+				<option value="{{id}}">{{name}}</option>
+			{{/each}}
+			</select>
+			<button type="button" onclick="build_ship($('#system_panel_build_ship_class_id').val());">Build Ship</button>
+			</h4>	
+			
+			
+			{{#if system.build_queue.items}}
+			<ul>
+			{{#each system.build_queue.items}}<li>{{target.name}} {{#if turns}} ({{turns}} turns){{/if}}</li>{{/each}}
+			</ul>
+			{{else}}
+			<p>Empty</p>
+			{{/if}}
 		{{/if}}
-		
 		
 		
 		
