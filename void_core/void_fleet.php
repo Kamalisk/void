@@ -45,7 +45,7 @@ class VOID_FLEET {
 				if (!$lowest_movement_points){
 					$lowest_movement_points = $ship->class->movement_capacity;
 				}
-				if ($ship->class->movement_points < $lowest_movement_points){
+				if ($ship->class->movement_capacity < $lowest_movement_points){
 					$lowest_movement_points = $ship->class->movement_capacity;
 				}
 			}			

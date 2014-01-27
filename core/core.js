@@ -1,25 +1,5 @@
 
-var hex_map = new Object();
-var hex_size = 60; 
-var hex_selected = {};
-var hex_highlighted = {};
-var hex_height = hex_size * 2;
-var hex_width = Math.sqrt(3)/2 * hex_height;
-var hex_vert = 3 / 4 * hex_height;
-var hex_hover_history = new Array();
-
-var map_context_menu_type;
-var map_right_click;
-
-var hex_neighbors = [
-	[0,  -1],  [+1, -1],  [ +1, 0],
-	[0,  +1],  [-1, +1],  [ -1, 0] 
-];
-
-var map_scale = 0.7;
-var map_height = 1400;
-var map_width = 1400;
-var map_viewport = new Object();	
+	
 
 var player;
 var players;
@@ -112,267 +92,9 @@ $(document).ready(function (){
 });
 
 
-function initialize_map(width, height){
-	
-	// figure out height and width of map based on the number of hexes
-	map_height = (hex_height * 1.5 * Math.floor(height / 2)) + hex_height ;
-	map_width = hex_width * width + (hex_width*0.7);
-	
-	var map_ratio = map_width / map_height;
-	
-	$('#galactic_map_mini').attr("width",map_width+400);
-	$('#galactic_map_mini').attr("height",map_height+400);
-	$('#galactic_map_mini').css("width",180*map_ratio);
-	$('#galactic_map_mini').css("height","180");
-	
-	$('#galactic_map_mini_overlay').attr("width",map_width);
-	$('#galactic_map_mini_overlay').attr("height",map_height);
-	$('#galactic_map_mini_overlay').css("width",180*map_ratio);
-	$('#galactic_map_mini_overlay').css("height","180");
-		
-	// calculate current view port
-	//map_viewport.startX = $('#galactic_map_container').scrollLeft();
-	//map_viewport.startY = $('#galactic_map_container').scrollTop();
-	map_viewport.endX = map_viewport.startX + $('#galactic_map_container').width;
-	map_viewport.endY = map_viewport.startY + $('#galactic_map_container').height;
-	map_viewport.width = $('#galactic_map_container').width();
-	map_viewport.height = $('#galactic_map_container').height();
-	map_viewport.percentX = map_viewport.startX / map_viewport.width;
-	map_viewport.percentY = map_viewport.startY / map_viewport.height;
-	map_viewport.percentWidth = map_width / map_viewport.width;
-	map_viewport.percentHeight = map_height / map_viewport.height;
-	map_viewport.factorWidth = map_width / 200;
-	map_viewport.factorHeight = map_height / 200;
-	
-	map_context_menu_type = "default";
-	map_right_click = "";
-	
-	if (!first_load){
-		map_scroll_offset = {"x":0, "y":0};
-		$("#galactic_map_hexes").css({"top": -map_buffer , "left": -map_buffer });
-		$("#galactic_map_overlay").css({"top": -map_buffer , "left": -map_buffer });
-		$("#galactic_map_objects").css({"top": -map_buffer , "left": -map_buffer });
-	}		
-	
-	map_chunk_size.x = Math.floor($('#galactic_map_container').width() + map_buffer*2);
-	map_chunk_size.y = Math.floor($('#galactic_map_container').height() + map_buffer*2);
-	
-	$('#galactic_map_overlay').attr("width",$('#galactic_map_container').width() + map_buffer*2);
-	$('#galactic_map_overlay').attr("height",$('#galactic_map_container').height() + map_buffer*2);
-	$('#galactic_map_overlay').css("width",$('#galactic_map_container').width() + map_buffer*2);
-	$('#galactic_map_overlay').css("height",$('#galactic_map_container').height() + map_buffer*2);
-	
-	$('#galactic_map_objects').attr("width",$('#galactic_map_container').width() + map_buffer*2);
-	$('#galactic_map_objects').attr("height",$('#galactic_map_container').height() + map_buffer*2);
-	$('#galactic_map_objects').css("width",$('#galactic_map_container').width() + map_buffer*2);
-	$('#galactic_map_objects').css("height",$('#galactic_map_container').height() + map_buffer*2);
-	
-	$('#galactic_map_hexes').attr("width", $('#galactic_map_container').width() + map_buffer*2);
-	$('#galactic_map_hexes').attr("height", $('#galactic_map_container').height() + map_buffer*2);
-	$('#galactic_map_hexes').css("width", $('#galactic_map_container').width() + map_buffer*2 );
-	$('#galactic_map_hexes').css("height", $('#galactic_map_container').height() + map_buffer*2 );
-	
-	draw_map("galactic_map", true);
-	draw_minimap_overlay();
-	// after first load has been done don't bother with most of this function
-	if (first_load){
-		return;
-	}	
-	
-	first_load = true;
-	scroll_in_progress = false;	
-	
-	var view_port_width = $("#galactic_map_container").width();
-	var map_surface_width = $("#galactic_map_hexes").width();
-	var view_port_height = $("#galactic_map_container").height();
-	var map_surface_height = $("#galactic_map_hexes").height();
 
 
-	// dragging surface events
-	$('#galactic_map_dragger').bind('mousedown',function(event){
-		mouse_down_event = event;
-		scroll_in_progress = {
-			"x": event.pageX, "y": event.pageY,
-			"target_x": $("#galactic_map_hexes").position().left, "target_y": $("#galactic_map_hexes").position().top
-		};		
-		event.preventDefault();
-	});
-	$('#galactic_map_dragger').bind('mouseup',function(event){
-		scroll_in_progress = false;
-		if (Math.abs(mouse_down_event.pageX - event.pageX) < 10 && Math.abs(mouse_down_event.pageY - event.pageY) < 10 && event.button == 0){
-			var offset_x = $("#galactic_map_hexes").position().left + map_buffer;
-			var offset_y = $("#galactic_map_hexes").position().top + map_buffer;
-			var click_x = event.pageX - $(this).offset().left;// + offset_x/hex_size/2;
-			var click_y = event.pageY - $(this).offset().top;// + offset_y/hex_size/2;
-			//console.log(offset_x);
-			click_to_hex( (click_x - offset_x) / map_scale - map_scroll_offset.x, (click_y - offset_y) / map_scale - map_scroll_offset.y, 'click', event);
-			
-		}
-		mouse_down_event = null;
-	});
-	
-	$('#galactic_map_dragger').bind('mousewheel',function(event){
-		//console.log(event);
-		var zoom_offset = {};
-		if (event.deltaY > 0){
-			map_scale = map_scale -= 0.1;
-		}else {
-			map_scale = map_scale += 0.1;
-		}
-		var click_x = event.pageX - $(this).offset().left;// + offset_x/hex_size/2;
-		var click_y = event.pageY - $(this).offset().top;// + offset_y/hex_size/2;
-		zoom_offset.x = 0.1 * click_x;
-		zoom_offset.y = 0.1 * click_y;
-		
-		jump_map(-map_scroll_offset.x + click_x/map_scale, -map_scroll_offset.y + click_y/map_scale);
-	});
-	
-	$('#galactic_map_dragger').bind('mousemove',function(event){
-		
-		//console.log(event);
-		if (scroll_in_progress){
-			// move the map!			
-			var x = (event.pageX  - scroll_in_progress.x);
-			var y = (event.pageY  - scroll_in_progress.y);
-			
-			var new_x = scroll_in_progress.target_x + x;
-			var new_y = scroll_in_progress.target_y + y;
 
-			var oldX = $("#galactic_map_hexes").css("left");
-			var oldY = $("#galactic_map_hexes").css("top");
-			
-			map_scroll_offset.adjust_x = $("#galactic_map_hexes").position().left + map_buffer;
-			map_scroll_offset.adjust_y = $("#galactic_map_hexes").position().top + map_buffer;
-
-			$("#galactic_map_hexes").css({"top": new_y , "left": new_x });
-			$("#galactic_map_overlay").css({"top": new_y , "left": new_x });
-			$("#galactic_map_objects").css({"top": new_y , "left": new_x });
-			
-			draw_minimap_overlay();
-			if (false && new_x >= -100 && !map_canvas_buffer_offset){					
-				map_canvas_buffer_offset = {};
-				map_canvas_buffer_offset.x = map_scroll_offset.x - map_buffer;
-				map_canvas_buffer_offset.y = map_scroll_offset.y - map_buffer;
-				console.log(map_canvas_buffer_offset);
-				draw_map("galactic_map_buffer", false, map_canvas_buffer_offset);
-			}
-			
-			if (new_x < (view_port_width - map_surface_width ) || new_x > 0 || new_y < (view_port_height - map_surface_height ) || new_y > 0){
-				map_scroll_offset.x = map_scroll_offset.x + (new_x + map_buffer)/map_scale;
-				map_scroll_offset.y = map_scroll_offset.y + (new_y + map_buffer)/map_scale;
-				$("#galactic_map_overlay").css({"top": -map_buffer , "left": -map_buffer });
-				$("#galactic_map_hexes").css({"top": -map_buffer , "left": -map_buffer });
-				$("#galactic_map_objects").css({"top": -map_buffer , "left": -map_buffer });
-				scroll_in_progress = {
-					"x": event.pageX, "y": event.pageY,
-					"target_x": $("#galactic_map_hexes").position().left, "target_y": $("#galactic_map_hexes").position().top
-				};
-				
-				
-				//if (map_canvas_buffer_offset && map_canvas_buffer_offset.x == map_scroll_offset.x && map_canvas_buffer_offset.y == map_scroll_offset.y){
-				//	var offscreen_canvas = document.getElementById("galactic_map_buffer_hexes");
-				//	var onscreen_canvas = document.getElementById("galactic_map_hexes");
-				//	var onscreen_context = onscreen_canvas.getContext("2d");					
-					// Don't care about transparency:
-				//	onscreen_context.drawImage(offscreen_canvas, 0, 0, $("#galactic_map_hexes").width(), $("#galactic_map_hexes").height(), 0, 0, $("#galactic_map_hexes").width(), $("#galactic_map_hexes").height());
-				//	map_canvas_buffer_offset = null;
-				//}else {
-					draw_map("galactic_map");
-				//}								
-				redraw_overlay();				
-			}
-			
-			event.preventDefault();
-		}
-		var offset_x = $("#galactic_map_hexes").position().left + map_buffer;
-		var offset_y = $("#galactic_map_hexes").position().top + map_buffer;
-		var click_x = event.pageX - $(this).offset().left;// + offset_x/hex_size/2;
-		var click_y = event.pageY - $(this).offset().top;// + offset_y/hex_size/2;
-		//console.log(offset_x);
-		click_to_hex( (click_x - offset_x) / map_scale - map_scroll_offset.x, (click_y - offset_y) / map_scale - map_scroll_offset.y, '', event);
-	});
-	$('#galactic_map_dragger').bind('mouseout',function(event){
-		scroll_in_progress = false;
-	});
-	$('#galactic_map_dragger').bind('contextmenu',function(event){
-			if (map_right_click && map_right_click != ""){
-				click_to_hex(event.pageX - $(this).offset().left, event.pageY - $(this).offset().top, 'click', event);
-			}else if (show_context_menu('galactic_map_context_menu', event.pageX, event.pageY)){
-				event.preventDefault();
-			}
-			return false;
-	});
-	
-	// set up click and drag for mini map
-	$('#galactic_map_mini_overlay').bind('mousedown',function(event){
-			start_minimap_drag(event.pageX - $(this).offset().left, event.pageY - $(this).offset().top);
-	});
-	$('#galactic_map_mini_overlay').bind('mouseup',function(event){
-			end_minimap_drag(event.pageX - $(this).offset().left, event.pageY - $(this).offset().top);
-	});
-	$('#galactic_map_mini_overlay').bind('mousemove',function(event){
-			minimap_move((event.pageX - $(this).offset().left)  , (event.pageY - $(this).offset().top));
-	});
-	
-	
-	$('body').bind('click',function(event){
-			$('#galactic_map_context_menu').hide();
-	});
-	
-	$('body').bind('keypress',function(event){
-			// handle shortcut keys
-	});
-	
-	// center the map on the users home system
-	if (player && player.home){
-		var coords = hex_to_pixel(player.home);
-		jump_map(coords.x, coords.y);
-		draw_minimap_overlay();
-		//$('#galactic_map_container').scrollLeft((coords.x * map_scale - ($('#galactic_map_container').width()/2)));
-		//$('#galactic_map_container').scrollTop((coords.y  * map_scale - ($('#galactic_map_container').height()/2)));
-	}
-	
-}
-
-function jump_map(x, y){	
-//	x = x;// - $("#galactic_map_container").width()/2/map_scale;
-//	y = y;// - $("#galactic_map_container").height()/2/map_scale;
-//	var new_x = Math.floor(x / map_buffer) * map_buffer;
-//	var new_y = Math.floor(y / map_buffer) * map_buffer;
-//	new_x = new_x - map_buffer;
-//	new_y = new_y - map_buffer;
-//	var diff_x = x % map_buffer;	
-//	var diff_y = y % map_buffer;
-//	
-//	console.log(new_x);
-//	console.log(diff_x);
-//	
-//	$("#galactic_map_overlay").css({"top": -diff_y , "left": -diff_x });
-//	$("#galactic_map_hexes").css({"top": -diff_y , "left": -diff_x });
-//	$("#galactic_map_objects").css({"top": -diff_y , "left": -diff_x });
-//	map_scroll_offset.x = ( -new_x );
-//	map_scroll_offset.y = ( -new_y );
-	map_scroll_offset.x = (-x + $("#galactic_map_container").width()/2/map_scale);
-	map_scroll_offset.y = (-y + $("#galactic_map_container").height()/2/map_scale);
-	draw_map("galactic_map");
-	redraw_overlay();
-}
-
-function map_zoom(out){
-	if (out){
-		map_scale = map_scale * 2;
-	}else {
-		map_scale = map_scale / 2;
-	}
-	$('#galactic_map').css("width",map_width*map_scale);
-	$('#galactic_map').css("height",map_height*map_scale);
-	$('#galactic_map_overlay').css("width",map_width*map_scale);
-	$('#galactic_map_overlay').css("height",map_height*map_scale);
-	$('#galactic_map_objects').css("width",map_width*map_scale);
-	$('#galactic_map_objects').css("height",map_height*map_scale);
-	
-	draw_map("galactic_map");
-}
 
 
 function update_interface(){
@@ -434,17 +156,26 @@ function append_template(template_id, data, element_id){
 		var selector = '#' + $(this).data('tooltip-id');		
 		$(this).tooltipsy({
 			content: $(selector).html(),
-			delay : 1000,
+			delay : 700,
 			alignTo: 'element',
-    	offset: [0, 1]
+			offset: [0, 1], 
+			show: function (e, $el) {
+        $el.css({
+            'display': 'block'
+        });
+        if ($($el).position().left + $($el).width() > $(window).width()){
+        	$el.css({
+            'left': $($el).position().left - ($($el).position().left + $($el).width() - $(window).width() ) - 10
+        });
+        }
+    	}
 		});
 	});
 	$('.tooltip-title', $("#"+element_id)).each(function() {
 		$(this).tooltipsy({
 			content: $(this).attr('title'),
-			delay : 1000,
-			alignTo: 'element',
-    	offset: [0, 1]
+			delay : 700,
+			alignTo: 'element'
 		});
 	});
 	$("#"+element_id).show();
@@ -555,7 +286,7 @@ function show_map_panel_fleet(id){
 }
 
 function show_system_view(x, z){	
-	$("#system_view_window").empty();		
+	$("#system_view_window .dialog_content").empty();		
 	var hex = hex_map['x'+x+'z'+z];
 	if (hex.system){
 		$.each(hex.system.planets, function (){
@@ -566,10 +297,10 @@ function show_system_view(x, z){
 		$.each(hex.system.build_queue.items, function (){
 			this.target = ship_class_cache[this.target_id];
 		});
-	}
-	
+	}	
 	var html = fetch_template('system_view_template',hex);		
-	$("#system_view_window").append(html);
+	$("#system_view_window .dialog_content").append(html);
+	$("#dialog_title").html('System at '+x+','+z);
 	$("#system_view_window").show();			
 }
 

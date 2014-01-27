@@ -13,8 +13,9 @@
 	<script type="text/javascript" src="core/handlebars.js"></script>
 	<script type="text/javascript" src="core/tooltipsy.js"></script>
 	
+	<script type="text/javascript" src="core/hex_map.js"></script>
 	<script type="text/javascript" src="core/core.js"></script>
-	<script type="text/javascript" src="core/hex.js"></script>
+	<script type="text/javascript" src="core/hex.js"></script>	
 	
 	<link rel="stylesheet" type="text/css" href="css/void.less.php" />
 	<style>
@@ -90,6 +91,13 @@
 	</div>
 	
 	<div id="system_view_window" class="dialog">
+		<div class="dialog_body">
+			<div class="dialog_header">
+				<h2> <span id="dialog_title"></span> <button class="close_window" onclick="$('#system_view_window').hide();">Return to Map</button></h2>				
+			</div>
+			<div class="dialog_content">
+			</div>
+		</div>
 	</div>
 	
 	<script id="tech_tree_template" type="text/x-handlebars-template">
@@ -185,7 +193,7 @@
 			</tr>
 			{{#if system.influence_level}}
 			<tr>
-				<th>Influence Level</th>
+				<th>Influence</th>
 				<td class="tooltip-template" data-tooltip-id="system-influence-tooltip">Level {{system.influence_level}} ({{system.influence_growth_turns}} turns) </td>
 			</tr>
 			{{/if}}
@@ -202,7 +210,24 @@
 				<th>Growth</th>
 				<td class="tooltip-template" data-tooltip-id="system-growth-tooltip">{{system.food_pool}} / {{system.food_growth_threshold}} (+{{system.food_per_turn}})</td>
 			</tr>
-			
+			{{#if system.planets}}
+			<tr>
+			<th>Planets</th>
+			<td>
+			<ul class="small_planet_list">
+			{{#each system.planets}}
+				<li class="tooltip-template{{#if terraformed}} terraformed{{/if}}" data-tooltip-id="planet-class-tooltip-{{id}}-{{class.id}}">
+					<img width="30" height="30" src="{{class.image}}" alt="{{class.name}}">
+					<div class="tooltip" id="planet-class-tooltip-{{id}}-{{class.id}}">						
+						<h4>{{class.name}}</h4>						
+						{{> planet}}
+					</div>
+				</li>
+			{{/each}}
+			</ul>
+			</td>
+			</tr>
+			{{/if}}
 			{{#if friendly}}
 			<tr>
 				<th>Structures</th>
@@ -217,7 +242,7 @@
 				</td>
 			</tr>
 			<tr>
-				<th>System Queue	
+				<th>Queue	
 				</th>
 				<td>
 				
@@ -244,18 +269,7 @@
 			
 			{{/if}}
 			{{/if}}
-			{{#if system.planets}}
-			<tr>
-			<th>Planets</th>
-			<td>
-			<ul>
-			{{#each system.planets}}
-				<li>{{class.name}}{{#if terraformed}} (terraformed){{/if}}</li>
-			{{/each}}
-			</ul>
-			</td>
-			</tr>
-			{{/if}}
+			
 			{{#if system.owner}}	
 			{{#if space_dock}}
 				<tr>
@@ -353,11 +367,7 @@
 	
 	<script id="system_view_template" type="text/x-handlebars-template">
 		<div id="system_view">
-		<h2>System at {{x}}, {{z}} (size {{system.population}})</h2>
 		
-		<div class="window_control">
-		<button class="close_window" onclick="$('#system_view_window').hide();">Return to Map</button>
-		</div>
 		
 		{{#if system.planets}}		
 		<ul class="system_view_planet_list">
