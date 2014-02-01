@@ -145,7 +145,7 @@ class VOID_MAP {
 	// calculate who controls each hex
 	// update vision for all players
 	public function update_map($core){
-		
+		global $void_ranges;
 		// first reset the map state for all players
 		foreach($this->sectors as &$sector){
 			$sector->reset_state();
@@ -190,7 +190,7 @@ class VOID_MAP {
 				
 				
 			}
-			global $void_ranges;
+
 			$fleets =& $sector->fleets;
 			if ($fleets){
 				foreach($fleets as &$player_fleets){

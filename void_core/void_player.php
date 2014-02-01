@@ -20,6 +20,7 @@ class VOID_PLAYER {
 	public $current_tech;
 	
 	public $available_ship_classes;
+	public $available_structure_classes;
 	
 	public $done;
 	

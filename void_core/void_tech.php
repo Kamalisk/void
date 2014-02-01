@@ -59,15 +59,15 @@ class VOID_TECH_TREE {
 		$tech = new VOID_TECH(1, "Space Flight", 10);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(2, "Geothermal Frakking", 100);
+		$tech = new VOID_TECH(2, "Geothermal Frakking", 20);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(3, "Xenobiology", 100);
+		$tech = new VOID_TECH(3, "Xenobiology", 20);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(4, "Laser Cutting", 100);
+		$tech = new VOID_TECH(4, "Laser Cutting", 20);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		

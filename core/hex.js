@@ -77,10 +77,13 @@ function hex_distance(hex1, hex2) {
         + Math.abs(hex1.z + hex1.x - hex2.z - hex2.x)) / 2);
 }
 
-function get_path_between_hexes(hex1, hex2, cost_threshold){
+function get_path_between_hexes(hexA, hexB, cost_threshold){
 	// init the open and closed arrays for storing traversed hexes
 	var open_list = new Object;
 	var closed_list = new Object;
+	
+	var hex1 = {'x': hexA.x, 'z': hexA.z, 'movement_cost': hexA.movement_cost};
+	var hex2 = {'x': hexB.x, 'z': hexB.z, 'movement_cost': hexB.movement_cost};
 	
 	hex1.f = 0;
 	hex1.g = 0;
@@ -88,7 +91,7 @@ function get_path_between_hexes(hex1, hex2, cost_threshold){
 	// add start space to open list
 	open_list['x'+hex1.x+'z'+hex1.z] = hex1;
 	console.log(cost_threshold);
-	if (hex_map['x'+hex2.x+'z'+hex2.z].movement_cost > cost_threshold){	
+	if (hex2.movement_cost > cost_threshold){	
 		return false;
 	}
 	for(var limit = 0; limit < 1000; limit++){
@@ -114,7 +117,7 @@ function get_path_between_hexes(hex1, hex2, cost_threshold){
 			var path = new Array();
 			var current_hex = lowest_f_hex;
 			while (current_hex.parent_hex){
-				path[path.length] = current_hex;
+				path[path.length] = get_hex(current_hex.x, current_hex.z);
 				current_hex = closed_list['x'+current_hex.parent_hex.x+'z'+current_hex.parent_hex.z];
 			}
 			path.reverse();
@@ -126,7 +129,8 @@ function get_path_between_hexes(hex1, hex2, cost_threshold){
 		closed_list['x'+lowest_f_hex.x+'z'+lowest_f_hex.z] = lowest_f_hex;
 		
 		for (var i = 0; i < 6; i++){
-			var adjacent_hex = get_adjacent_hex(lowest_f_hex, i);
+			var adjacent_hex_temp = get_adjacent_hex(lowest_f_hex, i);
+			var adjacent_hex = {'x': adjacent_hex_temp.x, 'z': adjacent_hex_temp.z, 'movement_cost': adjacent_hex_temp.movement_cost};
 			if (!adjacent_hex){
 				continue;
 			}
@@ -138,7 +142,7 @@ function get_path_between_hexes(hex1, hex2, cost_threshold){
 			if (adjacent_hex.movement_cost > cost_threshold){
 				continue;
 			}
-			if (adjacent_hex.unknown == 1){
+			if (adjacent_hex_temp.unknown == 1){
 				g_cost = g_cost + 10;
 			}
 			/*

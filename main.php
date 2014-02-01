@@ -1,6 +1,7 @@
 <?
 
 error_reporting(E_ALL);
+ini_set("memory_limit","234217728");
 
 include_once("void_core/void_core.php");
 
@@ -23,7 +24,11 @@ if (isset($_POST['action'])){
 	$void->dump_status($player_id);
 }else {
 	//$void->setup(20, 20);
-	$void->dump_map($player_id);
+	if (isset($_GET['first'])){
+		$void->dump_map($player_id, true);
+	}else {
+		$void->dump_map($player_id, false);
+	}	
 }
 
 save($void);

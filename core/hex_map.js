@@ -452,6 +452,55 @@ function redraw_map_section(x, y){
 
 }
 
+var image_cache = {};
+
+function preload_images(data, callback){
+	
+	var sources = [];
+	
+	// list of images to load
+	sources.push({'name':'fleet_f', 'image':'images/fleet_f.png'});	
+	sources.push({'name':'fleet_e', 'image':'images/fleet_e.png'});	
+	sources.push({'name':'star', 'image':'images/default.png'});	
+	sources.push({'name':'background', 'image':'images/back2.png'});	
+	
+	
+	// add image data from server for preloading
+	for(key in sector_class_cache){		
+		var sector_class = sector_class_cache[key];
+		if(sector_class.image){
+			sources.push({'name':'sector_class_'+sector_class.id, 'image':sector_class.image});	
+		}
+	}
+	for(key in planet_class_cache){		
+		var planet_class = planet_class_cache[key];
+		if(planet_class.image){
+			sources.push({'name':'planet_class_'+planet_class.id, 'image':planet_class.image});	
+		}
+	}	
+		
+	var loadedImages = 0;
+	var numImages = sources.length;
+
+	for(var i = 0; i < sources.length; i++) {
+	  var src = sources[i];
+	  image_cache[src.name] = new Image();
+	  image_cache[src.name].onload = function() {
+	    $('#loading_status').html("Loaded "+src.name);
+	    if(++loadedImages >= numImages) {	    		      
+	      handle_preload_images(data, callback);
+	    }
+	  };
+	  image_cache[src.name].src = src.image;
+	}
+}
+
+function handle_preload_images(data, callback){
+	//alert("yeah");
+	
+	callback(data);
+}
+
 
 function draw_map(map_id, first, custom_offset){
 	var offset = map_scroll_offset;
@@ -465,9 +514,6 @@ function draw_map(map_id, first, custom_offset){
 		"lower_y": -map_buffer * 2,
 		"upper_y": map_chunk_size.y + map_buffer
 	};
-	
-	console.log(offset.x);
-	console.log(offset.y);
 	
 	var canvas = document.getElementById(map_id+"_hexes");
 	var canvas_overlay = document.getElementById(map_id+"_overlay");
@@ -530,13 +576,14 @@ function draw_map(map_id, first, custom_offset){
 		}
 		if (hex.your_fleets && hex.your_fleets.length > 0){
 			
-			// really needs to be temporary
-			$.each(hex.your_fleets, function (){
-				fleet_cache[this.id]  = this;
-			});
-			
+			if (first){
+				// really needs to be temporary
+				$.each(hex.your_fleets, function (){
+					fleet_cache[this.id]  = this;
+				});
+			}
 			$(canvas_objects).drawImage({
-			  source: "images/fleet_f.png",
+			  source: image_cache['fleet_f'],
 			  x: hex.pixel_x-20, y: hex.pixel_y-25
 			});
 			
@@ -622,22 +669,12 @@ function draw_map_tile(canvas, map_tile, small){
 		if (!small){
 			if (map_tile.type == "asteroid"){
 				$(canvas).drawImage({
-				  source: "images/asteroids.png",
-				  x: x, y: y
-				});
-			}else if (map_tile.type == "nebula"){
-				$(canvas).drawImage({
 				  source: sector_class_cache[map_tile.class_id].image,
 				  x: x, y: y
 				});
 			}else if (map_tile.type == "nebula"){
 				$(canvas).drawImage({
 				  source: sector_class_cache[map_tile.class_id].image,
-				  x: x, y: y
-				});
-			}else if (map_tile.type == "nebula"){
-				$(canvas).drawImage({
-				  source: "images/nebula_c.png",
 				  x: x, y: y
 				});
 			}

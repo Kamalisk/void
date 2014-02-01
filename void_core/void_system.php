@@ -1,154 +1,6 @@
 <?
 
 
-class VOID_STRUCTURE {
-	public $class;
-	public $planet_id;
-	
-	function __construct($class){
-		$this->planet_id = 0;
-		$this->class = $class;
-	}
-	
-	function dump($player_id){
-		return new VOID_STRUCTURE_VIEW($this, $player_id);
-	}
-	
-}
-
-class VOID_STRUCTURE_VIEW {
-	public $class_id;	
-	public $name;
-	
-	function __construct($structure, $player_id){
-		$this->class_id = $structure->class->id;
-		$this->name = $structure->class->name;
-	}		
-}
-
-class VOID_STRUCTURE_CLASS {
-	public $id;
-	public $name;
-	
-	public $food_per_turn = 0;
-	public $research_per_turn = 0;
-	public $credits_per_turn = 0;
-	public $production_per_turn = 0;
-	
-	public $upkeep = 0;
-	
-	public $empire_unique;
-	
-	public $modifiers;
-	
-	function __construct(){
-		$this->empire_unique = false;
-		$this->modifiers = [];
-	}
-	
-	function get_modifier($type){
-		if (isset($this->modifiers[$type])){
-			return $this->modifiers[$type];
-		}
-	}
-	function set_modifier($type, $value){
-		//possibly handle custom function handlers for unique effects?
-		$this->modifiers[$type] = $value;
-	}
-	
-	function set_unique($type="empire"){
-		$this->empire_unique = true;
-	}
-}
-
-
-class VOID_QUEUE {
-	public $items;
-
-	function __construct(){
-		$this->items = [];
-	}
-	public function add($item){
-		$this->items[] =& $item;
-	}
-	public function remove(){
-		
-	}
-	public function pop(){
-		return array_shift($this->items);
-	}
-	public function swap(){
-		
-	}
-	public function get_front(){
-		return reset($this->items);
-	}
-	public function progress($work){
-		$item = $this->get_front();
-		if ($item){
-			$item->progress = $item->progress - $work;
-			if ($item->progress <= 0){
-				return $this->pop();
-			}
-		}
-		return false;
-	}
-	public function dump($work=0){
-		return new VOID_QUEUE_VIEW($this, $work);
-	}
-}
-
-class VOID_QUEUE_VIEW {
-	public $items;
-	function __construct($queue, $work=0){
-		$this->items = array();
-		foreach($queue->items as &$item){
-			$this->items[] = $item->dump($work);
-		}
-	}
-	
-}
-
-class VOID_QUEUE_ITEM {
-	public $id;
-	public $data;
-	public $progress;
-	public $target;
-	public $type;
-	
-	function __construct(){
-		// generate a "random" unique id for the queue
-		$this->id = uniqid(rand(100,999));
-		
-	}
-}
-
-class VOID_SYSTEM_QUEUE_ITEM extends VOID_QUEUE_ITEM {
-	public $work;
-	
-	public function dump($work){
-		return new VOID_SYSTEM_QUEUE_ITEM_VIEW($this, $work);
-	}
-}
-class VOID_SYSTEM_QUEUE_ITEM_VIEW {
-	public $type;
-	public $id;
-	public $target_id;
-	public $turns;
-	
-	function __construct($item, $work=0){
-		$this->id = $item->id;
-		$this->type = $item->type;
-		$this->target_id = $item->data->id;
-		if ($work){
-			$this->turns = ceil($item->progress / $work);
-		}
-	}
-}
-
-
-
-
 class VOID_SYSTEM_VIEW {
 	public $owner;
 	public $planets;
@@ -176,6 +28,8 @@ class VOID_SYSTEM_VIEW {
 	public $build_queue;
 	public $structures;
 	
+	public $available_structures;
+	
 	function __construct($system, $player_id){
 		$this->id = $system->id;
 		if ($system->owner){
@@ -193,6 +47,15 @@ class VOID_SYSTEM_VIEW {
 			if ($this->owner == $player_id){
 				$this->build_queue = $system->build_queue->dump($system->production_per_turn);
 			}
+			
+			$this->available_structures = [];
+			// generate a list of ids of the structures which can be built here
+			foreach($system->owner->available_structure_classes as $structure){
+				if (!isset($system->structures[$structure->id]) && !$system->build_queue->exists($structure->id, "structure")){
+					$this->available_structures[] = $structure->id;
+				}
+			}
+			
 		}
 		if ($system->planets){
 			foreach($system->planets as &$planet){
@@ -265,7 +128,7 @@ class VOID_SYSTEM {
 	
 	public function add_structure($structure){
 		// should check to see if it already exists etc..
-		$this->structures[] = $structure;
+		$this->structures[$structure->class->id] = $structure;
 	}
 	
 	public function update(){		
@@ -402,9 +265,9 @@ class VOID_SYSTEM {
 	public function add_order($type, $target){
 		$order = new VOID_SYSTEM_QUEUE_ITEM();		
 		$order->data = $target;		
-		$order->type = "build";
+		$order->type = $type;
 		$order->progress = $target->work_required;
-		$this->build_queue->add($order);		
+		$this->build_queue->add($order);
 	}
 	public function delete_order(){
 		
@@ -422,7 +285,7 @@ class VOID_SYSTEM {
 		$item = $this->build_queue->progress($this->production_per_turn);
 		if ($item){
 			// create the created item. 
-			if ($item->type == "build"){
+			if ($item->type == "ship"){
 				$ship_class = $item->data;
 				$ship = new VOID_SHIP($ship_class, $this->owner->id);
 				if ($fleet = $sector->get_primary_fleet($this->owner->id) ){
@@ -441,6 +304,10 @@ class VOID_SYSTEM {
 					$fleet->add_ship($ship);
 					$sector->add_fleet($fleet);
 				}
+			}else if ($item->type == "structure"){
+				$structure_class = $item->data;
+				$structure = new VOID_STRUCTURE($structure_class, $this->owner->id);
+				$this->add_structure($structure);
 			}
 		}
 		
@@ -455,78 +322,6 @@ class VOID_SYSTEM {
 	
 }
 
-
-
-
-class VOID_PLANET_VIEW {
-	public $name;
-	public $class_id;
-	public $population;
-	public $terraformed;
-	function __construct($planet, $player_id){
-		$this->name = $planet->name;
-		$this->class_id = $planet->class['id'];
-		$this->terraformed = $planet->terraformed;
-		$this->population = $planet->population;
-	}
-}
-
-class VOID_PLANET {
-	public $name = "";
-	public $class = "";
-	
-	public $population;
-	public $max_population;
-	public $terraformed;
-	
-	public $development; 
-	
-	function __construct(){
-		$this->population = 0;
-		$this->terraformed = 0;
-		$this->development = 0;
-	}
-	
-	public function terraform(){
-		$this->terraformed = 1;
-	}
-	
-	public function colonise(){
-		$this->terraform();
-		$this->development = 1;
-	}
-	
-	
-	public function update(){
-		// update the development value
-		// the development value affects the output of the planet when first terraformed
-		// 
-		if ($this->development < 1){
-			$this->development += $this->class['develop_per_turn'];
-		}else {
-			$this->development = 1;
-		}
-	}
-	
-	public function dump($player_id){
-		$view = new VOID_PLANET_VIEW($this, $player_id);
-		return $view;
-	}
-	
-	public function get_food_output(){
-		return $this->class['output']['food'];
-	}
-	public function get_research_output(){
-		return $this->class['output']['research'];
-	}
-	public function get_production_output(){
-		return $this->class['output']['production'];
-	}
-	public function get_credits_output(){
-		return $this->class['output']['credits'];
-	}
-	
-}
 
 
 ?>

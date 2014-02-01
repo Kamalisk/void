@@ -1,5 +1,10 @@
 <?
 
+function exception_error_handler($errno, $errstr, $errfile, $errline ) {
+    throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
+}
+set_error_handler("exception_error_handler");
+
 include_once("void_data.php");
 include_once("void_player.php");
 include_once("void_tech.php");
@@ -7,6 +12,9 @@ include_once("void_sector.php");
 include_once("void_system.php");
 include_once("void_fleet.php");
 include_once("void_map.php");
+include_once("void_queue.php");
+include_once("void_structure.php");
+include_once("void_planet.php");
 
 function void_unique_id(){
 	return uniqid("v".rand(100,999));
@@ -82,16 +90,7 @@ class VOID_VIEW {
 	}
 }
 
-class VOID_PLANET_CLASS {
-	public $name = "";
-	public $max_population = "";
-	public $resources;
-	
-	function __construct(){
-		$this->resources = new VOID_RESOURCES();
-	}
-	
-}
+
 
 class VOID_RESOURCES {
 	public $food;
@@ -166,8 +165,8 @@ class VOID {
 		$structure_class->id = 1;
 		$structure_class->name = "Captial";
 		$structure_class->set_unique("empire");
-		$structure_class->set_modifier("food", "10");
-		$structure_class->set_modifier("morale", "10");
+		$structure_class->set_modifier("food", 10);
+		$structure_class->set_modifier("morale", 10);
 		$tech = $this->tech_tree->get_tech(1);
 		$tech->add_structure_class($structure_class);
 		$this->structure_classes[$structure_class->id] = $structure_class;
@@ -175,18 +174,28 @@ class VOID {
 		$structure_class = new VOID_STRUCTURE_CLASS();
 		$structure_class->id = 2;
 		$structure_class->name = "Farm";
-		$this->structure_classes[$structure_class->id] = $structure_class;
-		
+		$structure_class->set_modifier("food", 5);
+		$structure_class->set_modifier("credits", -1);
 		$tech = $this->tech_tree->get_tech(2);
 		$tech->add_structure_class($structure_class);
-		
-		$structure_class = new VOID_STRUCTURE_CLASS();
-		$structure_class->id = 2;
-		$structure_class->name = "Bank";
 		$this->structure_classes[$structure_class->id] = $structure_class;
 		
+		$structure_class = new VOID_STRUCTURE_CLASS();
+		$structure_class->id = 3;
+		$structure_class->name = "Bank";		
+		$structure_class->set_modifier("credits", 5);
 		$tech = $this->tech_tree->get_tech(3);
 		$tech->add_structure_class($structure_class);
+		$this->structure_classes[$structure_class->id] = $structure_class;
+		
+		$structure_class = new VOID_STRUCTURE_CLASS();
+		$structure_class->id = 4;
+		$structure_class->name = "Happy Place";		
+		$structure_class->set_modifier("morale", 10);
+		$tech = $this->tech_tree->get_tech(4);
+		$tech->add_structure_class($structure_class);
+		$this->structure_classes[$structure_class->id] = $structure_class;
+		
 		
 		$starting_tech = $this->tech_tree->get_starting_tech();
 		
@@ -239,7 +248,7 @@ class VOID {
 		file_put_contents("test.ship_classes.void", serialize($this->ship_classes));
 	}
 	
-	public function dump_map($player_id){
+	public function dump_map($player_id, $first=false){
 		global $void_planet_classes;
 		global $void_sector_classes;
 		
@@ -248,10 +257,13 @@ class VOID {
 		$return['map'] = $this->map->dump_map($player_id);
 		$return['players'] = $this->players;
 		$return['player'] = $this->players[$player_id];
-		$return['planet_classes'] = $void_planet_classes;
-		$return['sector_classes'] = $void_sector_classes;
-		$return['ship_classes'] = $this->ship_classes;
-		$return['tech_tree'] = $this->tech_tree->dump();
+		if ($first){
+			$return['planet_classes'] = $void_planet_classes;
+			$return['sector_classes'] = $void_sector_classes;
+			$return['ship_classes'] = $this->ship_classes;
+			$return['structure_classes'] = $this->structure_classes;
+			$return['tech_tree'] = $this->tech_tree->dump();
+		}
 		//$this->map->players = $this->players;
 		echo json_encode($return, JSON_NUMERIC_CHECK);
 	}
@@ -347,7 +359,7 @@ class VOID {
 					}else if ($order->type == "colonise"){
 						$sector = $this->map->get_sector($fleet->x, $fleet->z);
 						if ($sector->system && $fleet->get_special("colony")){
-							$sector->system->colonise($this->players[$fleet->owner], $this->core);
+							$sector->system->colonise($this->players[$fleet->owner], $this);
 							$fleet->movement_points = 0;
 							if ($fleet->remove_special("colony")){
 								// delete the fleet!
@@ -452,8 +464,13 @@ class VOID {
 							foreach($orders as $order){
 								//echo $key."  -- \n";				
 								//echo $order['target_id'];
-								$target = $this->ship_classes[$order['target_id']];
-								$this->systems[$key]->add_order("build", $target);
+								if ($order['type'] == "ship"){
+									$target = $this->ship_classes[$order['target_id']];
+								}else if ($order['type'] == "structure"){
+									$target = $this->structure_classes[$order['target_id']];
+								}
+								
+								$this->systems[$key]->add_order($order['type'], $target);
 							}
 						}
 					}

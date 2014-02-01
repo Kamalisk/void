@@ -30,10 +30,12 @@
 	</script>
 	
 	<div id="main_loading">
-		<p>Loading...</p>
+		<img src="images/voidwars.png">
+		<p><img src="images/ajax-loader-big.gif"> Loading...</p>
+		<p id="loading_status"></p>
 	</div>
 	<div id="main_header">
-		<h1 title="Super Special Space Hex Adventure">SSSHA</h1>
+		<h1 title="Super Special Space Hex Adventure"><img src="images/voidwars_small.png"></h1>
 		<nav class="primary">
 			<ul class="primary_menu">
 		    <!--<li class="active menu_item"><a href="#">Galactic Map</a></li>
@@ -145,7 +147,7 @@
 		<p>
 		<button type="button" onclick="start_fleet_order_mode('{{id}}')">Move Fleet</button>
 		<button type="button" onclick="add_fleet_colonise_order()">Colonise</button>
-		<button type="button" onclick="add_fleet_colonise_order()">Cancel All Orders</button>
+		<button type="button" onclick="cancel_fleet_orders()">Cancel All Orders</button>
 		</p>
 		<h4>Ships</h4>
 		{{#if ships}}
@@ -217,7 +219,7 @@
 			<ul class="small_planet_list">
 			{{#each system.planets}}
 				<li class="tooltip-template{{#if terraformed}} terraformed{{/if}}" data-tooltip-id="planet-class-tooltip-{{id}}-{{class.id}}">
-					<img width="30" height="30" src="{{class.image}}" alt="{{class.name}}">
+					<img width="30" height="30" src="{{#if terraformed}}{{class.image_populated}}{{else}}{{class.image}}{{/if}}" alt="{{class.name}}">
 					<div class="tooltip" id="planet-class-tooltip-{{id}}-{{class.id}}">						
 						<h4>{{class.name}}</h4>						
 						{{> planet}}
@@ -250,10 +252,19 @@
 				<ul>
 				{{#with system.build_queue.items.[0]}}
 				<li>				
-				<span class="tooltip-template" data-tooltip-id="ship-class-tooltip">{{target.name}} {{#if turns}} ({{turns}} turns){{/if}}</span>
+				<span class="tooltip-template" data-tooltip-id="ship-class-tooltip-{{id}}">{{target.name}} {{#if turns}} ({{turns}} turns){{/if}}</span>
 				
-				<div class="tooltip" id="ship-class-tooltip">
-					{{#with target}} {{> ship_class}} {{/with}}
+				<div class="tooltip" id="ship-class-tooltip-{{id}}">
+					pie
+					{{#with target}} 
+						{{#compare type "==" "build"}}
+						{{> ship_class}}
+						{{/compare}}
+						{{#compare type "==" "structure"}}
+						{{> structure_class}}
+						{{/compare}}
+						
+					{{/with}}
 				</div>
 				
 				</li>
@@ -346,7 +357,7 @@
 	</script>
 	
 	<script id="planet_template" type="text/x-handlebars-template">
-		<img src="{{class.image}}" alt="{{class.name}}" title="{{class.name}}" oncontextmenu="context_menu(event, {})">
+		<img src="{{#if terraformed}}{{class.image_populated}}{{else}}{{class.image}}{{/if}}" alt="{{class.name}}" title="{{class.name}}" oncontextmenu="context_menu(event, {})">
 			<ul class="planet_class_output">
 				<li class="food"><img src="images/food.png" alt="Food" title="Food"> +{{class.output.food}}</li>
 				<li class="production"><img src="images/production.png" alt="Production" title="Production"> +{{class.output.production}}</li>
@@ -362,6 +373,12 @@
 				<li>Weapons: {{weapon_count}}x{{weapon_damage}} ({{weapon_type}})</li>
 				<li>Production cost: {{work_required}}</li>
 				<li>Special: {{special}}</li>
+			</ul>
+	</script>
+	
+	<script id="structure_class_template" type="text/x-handlebars-template">			
+			<ul class="structure_class">
+				<li>Class name: {{name}}</li>				
 			</ul>
 	</script>
 	
@@ -388,23 +405,44 @@
 			<img src="images/credits.png" alt="Credits" title="Credits"> {{system.credits_per_turn}}
 			<img src="images/influence.png" alt="Influence" title="Influence"> {{system.influence_per_turn}}</p>
 			
-			<h4>System Queue
-			<select id="system_panel_build_ship_class_id">
+			<div class="system_view_list">
+			<h4>Available Ship Classes</h4>
+			<ul class="ship_class_selector_list">
 			{{#each owner_object.available_ship_classes}}
-				<option value="{{id}}">{{name}}</option>
+				<li class="system_view_selector">
+					{{name}}
+					<button type="button" onclick="build_ship('{{id}}');">Build Ship</button>
+				</li>
 			{{/each}}
-			</select>
-			<button type="button" onclick="build_ship($('#system_panel_build_ship_class_id').val());">Build Ship</button>
-			</h4>	
+			</ul>
+			</div>
 			
+			<div class="system_view_list">
+			<h4>Available Structure Classes</h4>
+			<ul class="ship_class_selector_list">
+			{{#each system.available_structure_classes}}
+				<li class="system_view_selector">
+					{{name}}
+					<button type="button" onclick="build_structure('{{id}}');">Build Structure</button>
+				</li>
+			{{/each}}
+			</ul>
+			</div>
 			
+			<div class="system_view_list">
+			<h4>System Queue</h4>
 			{{#if system.build_queue.items}}
 			<ul>
-			{{#each system.build_queue.items}}<li>{{target.name}} {{#if turns}} ({{turns}} turns){{/if}}</li>{{/each}}
-			</ul>
+			{{#each system.build_queue.items}}
+				<li class="system_view_selector">
+				{{target.name}} {{#if turns}} ({{turns}} turns){{/if}}
+				</li>
+				{{/each}}
+			</ul>			
 			{{else}}
 			<p>Empty</p>
 			{{/if}}
+			</div>
 		{{/if}}
 		
 		

@@ -81,6 +81,7 @@ $void_planet_classes[1] = [
 	],
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_m.png", 
+	"image_populated" => "images/planets/class_m.png", 
 	"max_population" => 4
 ];
 
@@ -95,6 +96,7 @@ $void_planet_classes[2] = [
 	],
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_j.png", 
+	"image_populated" => "images/planets/class_j.png", 
 	"max_population" => 5
 ];
 
@@ -109,6 +111,7 @@ $void_planet_classes[3] = [
 	],
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_x.png", 
+	"image_populated" => "images/planets/class_x.png", 
 	"max_population" => 6
 ];
 
@@ -123,6 +126,7 @@ $void_planet_classes[4] = [
 	],
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_p.png", 
+	"image_populated" => "images/planets/class_p.png", 
 	"max_population" => 6
 ];
 
@@ -137,6 +141,7 @@ $void_planet_classes[5] = [
 	],
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_c.png", 
+	"image_populated" => "images/planets/class_c_populated.png", 
 	"max_population" => 6
 ];
 
