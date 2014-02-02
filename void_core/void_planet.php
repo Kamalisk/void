@@ -6,13 +6,14 @@ class VOID_PLANET_VIEW {
 	public $population;
 	public $terraformed;
 	
-	
+	public $id;
 	
 	function __construct($planet, $player_id){
 		$this->name = $planet->name;
 		$this->class_id = $planet->class['id'];
 		$this->terraformed = $planet->terraformed;
-		$this->population = $planet->population;		
+		$this->population = $planet->population;	
+		$this->id = $planet->id;		
 	}
 }
 
@@ -26,7 +27,10 @@ class VOID_PLANET {
 	
 	public $development; 
 	
+	public $id;
+	
 	function __construct(){
+		$this->id = void_unique_id();
 		$this->population = 0;
 		$this->terraformed = 0;
 		$this->development = 0;

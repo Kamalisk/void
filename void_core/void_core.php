@@ -51,6 +51,7 @@ class VOID_ORDER {
 	public $owner;
 	public $x;
 	public $z;
+	public $planet_id;
 	
 	function __construct($type){
 		$this->type = $type;
@@ -62,6 +63,9 @@ class VOID_ORDER {
 		}
 		if (isset($params['z'])){
 			$this->z = $params['z'];
+		}
+		if (isset($params['planet_id'])){
+			$this->planet_id = $params['planet_id'];
 		}
 	}
 	
@@ -156,10 +160,33 @@ class VOID {
 		$ship_class->work_required = 30;
 		$ship_class->weapon_count = 3;
 		$ship_class->weapon_damage = 15;
-		$this->ship_classes[$ship_class->id] = $ship_class;
-		
 		$tech = $this->tech_tree->get_tech(2);
 		$tech->add_ship_class($ship_class);
+		$this->ship_classes[$ship_class->id] = $ship_class;
+		
+		$ship_class = new VOID_SHIP_CLASS();
+		$ship_class->id = 4;
+		$ship_class->name = "Speedy";
+		$ship_class->work_required = 30;
+		$ship_class->weapon_count = 1;
+		$ship_class->weapon_damage = 15;
+		$ship_class->movement_capacity = 4;
+		$tech = $this->tech_tree->get_tech(4);
+		$tech->add_ship_class($ship_class);
+		$this->ship_classes[$ship_class->id] = $ship_class;
+		
+		$ship_class = new VOID_SHIP_CLASS();
+		$ship_class->id = 5;
+		$ship_class->name = "Speedy Colony";
+		$ship_class->work_required = 40;
+		$ship_class->add_special("colony");
+		$ship_class->weapon_count = 0;
+		$ship_class->weapon_damage = 0;
+		$ship_class->movement_capacity = 4;
+		$tech = $this->tech_tree->get_tech(5);
+		$tech->add_ship_class($ship_class);
+		$this->ship_classes[$ship_class->id] = $ship_class;
+		
 		
 		$structure_class = new VOID_STRUCTURE_CLASS();
 		$structure_class->id = 1;
@@ -196,6 +223,21 @@ class VOID {
 		$tech->add_structure_class($structure_class);
 		$this->structure_classes[$structure_class->id] = $structure_class;
 		
+		$structure_class = new VOID_STRUCTURE_CLASS();
+		$structure_class->id = 5;
+		$structure_class->name = "Factory";		
+		$structure_class->set_modifier("production", 10);
+		$tech = $this->tech_tree->get_tech(5);
+		$tech->add_structure_class($structure_class);
+		$this->structure_classes[$structure_class->id] = $structure_class;
+		
+		$structure_class = new VOID_STRUCTURE_CLASS();
+		$structure_class->id = 6;
+		$structure_class->name = "Research Lab";		
+		$structure_class->set_modifier("research", 10);
+		$tech = $this->tech_tree->get_tech(6);
+		$tech->add_structure_class($structure_class);
+		$this->structure_classes[$structure_class->id] = $structure_class;
 		
 		$starting_tech = $this->tech_tree->get_starting_tech();
 		
@@ -358,8 +400,8 @@ class VOID {
 						$continue = true;
 					}else if ($order->type == "colonise"){
 						$sector = $this->map->get_sector($fleet->x, $fleet->z);
-						if ($sector->system && $fleet->get_special("colony")){
-							$sector->system->colonise($this->players[$fleet->owner], $this);
+						if ($sector->system && $fleet->get_special("colony")){							
+							$sector->system->colonise($this->players[$fleet->owner], $this, $order->planet_id);
 							$fleet->movement_points = 0;
 							if ($fleet->remove_special("colony")){
 								// delete the fleet!
@@ -445,8 +487,8 @@ class VOID {
 							foreach($orders as $order){
 								if ($order['type'] == "move"){
 									$this->fleets[$key]->add_order("move", array("x"=>$order['x'], "z"=>$order['z']));
-								}else if ($order['type'] == "colonise"){
-									$this->fleets[$key]->add_order("colonise", array("x"=>$order['x'], "z"=>$order['z']));
+								}else if ($order['type'] == "colonise"){									
+									$this->fleets[$key]->add_order("colonise", array("x"=>$order['x'], "z"=>$order['z'], "planet_id" => $order['planet_id']));
 								}
 							}
 						}

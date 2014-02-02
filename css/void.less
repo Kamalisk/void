@@ -179,10 +179,11 @@ button:active {
 .dialog_body {
 	width : 60%;		
 	margin : auto;
-	margin-top : 10%;
+	margin-top : 5%;
 	background : @primary_background_color;
 	border : solid white 2px;
 	border-radius : 5px;
+	z-index : 10000;
 }
 .dialog_header h2 button {
 	float : right;
@@ -268,7 +269,7 @@ div#player_resources {
 	position : absolute; 
 	top : 0; 
 	left : 0; 
-	
+	transform: translate3d(0,0,0);
 }
 
 
@@ -277,12 +278,14 @@ div#player_resources {
 	height : 1400px;
 	position : absolute;
 	cursor : pointer;
+	transform: translate3d(0,0,0);
 }
 #galactic_map_objects {
 	width : 1400px;
 	height : 1400px;
 	position : absolute;
 	cursor : pointer;
+	transform: translate3d(0,0,0);
 }
 #galactic_map_mini_container {
 	position : absolute;
@@ -307,7 +310,7 @@ div#player_resources {
 	top : 0px;
 	left : 0px;
 	bottom : 0px;
-	right : 340px;
+	right : 0px;
 	box-shadow : 2px 2px 5px #121212;
 	
 	background-color : black;
@@ -317,12 +320,28 @@ div#player_resources {
 	overflow : hidden;
 	position : absolute;
 	
-	top : 0px;
-	bottom : 0px;
+	top : 0px;	
 	right : 0px;
 	width : 340px;
-	border-left : solid #3f3f3f 2px;
 	
+	border-left : solid #3f3f3f 2px;
+	border-bottom : solid #3f3f3f 2px;
+	background-color : @primary_background_color;
+	border-radius : 0 0 0 5px;
+	display : none;
+	z-index : 1000;	
+}
+#galactic_map_panel_content {
+	
+}
+
+#galactic_map_minimap {
+	overflow : hidden;
+	position : absolute;	
+	bottom : 0px;
+	right : 0px;
+	width : 300px;
+	height : 200px;
 }
 
 #galactic_map_context_menu {
@@ -331,6 +350,21 @@ div#player_resources {
 	
 	background-color : #4f4f4f;
 	border : solid #222222 2px;
+}
+
+#galactic_map_panel_fleet {
+	position : absolute;
+	left : 0;
+	bottom : 0;
+	height : 150px;
+	width : 300px;
+	border-top : solid grey 2px;
+	border-right : solid grey 2px;
+	border-radius : 0 5px 0 0;
+	background-color : @primary_background_color;
+	padding : 0.2em;
+	display : none;
+	z-index : 1000;
 }
 
 
@@ -347,13 +381,7 @@ div#player_resources {
 
 .map_panel_content {
 	padding : 0.3em;
-	overflow : auto;
-	position : absolute;
-	top : 28px;
-	bottom : 202px;
-	right : 1px;
-	left : 1px;
-	
+	overflow : auto;	
 }
 	
 	
@@ -442,6 +470,14 @@ div.window_control .close_window {
 	width : 210px;
 	vertical-align : top;
 }
+.selector_list {
+	height : 230px;	
+	overflow : auto;
+	border : solid #434343 1px;
+	border-bottom : solid #434343 1px;
+	margin-bottom : 0.1em;
+	border-radius : 5px 5px 5px 5px;
+}
 
 .ship_class_selector_list {
 	
@@ -452,12 +488,23 @@ div.window_control .close_window {
 }
 .system_view_selector {
 	display : inline-block;
-	width : 200px;
+	width : 192px;
 	height : 40px;
+	border : #212121 1px solid;	
+	vertical-align : top;
 }
 
-.ship_class_selector button {
+.system_view_selector button {
 	float : right;
+}
+
+.selectable {
+	cursor : pointer;	
+	border : solid black 2px;
+}
+.selectable:hover {
+	border : solid grey 2px;
+	border-radius : 5px 5px 5px 5px;
 }
 
 
@@ -512,7 +559,7 @@ div.window_control .close_window {
 
 /* resources */
 
-.food, .credits, .production, .research {
+.food, .credits, .production, .research, mroale {
 	font-weight : bold;
 }
 

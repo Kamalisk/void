@@ -82,6 +82,7 @@ $(document).ready(function (){
 	
 	Handlebars.registerPartial("planet", $("#planet_template").html());
 	Handlebars.registerPartial("ship_class", $("#ship_class_template").html());
+	Handlebars.registerPartial("structure_class", $("#structure_class_template").html());		
 	
 	fetch_game_data(true);
 	// fetch map data from the server
@@ -170,6 +171,11 @@ function append_template(template_id, data, element_id){
             'left': $($el).position().left - ($($el).position().left + $($el).width() - $(window).width() ) - 10
         });
         }
+        if ($($el).position().top + $($el).height() > $(window).height()){
+        	$el.css({
+            'top': $($el).position().top - ($($el).position().top + $($el).height() - $(window).height() ) - 40
+        });
+        }
     	}
 		});
 	});
@@ -222,6 +228,9 @@ function render_research(){
 
 function show_map_panel_system(hex){
 	panel_view = "system";
+	fleet_selected = false;
+	$("#galactic_map_panel").show();
+	$("#galactic_map_panel_fleet").hide();
 	$("#galactic_map_panel_content").empty();			
 	var hex = hex_map['x'+hex.x+'z'+hex.z];
 	if (hex.owner){
@@ -252,9 +261,10 @@ function show_map_panel_system(hex){
 		$.each(hex.your_fleets, function(){
 			if (this.ships && this.ships){
 				$.each(this.ships, function (){
-					this.class = ship_class_cache[this.class_id];
+					this.class = ship_class_cache[this.class_id];					
 				});
 			}
+			show_map_panel_fleet(this.id);
 		});		
 	}
 	
@@ -271,8 +281,9 @@ function show_map_panel_system(hex){
 
 
 function show_map_panel_fleet(id){
-	panel_view = "fleet";
-	$("#galactic_map_panel_content").empty();
+	$("#galactic_map_panel_fleet").show();
+	//panel_view = "fleet";
+	//$("#galactic_map_panel_content").empty();
 	//start_fleet_order(id);
 	var fleet = fleet_cache[id];
 	var hex = get_hex(fleet.x, fleet.z);
@@ -291,11 +302,12 @@ function show_map_panel_fleet(id){
 		});
 	}
 	redraw_overlay();
-	append_template('galactic_map_panel_fleet_template',fleet, "galactic_map_panel_content");
+	append_template('galactic_map_panel_fleet_template',fleet, "galactic_map_panel_fleet");
 	map_context_menu_type = "default";
 }
 
-function show_system_view(x, z){	
+function show_system_view(x, z){
+	clean_up_tooltips();
 	$("#system_view_window .dialog_content").empty();		
 	var hex = hex_map['x'+x+'z'+z];
 	if (hex.system){
@@ -330,8 +342,40 @@ function show_system_view(x, z){
 				}
 			}
 		});
+		
+		if (hex.system.structures){
+			$.each(hex.system.structures, function (){
+				if (structure_class_cache[this.class_id]){				
+					this.class = structure_class_cache[this.class_id];
+				}
+			});
+		}
 	}	
-	var html = fetch_template('system_view_template',hex);		
+	//var html = fetch_template('system_view_template',hex);
+	append_template('system_view_template',hex, "dialog_content");
+	//$("#dialog_content").append(html);
+	$("#dialog_title").html('System at '+x+','+z);
+	
+	$("#system_view_window").show();
+	$(".selector_list").customScrollbar({
+		hScroll: false,
+		vScroll: true, 
+		skin: "default-skin"	
+	});		
+}
+
+
+function show_system_view_basic(x, z){
+	clean_up_tooltips();
+	$("#system_view_window .dialog_content").empty();		
+	var hex = hex_map['x'+x+'z'+z];
+	if (hex.system){
+		$.each(hex.system.planets, function (){
+			this.class = planet_class_cache[this.class_id];
+			this.selectable = true;
+		});
+	}
+	var html = fetch_template('system_view_basic_template',hex);		
 	$("#system_view_window .dialog_content").append(html);
 	$("#dialog_title").html('System at '+x+','+z);
 	$("#system_view_window").show();			
@@ -362,6 +406,10 @@ function show_context_menu(id, x, y, type){
 	$("#"+id).show();
 }
 
+
+function clean_up_tooltips(){
+	$('.tooltipsy').hide();
+}
 
 function context_menu(event, params){
 	show_context_menu('galactic_map_context_menu', event.pageX, event.pageY, 'system_planet_menu');
@@ -413,11 +461,25 @@ function add_fleet_order(start, end){
 	fleet_order_start_hex = end;
 }
 
-function add_fleet_colonise_order(){
-	var previous_order = fleet_orders[fleet_selected][fleet_orders[fleet_selected].length-1];
-	var order = {'type':'colonise', "x":previous_order.x, "z":previous_order.z};
-	fleet_orders[fleet_selected][fleet_orders[fleet_selected].length] = order;
-	//console.log(fleet_orders);
+function add_fleet_colonise_order_dialog(){
+	if (fleet_orders[fleet_selected] && fleet_orders[fleet_selected].length > 0){
+		var previous_order = fleet_orders[fleet_selected][fleet_orders[fleet_selected].length-1];
+	}else {
+		var previous_order = {'x':fleet_cache[fleet_selected].x , 'z':fleet_cache[fleet_selected].z};		
+	}
+	show_system_view_basic(previous_order.x, previous_order.z);
+}
+
+function add_fleet_colonise_order(pid){
+	if (fleet_orders[fleet_selected] && fleet_orders[fleet_selected].length > 0){
+		var previous_order = fleet_orders[fleet_selected][fleet_orders[fleet_selected].length-1];
+	}else {
+		var previous_order = {'x':fleet_cache[fleet_selected].x , 'z':fleet_cache[fleet_selected].z};
+		fleet_orders[fleet_selected] = [];
+	}
+	var order = {'type':'colonise', "x":previous_order.x, "z":previous_order.z, "planet_id": pid};
+	fleet_orders[fleet_selected].push(order);
+	
 	redraw_overlay();
 }
 
@@ -508,7 +570,7 @@ function click_to_hex(x, y, param, event){
 	var coords = pixel_to_hex(x,y);
 	//console.log(coords);
 	if (param == "click"){		
-		if (panel_view == "fleet" && fleet_order_mode == true){
+		if (fleet_order_mode == true){
 			
 			add_fleet_order(fleet_order_start_hex, {'x':coords[0], 'z':coords[2]});
 			if (event && event.ctrlKey){
@@ -528,16 +590,16 @@ function click_to_hex(x, y, param, event){
 			}
 			redraw_overlay();
 			show_map_panel_system(hex_selected);
-			console.log(hex_map['x'+coords[0]+'z'+coords[2]]);
-			
+			console.log(hex_map['x'+coords[0]+'z'+coords[2]]);			
 		}
 		
 	}else if (param == "ctrl_click"){
 		
 	}else if (param == "double_click"){
-		if (fleet_order_mode){
-			end_fleet_order_mode(fleet_selected);
-		}
+		console.log("double click");			
+		hex_selected = get_hex(coords[0], coords[2]);
+		redraw_overlay();
+		show_system_view(hex_selected.x, hex_selected.z);
 	}else {
 		if (hex_highlighted.x != coords[0] || hex_highlighted.z != coords[2]){
 			hex_highlighted = get_hex(coords[0], coords[2]);

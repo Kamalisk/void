@@ -4,6 +4,7 @@
 class VOID_SYSTEM_VIEW {
 	public $owner;
 	public $planets;
+	public $yours;
 	
 	public $influence_level;
 	public $influence_per_turn;
@@ -32,6 +33,7 @@ class VOID_SYSTEM_VIEW {
 	
 	function __construct($system, $player_id){
 		$this->id = $system->id;
+		$this->yours = false;
 		if ($system->owner){
 			$this->owner = $system->owner->id;
 			$this->influence_pool = $system->influence_pool;
@@ -44,17 +46,21 @@ class VOID_SYSTEM_VIEW {
 			$this->growth_turns = $this->food_per_turn ? ceil(($this->food_growth_threshold - $this->food_pool) / $this->food_per_turn) : " - ";
 			$this->influence_growth_threshold = $system->influence_growth_threshold;
 			$this->influence_growth_turns = $this->influence_per_turn ? ceil(($this->influence_growth_threshold - $this->influence_pool) / $this->influence_per_turn) : " - ";
-			if ($this->owner == $player_id){
-				$this->build_queue = $system->build_queue->dump($system->production_per_turn);
-			}
 			
-			$this->available_structures = [];
-			// generate a list of ids of the structures which can be built here
-			foreach($system->owner->available_structure_classes as $structure){
-				if (!isset($system->structures[$structure->id]) && !$system->build_queue->exists($structure->id, "structure")){
-					$this->available_structures[] = $structure->id;
+			if ($this->owner == $player_id){
+				$this->yours = true;
+				$this->build_queue = $system->build_queue->dump($system->production_per_turn);
+				
+				$this->available_structures = [];
+				// generate a list of ids of the structures which can be built here
+				foreach($system->owner->available_structure_classes as $structure){
+					if (!isset($system->structures[$structure->id]) && !$system->build_queue->exists($structure->id, "structure")){
+						$this->available_structures[] = $structure->id;
+					}
 				}
 			}
+			
+			
 			
 		}
 		if ($system->planets){
@@ -105,6 +111,8 @@ class VOID_SYSTEM {
 	public $docked_fleet;
 	public $structures;
 	
+	public $planet_index;
+	
 	public function __construct($x, $z){
 		$this->x = $x;
 		$this->z = $z;
@@ -118,12 +126,22 @@ class VOID_SYSTEM {
 		$this->influence_growth_threshold = 5;
 		$this->production_per_turn = 0;
 		
+		$this->planet_index = [];
+		
 		$this->build_queue = new VOID_QUEUE();
 		$this->structures = [];
 	}
 	
 	public function add_planet($planet){
 		$this->planets[] = $planet;
+		$this->planet_index[$planet->id] = $planet;
+	}
+	
+	public function get_planet($pid){
+		if (isset($this->planet_index[$pid])){
+			return $this->planet_index[$pid];
+		}
+		return false;
 	}
 	
 	public function add_structure($structure){
@@ -196,6 +214,16 @@ class VOID_SYSTEM {
 				$output += $planet->get_credits_output() * $this->population * $planet->development;
 			}
 		}
+		
+		if ($this->structures){
+			foreach($this->structures as $structure){
+				$modifier = $structure->class->get_modifier("credits");
+				if ($modifier){
+					$output += $modifier;
+				}
+			}
+		}
+		
 		return $output;
 	}
 	
@@ -208,6 +236,16 @@ class VOID_SYSTEM {
 				$output += $planet->get_research_output() * $this->population * $planet->development;
 			}
 		}
+		
+		if ($this->structures){
+			foreach($this->structures as $structure){
+				$modifier = $structure->class->get_modifier("research");
+				if ($modifier){
+					$output += $modifier;
+				}
+			}
+		}
+		
 		return $output;
 	}
 	public function get_production_income(){
@@ -219,6 +257,16 @@ class VOID_SYSTEM {
 				$output += $planet->get_production_output() * $this->population * $planet->development;
 			}
 		}
+		
+		if ($this->structures){
+			foreach($this->structures as $structure){
+				$modifier = $structure->class->get_modifier("production");
+				if ($modifier){
+					$output += $modifier;
+				}
+			}
+		}
+		
 		return $output;
 	}
 	
@@ -246,15 +294,25 @@ class VOID_SYSTEM {
 		return $view;
 	}
 	
-	public function colonise($owner, $core){
-		
-		$key = array_rand($this->planets);
-		$planet =& $this->planets[$key];
+	public function colonise($owner, $core, $pid=""){
+		if ($pid){
+			$planet = $this->get_planet($pid);
+			if (!$planet){
+				return false;
+			}
+		}else {
+			$key = array_rand($this->planets);
+			$planet =& $this->planets[$key];
+		}
+				
+		if (!$this->owner){
+			$this->population = 1;
+			$this->influence_level = 1;
+		}
+						
 		$planet->colonise();
-		$this->owner = $owner;
+		$this->owner = $owner;				
 		
-		$this->population = 1;
-		$this->influence_level = 1;
 		$this->update();
 		$this->docked_fleet = new VOID_FLEET();
 		$this->docked_fleet->capacity = 10;

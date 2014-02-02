@@ -95,8 +95,8 @@ function initialize_map(width, height){
 	var map_surface_width = $("#galactic_map_hexes").width();
 	var view_port_height = $("#galactic_map_container").height();
 	var map_surface_height = $("#galactic_map_hexes").height();
-
-
+		
+	
 	// dragging surface events
 	$('#galactic_map_dragger').bind('mousedown',function(event){
 		mouse_down_event = event;
@@ -106,6 +106,16 @@ function initialize_map(width, height){
 		};		
 		event.preventDefault();
 	});
+	
+	$('#galactic_map_dragger').bind('dblclick',function(event){
+		var offset_x = $("#galactic_map_hexes").position().left + map_buffer;
+		var offset_y = $("#galactic_map_hexes").position().top + map_buffer;
+		var click_x = event.pageX - $(this).offset().left;// + offset_x/hex_size/2;
+		var click_y = event.pageY - $(this).offset().top;// + offset_y/hex_size/2;
+		click_to_hex( (click_x - offset_x) / map_scale - map_scroll_offset.x, (click_y - offset_y) / map_scale - map_scroll_offset.y, 'double_click', event);			
+		event.preventDefault();
+	});
+	
 	$('#galactic_map_dragger').bind('mouseup',function(event){
 		scroll_in_progress = false;
 		if (Math.abs(mouse_down_event.pageX - event.pageX) < 10 && Math.abs(mouse_down_event.pageY - event.pageY) < 10 && event.button == 0){
@@ -136,6 +146,10 @@ function initialize_map(width, height){
 		jump_map(-map_scroll_offset.x + click_x/map_scale, -map_scroll_offset.y + click_y/map_scale);
 	});
 	
+	
+	var hexes_layer = $("#galactic_map_hexes");
+	var objects_layer = $("#galactic_map_objects");
+	var overlay_layer = $("#galactic_map_overlay");
 	$('#galactic_map_dragger').bind('mousemove',function(event){
 		
 		//console.log(event);
@@ -147,34 +161,29 @@ function initialize_map(width, height){
 			var new_x = scroll_in_progress.target_x + x;
 			var new_y = scroll_in_progress.target_y + y;
 
-			var oldX = $("#galactic_map_hexes").css("left");
-			var oldY = $("#galactic_map_hexes").css("top");
+			map_scroll_offset.adjust_x = x;
+			map_scroll_offset.adjust_y = y;
 			
-			map_scroll_offset.adjust_x = $("#galactic_map_hexes").position().left + map_buffer;
-			map_scroll_offset.adjust_y = $("#galactic_map_hexes").position().top + map_buffer;
-
-			$("#galactic_map_hexes").css({"top": new_y , "left": new_x });
-			$("#galactic_map_overlay").css({"top": new_y , "left": new_x });
-			$("#galactic_map_objects").css({"top": new_y , "left": new_x });
+			/*
+			hexes_layer.css({"x": x, "y": y});			
+			overlay_layer.css({"x": x , "y": y });
+			objects_layer.css({"x": x , "y": y });
+			*/
 			
-			draw_minimap_overlay();
-			if (false && new_x >= -100 && !map_canvas_buffer_offset){					
-				map_canvas_buffer_offset = {};
-				map_canvas_buffer_offset.x = map_scroll_offset.x - map_buffer;
-				map_canvas_buffer_offset.y = map_scroll_offset.y - map_buffer;
-				console.log(map_canvas_buffer_offset);
-				draw_map("galactic_map_buffer", false, map_canvas_buffer_offset);
-			}
+			hexes_layer.css({"left": new_x, "top": new_y});			
+			overlay_layer.css({"left": new_x , "top": new_y });
+			objects_layer.css({"left": new_x , "top": new_y });
 			
+			draw_minimap_overlay();			
 			if (new_x < (view_port_width - map_surface_width ) || new_x > 0 || new_y < (view_port_height - map_surface_height ) || new_y > 0){
 				map_scroll_offset.x = map_scroll_offset.x + (new_x + map_buffer)/map_scale;
 				map_scroll_offset.y = map_scroll_offset.y + (new_y + map_buffer)/map_scale;
-				$("#galactic_map_overlay").css({"top": -map_buffer , "left": -map_buffer });
-				$("#galactic_map_hexes").css({"top": -map_buffer , "left": -map_buffer });
-				$("#galactic_map_objects").css({"top": -map_buffer , "left": -map_buffer });
+				overlay_layer.css({"top": -map_buffer , "left": -map_buffer });
+				hexes_layer.css({"top": -map_buffer , "left": -map_buffer });
+				objects_layer.css({"top": -map_buffer , "left": -map_buffer });
 				scroll_in_progress = {
 					"x": event.pageX, "y": event.pageY,
-					"target_x": $("#galactic_map_hexes").position().left, "target_y": $("#galactic_map_hexes").position().top
+					"target_x": hexes_layer.position().left, "target_y": hexes_layer.position().top
 				};
 				
 				
@@ -332,7 +341,7 @@ function redraw_overlay(){
 	var fleet_order_movement_counter = 0;
 	var last_hex = null;
 	// draw the current fleet orders
-	if (panel_view == "fleet" && fleet_selected && fleet_orders && fleet_orders[fleet_selected]){
+	if (fleet_selected && fleet_orders && fleet_orders[fleet_selected]){
 		
 			$.each(fleet_orders[fleet_selected], function (key2, value){
 				if (value.type == "move"){
@@ -367,7 +376,7 @@ function redraw_overlay(){
 	
 	}	
 	
-	if (panel_view == "fleet" && fleet_selected && fleet_order_mode && fleet_order_start_hex && hex_highlighted && get_hex(hex_highlighted.x,hex_highlighted.z) ){
+	if (fleet_selected && fleet_order_mode && fleet_order_start_hex && hex_highlighted && get_hex(hex_highlighted.x,hex_highlighted.z) ){
 		var path = get_path_between_hexes(fleet_order_start_hex, hex_highlighted, fleet_cache[fleet_selected].movement_capacity);
 		//console.log(hex_highlighted);
 		//var path = false;		
@@ -463,6 +472,13 @@ function preload_images(data, callback){
 	sources.push({'name':'fleet_e', 'image':'images/fleet_e.png'});	
 	sources.push({'name':'star', 'image':'images/default.png'});	
 	sources.push({'name':'background', 'image':'images/back2.png'});	
+	
+	sources.push({'name':'research', 'image':'images/icons/research.png'});	
+	sources.push({'name':'production', 'image':'images/icons/production.png'});	
+	sources.push({'name':'credits', 'image':'images/icons/credits.png'});	
+	sources.push({'name':'food', 'image':'images/icons/food.png'});	
+	sources.push({'name':'morale', 'image':'images/icons/happy.png'});
+	sources.push({'name':'influence', 'image':'images/icons/influence.png'});
 	
 	
 	// add image data from server for preloading
@@ -570,7 +586,7 @@ function draw_map(map_id, first, custom_offset){
 		var hex = hexes_to_draw[i];
 		if (hex.star){
 			$(canvas_objects).drawImage({
-			  source: "images/default.png",
+			  source: image_cache['star'],
 			  x: hex.pixel_x, y: hex.pixel_y
 			});
 		}
@@ -593,7 +609,7 @@ function draw_map(map_id, first, custom_offset){
 		}
 		if (hex.enemy_fleets.length > 0){
 			$(canvas_objects).drawImage({
-			  source: "images/fleet_e.png",
+			  source: image_cache['fleet_e'],
 			  x: hex.pixel_x+20, y: hex.pixel_y-25
 			});
 		}

@@ -277,8 +277,10 @@ class VOID_SECTOR {
 	// dump the sector data as an array for output to the client
 	// dump from the perspective of a specific player
 	public function dump_sector($player_id){
-		if (false && isset($this->fog_state[$player_id]) && $this->fog_state[$player_id]['view']){
-			return $this->fog_state[$player_id]['view'];
+		if (!isset($this->state[$player_id]) && isset($this->fog_state[$player_id]) && isset($this->fog_state[$player_id]['view']) ){
+			$fog = $this->fog_state[$player_id]['view'];
+			$fog->fog = true;
+			return $fog;
 		} else {
 			$view = new VOID_SECTOR_VIEW($this, $player_id);
 			return $view;
