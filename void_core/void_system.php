@@ -41,13 +41,15 @@ class VOID_SYSTEM_VIEW {
 			$this->influence_level = $system->influence_level;
 			$this->food_per_turn = $system->food_per_turn;
 			$this->production_per_turn = $system->production_per_turn;
-			$this->food_pool = $system->food_pool;
-			$this->food_growth_threshold = $system->food_growth_threshold;
-			$this->growth_turns = $this->food_per_turn ? ceil(($this->food_growth_threshold - $this->food_pool) / $this->food_per_turn) : " - ";
-			$this->influence_growth_threshold = $system->influence_growth_threshold;
-			$this->influence_growth_turns = $this->influence_per_turn ? ceil(($this->influence_growth_threshold - $this->influence_pool) / $this->influence_per_turn) : " - ";
 			
 			if ($this->owner == $player_id){
+				$this->food_pool = $system->food_pool;
+				$this->food_growth_threshold = $system->food_growth_threshold;
+				$this->growth_turns = $this->food_per_turn ? ceil(($this->food_growth_threshold - $this->food_pool) / $this->food_per_turn) : " - ";
+				$this->influence_growth_threshold = $system->influence_growth_threshold;
+				$this->influence_growth_turns = $this->influence_per_turn ? ceil(($this->influence_growth_threshold - $this->influence_pool) / $this->influence_per_turn) : " - ";
+			
+				
 				$this->yours = true;
 				$this->build_queue = $system->build_queue->dump($system->production_per_turn);
 				

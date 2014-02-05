@@ -171,7 +171,7 @@ class VOID {
 		$ship_class->weapon_count = 1;
 		$ship_class->weapon_damage = 15;
 		$ship_class->movement_capacity = 4;
-		$tech = $this->tech_tree->get_tech(4);
+		$tech = $this->tech_tree->get_tech(6);
 		$tech->add_ship_class($ship_class);
 		$this->ship_classes[$ship_class->id] = $ship_class;
 		
@@ -203,7 +203,7 @@ class VOID {
 		$structure_class->name = "Farm";
 		$structure_class->set_modifier("food", 5);
 		$structure_class->set_modifier("credits", -1);
-		$tech = $this->tech_tree->get_tech(2);
+		$tech = $this->tech_tree->get_tech(3);
 		$tech->add_structure_class($structure_class);
 		$this->structure_classes[$structure_class->id] = $structure_class;
 		
@@ -211,7 +211,7 @@ class VOID {
 		$structure_class->id = 3;
 		$structure_class->name = "Bank";		
 		$structure_class->set_modifier("credits", 5);
-		$tech = $this->tech_tree->get_tech(3);
+		$tech = $this->tech_tree->get_tech(4);
 		$tech->add_structure_class($structure_class);
 		$this->structure_classes[$structure_class->id] = $structure_class;
 		
@@ -219,7 +219,7 @@ class VOID {
 		$structure_class->id = 4;
 		$structure_class->name = "Happy Place";		
 		$structure_class->set_modifier("morale", 10);
-		$tech = $this->tech_tree->get_tech(4);
+		$tech = $this->tech_tree->get_tech(6);
 		$tech->add_structure_class($structure_class);
 		$this->structure_classes[$structure_class->id] = $structure_class;
 		
@@ -227,7 +227,7 @@ class VOID {
 		$structure_class->id = 5;
 		$structure_class->name = "Factory";		
 		$structure_class->set_modifier("production", 10);
-		$tech = $this->tech_tree->get_tech(5);
+		$tech = $this->tech_tree->get_tech(2);
 		$tech->add_structure_class($structure_class);
 		$this->structure_classes[$structure_class->id] = $structure_class;
 		
@@ -235,7 +235,7 @@ class VOID {
 		$structure_class->id = 6;
 		$structure_class->name = "Research Lab";		
 		$structure_class->set_modifier("research", 10);
-		$tech = $this->tech_tree->get_tech(6);
+		$tech = $this->tech_tree->get_tech(5);
 		$tech->add_structure_class($structure_class);
 		$this->structure_classes[$structure_class->id] = $structure_class;
 		

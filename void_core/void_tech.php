@@ -67,7 +67,7 @@ class VOID_TECH_TREE {
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(4, "Laser Cutting", 20);
+		$tech = new VOID_TECH(4, "Interstellar Trade", 20);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
@@ -75,8 +75,8 @@ class VOID_TECH_TREE {
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(6, "Lukas Destruction Field", 200);
-		$tech->add_req(4);
+		$tech = new VOID_TECH(6, "Lukas Refactoring", 200);
+		$tech->add_req(1);
 		$this->add_tech($tech);
 		
 		$tech = new VOID_TECH(7, "Banana Powered Engines", 200);

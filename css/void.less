@@ -226,7 +226,7 @@ div#player_resources {
 
 #main_loading{
 	position : absolute;
-	z-index : 10;
+	z-index : 2000;
 	width : 100%;
 	height : 100%;
 	text-align : center;
@@ -287,13 +287,9 @@ div#player_resources {
 	cursor : pointer;
 	transform: translate3d(0,0,0);
 }
-#galactic_map_mini_container {
-	position : absolute;
-	bottom : 0px;
-	height : 200px;
-	left : 0;
-	right : 0;
-	border-top : solid red 2px;
+#galactic_map_mini_container {	
+	width : 100%;
+	height : 100%;	
 }
 #galactic_map_mini {
 	background-color : #3f3f3f;
@@ -341,7 +337,8 @@ div#player_resources {
 	bottom : 0px;
 	right : 0px;
 	width : 300px;
-	height : 200px;
+	
+	z-index : 1000;
 }
 
 #galactic_map_context_menu {
@@ -514,6 +511,7 @@ div.window_control .close_window {
 	padding : 0.3em;
 	display : inline-block;
 	border : solid grey 2px;
+	border-radius : 3px;
 	width : 225px;
 	min-height : 60px;
 	margin-bottom : 1em;
@@ -522,7 +520,7 @@ div.window_control .close_window {
 	border-bottom : dashed 2px grey;
 }
 .tech_tree_item:hover {
-	border : solid red 2px;
+	border : solid rgba(200, 40, 40, 0.5) 2px;
 	cursor : pointer;
 }
 
@@ -550,11 +548,19 @@ div.window_control .close_window {
 	left : 750px;
 }
 
-.current_tech {
-	border : solid green 2px;
-	background : url("../images/planets/class_m.png") no-repeat;	
+.available_tech {
+	border : solid orange 2px;
 }
-
+.researched_tech {
+	border : solid #3d3d3d 2px;
+}
+.researched_tech:hover {
+	border : solid rbga(200, 200, 20, 0.5) 2px;;
+}
+.current_tech {
+	border : solid green 2px;	
+	background-color : rgba(200, 200, 40, 0.1);
+}
 
 
 /* resources */

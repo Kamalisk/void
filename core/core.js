@@ -126,7 +126,8 @@ function end_minimap_drag(x, y){
 }
 function minimap_move(x, y){
 	if (minimap_drag){
-		jump_map(x*map_viewport.factorWidth*map_scale, y*map_viewport.factorHeight*map_scale);
+		//mouse_move_event({"pageX": , "});
+		//jump_map(x * map_viewport.factorWidth  - $('#galactic_map_container').width()/2, y * map_viewport.factorHeight  - $('#galactic_map_container').height()/2);
 		//$('#galactic_map_container').scrollLeft(x*map_viewport.factorWidth*map_scale - ($('#galactic_map_container').width() / 2));
 		//$('#galactic_map_container').scrollTop(y*map_viewport.factorHeight*map_scale - ($('#galactic_map_container').height() / 2));
 		draw_minimap_overlay();

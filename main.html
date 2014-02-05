@@ -119,7 +119,7 @@
 		{{#each tiers}}
 			<div class="tech_tier tech_tier_{{@key}}">
 			{{#each this}}
-				<div class="tech_tree_item tier_{{tier}} tech_{{id}} {{#if this.player_current}}current_tech{{/if}}" onclick="select_tech({{id}})">
+				<div class="tech_tree_item {{#if this.player_has}}researched_tech{{/if}} {{#if this.player_available}}available_tech{{/if}} tier_{{tier}} tech_{{id}} {{#if this.player_current}}current_tech{{/if}}" onclick="select_tech({{id}})">
 					<h4>{{name}}</h4>
 					
 					{{#if this.player_available}}
