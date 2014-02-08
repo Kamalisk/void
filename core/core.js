@@ -12,6 +12,8 @@ var ship_class_cache;
 var structure_class_cache;
 var tech_tree;
 
+var event_logs;
+
 var fleet_cache = {};
 
 var current_tech;
@@ -106,6 +108,10 @@ function update_interface(){
 			player.research_time = Math.ceil(player.current_tech.progress / player.research_per_turn);
 		}
 		append_template("player_resources_template", player, "player_resources");
+		
+		append_template("event_log_template", player, "galactic_map_event_list");
+		$("#galactic_map_event_list").show();
+		//$("#galactic_map_event_list").fadeOut(7000);
 	}
 	if (panel_view == "system" && hex_selected && hex_selected.x){
 		show_map_panel_system(hex_selected);	
@@ -156,13 +162,29 @@ function append_template(template_id, data, element_id){
 	var html = fetch_template(template_id, data);	
 	$("#"+element_id).append(html);
 	
+	/*
+	$('.tooltip-template').bind('mouseenter',function(event){
+		if ($(event.target).attr("data-tooltip-id")){
+			//var target_tip_data_id = $(event.target).attr("data-tooltip-id");
+			//$("#tooltip_box").html($("#"+target_tip_data_id).html());
+			//$("#tooltip_box").css({"top":200, "left": 200});
+			//$("#tooltip_box").show();
+			console.log("boo");
+		}
+	})
+	.bind('mouseleave', function(event){
+		//$("#tooltip_box").hide();
+	});
+	*/
+	
+	clean_up_tooltips();
 	$('.tooltip-template', $("#"+element_id)).each(function() {
 		var selector = '#' + $(this).data('tooltip-id');		
 		$(this).tooltipsy({
 			content: $(selector).html(),
-			delay : 700,
+			delay : 600,
 			alignTo: 'element',
-			offset: [0, 1], 
+			offset: [1, 0], 
 			show: function (e, $el) {
         $el.css({
             'display': 'block'
@@ -187,6 +209,7 @@ function append_template(template_id, data, element_id){
 			alignTo: 'element'
 		});
 	});
+	
 	$("#"+element_id).show();
 }
 
@@ -243,9 +266,9 @@ function show_map_panel_system(hex){
 		});
 	}
 	if (hex.system && hex.system.build_queue && hex.system.build_queue.items){
-		console.log(this);
+		
 		$.each(hex.system.build_queue.items, function (){
-			console.log(this);
+			
 			if (this.type == "ship"){
 				this.target = ship_class_cache[this.target_id];
 			}else if (this.type == "structure"){
@@ -307,10 +330,15 @@ function show_map_panel_fleet(id){
 	map_context_menu_type = "default";
 }
 
-function show_system_view(x, z){
-	clean_up_tooltips();
+function show_system_view(x, z){		
+	
 	$("#system_view_window .dialog_content").empty();		
 	var hex = hex_map['x'+x+'z'+z];
+	
+	if (hex.owner){
+		hex.owner_object = players[hex.owner];
+	}
+	
 	if (hex.system){
 		$.each(hex.system.planets, function (){
 			this.class = planet_class_cache[this.class_id];
@@ -333,7 +361,7 @@ function show_system_view(x, z){
 				// check the orders they have made this turn also
 				if (system_orders[hex.system.id]){
 					$.each(system_orders[hex.system.id], function (){
-						if (this.target_id == structure_id){
+						if (this.target_id == structure_id && this.type == "structure"){
 				 			in_queue = true;
 						}
 					});
@@ -341,17 +369,41 @@ function show_system_view(x, z){
 				if (!in_queue){
 					hex.system.available_structure_classes.push(structure_class_cache[this]);
 				}
+								
 			}
 		});
-		
-		if (hex.system.structures){
-			$.each(hex.system.structures, function (){
-				if (structure_class_cache[this.class_id]){				
-					this.class = structure_class_cache[this.class_id];
-				}
-			});
-		}
-	}	
+	}
+	
+			
+	if (hex.system.structures){
+		$.each(hex.system.structures, function (){
+			if (structure_class_cache[this.class_id]){				
+				this.class = structure_class_cache[this.class_id];
+			}
+		});
+	}
+	
+	if (structure_class_cache){
+		$.each(structure_class_cache, function (){
+			if (hex.system.production_per_turn){
+				var turns = Math.ceil(this.work_required / hex.system.production_per_turn);		
+			}else {
+				var turns = "1000";
+			}
+			this.turns = turns;
+		});
+	}
+	if (hex.owner_object.available_ship_classes){
+		$.each(hex.owner_object.available_ship_classes, function (){
+			if (hex.system.production_per_turn){
+				var turns = Math.ceil(this.work_required / hex.system.production_per_turn);		
+			}else {
+				var turns = "1000";
+			}
+			this.turns = turns;
+		});
+	}
+	
 	//var html = fetch_template('system_view_template',hex);
 	append_template('system_view_template',hex, "dialog_content");
 	//$("#dialog_content").append(html);
@@ -382,6 +434,23 @@ function show_system_view_basic(x, z){
 	$("#system_view_window").show();			
 }
 
+function show_system_view_construct(x, z){
+	clean_up_tooltips();
+	$("#system_view_window .dialog_content").empty();		
+	var hex = hex_map['x'+x+'z'+z];
+	if (hex.system){
+		$.each(hex.system.planets, function (){
+			this.class = planet_class_cache[this.class_id];
+			this.selectable = true;
+		});
+	}
+	var html = fetch_template('system_view_basic_template',hex);		
+	$("#system_view_window .dialog_content").append(html);
+	$("#dialog_title").html('System at '+x+','+z);
+	$("#system_view_window").show();			
+}
+
+
 function show_context_menu(id, x, y, type){
 	
 	var map_x = x - $("#galactic_map_overlay").offset().left;
@@ -409,7 +478,7 @@ function show_context_menu(id, x, y, type){
 
 
 function clean_up_tooltips(){
-	$('.tooltipsy').hide();
+	$('.tooltipsy').remove();
 }
 
 function context_menu(event, params){
@@ -432,9 +501,7 @@ function start_fleet_order_mode(id){
 	
 	// set the hex highlight path start points
 	fleet_order_mode = true;
-	console.log(fleet_order_start_hex);
-	console.log(fleet);
-	console.log("banana");
+
 	redraw_overlay();
 }
 function end_fleet_order_mode(id){
@@ -483,6 +550,29 @@ function add_fleet_colonise_order(pid){
 	
 	redraw_overlay();
 }
+
+function add_fleet_construct_order_dialog(){
+	if (fleet_orders[fleet_selected] && fleet_orders[fleet_selected].length > 0){
+		var previous_order = fleet_orders[fleet_selected][fleet_orders[fleet_selected].length-1];
+	}else {
+		var previous_order = {'x':fleet_cache[fleet_selected].x , 'z':fleet_cache[fleet_selected].z};		
+	}
+	show_system_view_construct(previous_order.x, previous_order.z);
+}
+
+function add_fleet_construct_order(pid){
+	if (fleet_orders[fleet_selected] && fleet_orders[fleet_selected].length > 0){
+		var previous_order = fleet_orders[fleet_selected][fleet_orders[fleet_selected].length-1];
+	}else {
+		var previous_order = {'x':fleet_cache[fleet_selected].x , 'z':fleet_cache[fleet_selected].z};
+		fleet_orders[fleet_selected] = [];
+	}
+	var order = {'type':'construct', "x":previous_order.x, "z":previous_order.z, "planet_id": pid};
+	fleet_orders[fleet_selected].push(order);
+	
+	redraw_overlay();
+}
+
 
 function cancel_fleet_orders(){
 	fleet_orders[fleet_selected] = new Array();
@@ -711,11 +801,17 @@ function handle_fetch_game_data(data){
 		hex_map = data.map.sectors;
 		player = data.player;
 		players = data.players;
+		if (data.logs){
+			event_logs = data.logs;
+			player.logs = data.logs;
+		}
 		if (data.planet_classes){
 			planet_class_cache = data.planet_classes;
 		}
 		if (data.ship_classes){
 			ship_class_cache = data.ship_classes;
+			var html = fetch_template('ship_class_tooltip_templates', ship_class_cache);		
+			$("#tooltip_block").append(html);						
 		}
 		if (data.structure_classes){
 			structure_class_cache = data.structure_classes;

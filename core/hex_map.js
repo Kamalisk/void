@@ -154,12 +154,16 @@ function initialize_map(width, height){
 		}else {
 			map_scale = map_scale -= 0.1;
 		}
-		var click_x = event.pageX - $(this).offset().left;// + offset_x/hex_size/2;
-		var click_y = event.pageY - $(this).offset().top;// + offset_y/hex_size/2;
-		zoom_offset.x = 0.1 * click_x;
-		zoom_offset.y = 0.1 * click_y;
+		console.log(event);
+		draw_map("galactic_map");
+		redraw_overlay();	
 		
-		jump_map(-map_scroll_offset.x + click_x/map_scale, -map_scroll_offset.y + click_y/map_scale);
+		//var click_x = event.pageX - $(this).offset().left;// + offset_x/hex_size/2;
+		//var click_y = event.pageY - $(this).offset().top;// + offset_y/hex_size/2;
+		//zoom_offset.x = 0.1 * click_x;
+		//zoom_offset.y = 0.1 * click_y;
+		
+		//jump_map(-map_scroll_offset.x + click_x/map_scale, -map_scroll_offset.y + click_y/map_scale);
 	});
 	
 	
@@ -361,7 +365,13 @@ function redraw_overlay(){
 	if (hex_selected && hex_map['x'+hex_selected.x+'z'+hex_selected.z]){
 		var coords = hex_to_pixel(hex_selected, map_scroll_offset);
 		draw_hex(canvas, coords.x,  coords.y, hex_size-1, "red", "none");
+		var system = hex_map['x'+hex_selected.x+'z'+hex_selected.z];
+		if (system && system.influence_size){
+			// draw border around range of influence
+			
+		}
 	}
+		
 	
 	var fleet_order_turn_counter = 0;
 	var fleet_order_movement_counter = 0;
@@ -397,6 +407,9 @@ function redraw_overlay(){
 				}else if (value.type == "colonise"){
 					var coords = hex_to_pixel(value, map_scroll_offset);
 					draw_hex(canvas, coords.x,  coords.y, hex_size-5, "pink", "rgba(240, 150, 40, 0.2)");
+				}else if (value.type == "construct"){
+					var coords = hex_to_pixel(value, map_scroll_offset);
+					draw_hex(canvas, coords.x,  coords.y, hex_size-5, "cyan", "rgba(240, 150, 40, 0.2)");
 				}
 			});
 	
@@ -648,7 +661,7 @@ function draw_map(map_id, first, custom_offset){
 			}
 			$(canvas_objects).drawImage({
 			  source: image_cache['fleet_f'],
-			  x: hex.pixel_x-20, y: hex.pixel_y-25
+			  x: hex.pixel_x-35, y: hex.pixel_y
 			});
 			
 			if (hex.your_fleets[0].orders.length > 0){				
@@ -658,7 +671,7 @@ function draw_map(map_id, first, custom_offset){
 		if (hex.enemy_fleets.length > 0){
 			$(canvas_objects).drawImage({
 			  source: image_cache['fleet_e'],
-			  x: hex.pixel_x+20, y: hex.pixel_y-25
+			  x: hex.pixel_x+35, y: hex.pixel_y
 			});
 		}
 		if (hex.system && hex.system.population){

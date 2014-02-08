@@ -91,6 +91,19 @@
 		<div id="galactic_map_panel_fleet">
 			
 		</div>
+		
+		<div id="galactic_map_event_list">
+			
+		</div>
+		
+		<div id="tooltip_block">
+		
+		</div>
+		
+		<div id="tooltip_box" style="border : solid white 3px; background-color : red; position : absolute; display : none; z-index : 50000">
+			tooltip content here!
+		</div>
+		
 	</div>
 	
 	<div id="research_view" style="display : none;" class="view">
@@ -103,6 +116,16 @@
 	
 	</div>
 	
+	<script id="event_log_template" type="text/x-handlebars-template">
+		<div>
+			<ul>
+			{{#each logs}}
+				<li class="event_log_item"><img src="images/icons/production.png" alt="Production" title="Production"> {{this}}</li>
+			{{/each}}
+			</ul>
+		</div>
+	</script>
+	
 	<div id="system_view_window" class="dialog">
 		<div class="dialog_body">
 			<div class="dialog_header">
@@ -112,6 +135,14 @@
 			</div>
 		</div>
 	</div>
+	
+	<script id="ship_class_tooltip_templates" type="text/x-handlebars-template">
+		{{#each this}}
+		<div class="tooltip" id="ship-class-tooltip-{{id}}">
+			{{> ship_class this}}
+		</div>
+		{{/each}}
+	</script>
 	
 	<script id="tech_tree_template" type="text/x-handlebars-template">
 		<div>
@@ -158,6 +189,7 @@
 		<p>
 		<button type="button" onclick="start_fleet_order_mode('{{id}}')">Move Fleet</button>
 		<button type="button" onclick="add_fleet_colonise_order_dialog()">Colonise</button>
+		<button type="button" onclick="add_fleet_construct_order_dialog()">Construct</button>
 		<button type="button" onclick="cancel_fleet_orders()">Cancel All Orders</button>
 		</p>
 		<h4>Ships</h4>
@@ -209,7 +241,10 @@
 			{{#if system.influence_level}}
 			<tr>
 				<th>Influence</th>
-				<td class="tooltip-template" data-tooltip-id="system-influence-tooltip">Level {{system.influence_level}} ({{system.influence_growth_turns}} turns) </td>
+				<td class="tooltip-template" data-tooltip-id="system-influence-tooltip">
+				Level {{system.influence_level}} ({{system.influence_growth_turns}} turns) 
+				
+				</td>
 			</tr>
 			{{/if}}
 			
@@ -257,19 +292,6 @@
 				{{#with system.build_queue.items.[0]}}
 				<li>				
 				<span class="tooltip-template" data-tooltip-id="ship-class-tooltip-{{id}}">{{target.name}} {{#if turns}} ({{turns}} turns){{/if}}</span>
-				
-				<div class="tooltip" id="ship-class-tooltip-{{id}}">
-					pie
-					{{#with target}} 
-						{{#compare type "==" "build"}}
-						{{> ship_class}}
-						{{/compare}}
-						{{#compare type "==" "structure"}}
-						{{> structure_class}}
-						{{/compare}}
-						
-					{{/with}}
-				</div>
 				
 				</li>
 				{{/with}}
@@ -449,15 +471,13 @@
 			<h4>Available Ship Classes</h4>
 			<ul class="selector_list">
 			{{#each owner_object.available_ship_classes}}
-				<li class="tooltip-template system_view_selector" data-tooltip-id="system-ship-class-tooltip-{{id}}">
+				<li class="tooltip-template system_view_selector" data-tooltip-id="ship-class-tooltip-{{id}}">
 					<img src="images/ship.png">
-					{{name}}
+					<h4>{{name}}</h4>
+					<p>
 					{{#if turns}} ({{turns}} turns){{/if}}
 					<button type="button" onclick="build_ship('{{id}}');">Build</button>
-					<div class="tooltip" id="system-ship-class-tooltip-{{id}}">
-						{{> ship_class}}							
-					</div>
-					
+					</p>
 				</li>
 				
 			{{/each}}
@@ -470,9 +490,11 @@
 			{{#each system.available_structure_classes}}
 				<li class="tooltip-template system_view_selector" data-tooltip-id="system-structure-class-tooltip-{{id}}">
 					<img src="images/structure.png">
-					{{name}}
+					<h4>{{name}}</h4>
+					<p>
 					{{#if turns}} ({{turns}} turns){{/if}}
 					<button type="button" onclick="build_structure('{{id}}');">Build</button>
+					</p>
 					<div class="tooltip" id="system-structure-class-tooltip-{{id}}">
 						{{> structure_class}}	
 					</div>
@@ -494,7 +516,8 @@
 				{{#compare type "==" "structure"}}
 				<img src="images/structure.png">
 				{{/compare}}
-				{{target.name}} {{#if turns}} ({{turns}} turns){{/if}}
+				<h4>{{target.name}}</h4>
+				<p> {{#if turns}} ({{turns}} turns){{/if}}</p>
 				</li>
 				{{/each}}			
 			{{else}}
@@ -510,7 +533,7 @@
 			{{#each system.structures}}
 				<li class="tooltip-template system_view_selector" data-tooltip-id="system-structure-class-tooltip-{{class.id}}">
 				<img src="images/structure.png">
-				{{name}}
+				<h4>{{name}}</h4>
 				<div class="tooltip" id="system-structure-class-tooltip-{{class.id}}">
 					{{#with class}}
 					{{> structure_class}}	
@@ -579,6 +602,13 @@
 			{{/compare}}
 			<p>
 			
+		</div>
+		<div class="events">
+			<ul>
+			{{#each logs}}
+				<li>{{this}}</li>
+			{{/each}}
+			</ul>
 		</div>
 	</script>
 	

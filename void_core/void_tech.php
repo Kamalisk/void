@@ -1,6 +1,16 @@
 <?
 
 
+class VOID_POWER {
+	public $name;
+	public $modifiers;
+	
+	function __construct(){
+		
+	}
+}
+
+
 class VOID_TECH_TREE {
 	
 	public $items;
@@ -59,29 +69,42 @@ class VOID_TECH_TREE {
 		$tech = new VOID_TECH(1, "Space Flight", 10);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(2, "Geothermal Frakking", 20);
+		$tech = new VOID_TECH(2, "Geothermal Frakking", 30);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(3, "Xenobiology", 20);
+		$tech = new VOID_TECH(3, "Xenobiology", 30);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(4, "Interstellar Trade", 20);
+		$tech = new VOID_TECH(4, "Interstellar Trade", 30);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(5, "Subspace Commuincations", 100);
+		$tech = new VOID_TECH(5, "Subspace Communications", 30);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(6, "Lukas Refactoring", 200);
+		$tech = new VOID_TECH(6, "Lukas String Theory", 30);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(7, "Banana Powered Engines", 200);
-		$tech->add_req(2);
+		$tech = new VOID_TECH(7, "Galactic Currency", 200);
+		$tech->add_req(4);
+		$tech->add_req(5);
+		$this->add_tech($tech);
+		
+		$tech = new VOID_TECH(8, "Organic Manufacturing", 200);
 		$tech->add_req(3);
+		$this->add_tech($tech);
+		
+		$tech = new VOID_TECH(9, "Laser Amplification", 200);
+		$tech->add_req(2);
+		$this->add_tech($tech);
+		
+		$tech = new VOID_TECH(10, "Gravitational Mapping", 200);
+		$tech->add_req(5);
+		$tech->add_req(6);
 		$this->add_tech($tech);
 		
 		$this->calculate_tier();

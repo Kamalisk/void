@@ -21,8 +21,11 @@ class VOID_PLAYER {
 	
 	public $available_ship_classes;
 	public $available_structure_classes;
+	public $built_structures;
 	
 	public $done;
+	
+	public $met_players;
 	
 	function __construct($id){
 		$this->id = $id;
@@ -30,6 +33,7 @@ class VOID_PLAYER {
 		$this->credits_pool = 0;
 		$this->morale = 0;
 		$this->current_tech = false;
+		$this->met_players = [];
 		VOID_LOG::init($id);
 	}
 	
@@ -76,6 +80,21 @@ class VOID_PLAYER {
 		}
 	}
 	
+	public function update_available_structure_class($id, $add=true){
+		if ($add == false){
+			$this->built_structures[$id] = false;
+		}else {
+			$this->built_structures[$id] = true;
+		}		
+	}	
+
+	public function is_structure_available($id){
+		if (isset($this->built_structures[$id]) && $this->built_structures[$id]){
+			return false;
+		}
+		return true;
+	}
+	
 	public function update_available_tech($tech_tree){
 		foreach($tech_tree->items as &$tech){
 			if (isset($this->tech[$tech->id])){
@@ -103,6 +122,13 @@ class VOID_PLAYER {
 		$this->morale = $this->morale + $morale;
 	}
 	
+	public function add_met_player($player_id){
+		if (isset($this->met_players[$player_id])){
+			return false;
+		}
+		$this->met_players[$player_id] = $player_id;
+		return true;
+	}
 	
 }
 

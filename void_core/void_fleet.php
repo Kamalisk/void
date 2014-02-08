@@ -99,6 +99,10 @@ class VOID_FLEET {
 				unset($this->ships[$key]);
 			}
 		}
+		if (count($this->ships) <= 0){
+			return true;
+		}
+		return false;
 	}
 	
 	public function get_special(){

@@ -37,6 +37,7 @@ class VOID_STRUCTURE_CLASS {
 	public $upkeep = 0;
 	
 	public $empire_unique;	
+	public $world_unique;
 	
 	public $modifiers;
 	
@@ -45,6 +46,7 @@ class VOID_STRUCTURE_CLASS {
 	function __construct(){
 		$this->work_required = 10;
 		$this->empire_unique = false;
+		$this->world_unique = false;
 		$this->modifiers = [];
 	}
 	
@@ -61,6 +63,15 @@ class VOID_STRUCTURE_CLASS {
 	function set_unique($type="empire"){
 		$this->empire_unique = true;
 	}
+	
+	function is_unique($type){
+		if ($type == "empire"){
+			return $this->empire_unique;
+		}else if ($type == "world"){
+			return $this->world_unique;
+		}
+	}
+	
 }
 
 ?>

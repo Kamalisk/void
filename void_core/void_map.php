@@ -181,6 +181,7 @@ class VOID_MAP {
 					
 						if (isset($this->sectors['x'.$x.'z'.$z])){
 							$n =& $this->sectors['x'.$x.'z'.$z];
+							$sector->system->add_influenced_sector($n);
 							$n->add_state($sector->system->owner->id, "sensor_power", 1);
 							$n->add_state($sector->system->owner->id, "influence", $sector->system->influence_level/$ring);
 						}
@@ -216,10 +217,22 @@ class VOID_MAP {
 		}
 		
 		// run through all sectors and calculate who "owns" each sector
-		foreach($this->sectors as &$sector){
-			
+		foreach($this->sectors as &$sector){			
 			$sector->update_owner($core);			
 			$sector->update_fog();
+		}
+		
+		
+		// update meeting of new players 
+		foreach($this->sectors as &$sector){			
+			$player_ids = $sector->get_vision();
+			foreach($player_ids as $player_id){
+				if ($sector->owner){
+					if ($core->players[$player_id]->add_met_player($sector->owner->id)){
+						VOID_LOG::write($player_id, "You have met ".$sector->owner->name);
+					}
+				}
+			}
 		}
 
 		

@@ -353,7 +353,7 @@ div#player_resources {
 	position : absolute;
 	left : 0;
 	bottom : 0;
-	height : 150px;
+	min-height : 150px;
 	width : 300px;
 	border-top : solid grey 2px;
 	border-right : solid grey 2px;
@@ -364,7 +364,20 @@ div#player_resources {
 	z-index : 1000;
 }
 
+#galactic_map_event_list {
+	position : absolute;
+	top : 0;
+	left : 0;	
+	
+	background-color : rgba(70, 70, 70, 0.3);
+	padding : 0.3em;
+	display : none;
+	z-index : 1000;
+}
 
+.event_log_item {
+	padding : 0.1em;
+}
 
 
 .map_panel_header {
@@ -491,8 +504,22 @@ div.window_control .close_window {
 	vertical-align : top;
 }
 
+.system_view_selector img {
+	float : left;
+}
+
+.system_view_selector h4 {
+	margin : 0;
+	padding : 0;
+}
+
 .system_view_selector button {
 	float : right;
+}
+
+.system_view_selector p {
+	padding : 0;
+	margin : 0;
 }
 
 .selectable {
@@ -567,5 +594,13 @@ div.window_control .close_window {
 
 .food, .credits, .production, .research, mroale {
 	font-weight : bold;
+}
+
+/* events */
+
+.events {
+	height : 16px;
+	overflow : hidden;
+	display : inline-block;
 }
 

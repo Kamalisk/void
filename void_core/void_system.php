@@ -11,6 +11,7 @@ class VOID_SYSTEM_VIEW {
 	public $influence_pool;
 	public $influence_growth_threshold;
 	public $influence_growth_turns;
+	public $influence_size;
 	
 	public $food_pool;
 	public $food_per_turn;
@@ -31,6 +32,8 @@ class VOID_SYSTEM_VIEW {
 	
 	public $available_structures;
 	
+	public $influenced_sectors;
+	
 	function __construct($system, $player_id){
 		$this->id = $system->id;
 		$this->yours = false;
@@ -48,7 +51,7 @@ class VOID_SYSTEM_VIEW {
 				$this->growth_turns = $this->food_per_turn ? ceil(($this->food_growth_threshold - $this->food_pool) / $this->food_per_turn) : " - ";
 				$this->influence_growth_threshold = $system->influence_growth_threshold;
 				$this->influence_growth_turns = $this->influence_per_turn ? ceil(($this->influence_growth_threshold - $this->influence_pool) / $this->influence_per_turn) : " - ";
-			
+				$this->influence_size = $system->influence_size;
 				
 				$this->yours = true;
 				$this->build_queue = $system->build_queue->dump($system->production_per_turn);
@@ -56,12 +59,23 @@ class VOID_SYSTEM_VIEW {
 				$this->available_structures = [];
 				// generate a list of ids of the structures which can be built here
 				foreach($system->owner->available_structure_classes as $structure){
-					if (!isset($system->structures[$structure->id]) && !$system->build_queue->exists($structure->id, "structure")){
+					$available = true;
+					if ($system->build_queue->exists($structure->id, "structure")){
+						$available = false;
+					}
+					if ( !$system->owner->is_structure_available($structure->id) ){
+						$available = false;
+					} 
+					if ($available){
 						$this->available_structures[] = $structure->id;
 					}
 				}
 			}
-			
+			if ($system->influenced_sectors){
+				foreach($system->influenced_sectors as $sector){
+					$this->influenced_sectors[] = $sector->id;
+				}
+			}
 			
 			
 		}
@@ -101,6 +115,7 @@ class VOID_SYSTEM {
 	public $influence_per_turn;
 	public $influence_pool;
 	public $influence_growth_threshold;
+	public $influence_size;
 	
 	public $population;
 	
@@ -109,11 +124,14 @@ class VOID_SYSTEM {
 	public $build_queue;
 	
 	public $id;
+	public $name;
 	
 	public $docked_fleet;
 	public $structures;
 	
 	public $planet_index;
+	
+	public $influenced_sectors;
 	
 	public function __construct($x, $z){
 		$this->x = $x;
@@ -148,15 +166,33 @@ class VOID_SYSTEM {
 	
 	public function add_structure($structure){
 		// should check to see if it already exists etc..
+		if ($structure->class->is_unique("empire")){
+			$this->owner->update_available_structure_class($structure->class->id, true);
+		}
 		$this->structures[$structure->class->id] = $structure;
+	}
+	
+	public function add_influenced_sector($sector){
+		$this->influenced_sectors[$sector->id] = $sector;
 	}
 	
 	public function update(){		
 		$this->food_per_turn = $this->get_food_income();
 		$this->production_per_turn = $this->get_production_income();
 		$this->influence_growth_threshold = ($this->influence_level+1) * 3;	
-		$this->influence_per_turn = $this->population;
+		$this->influence_per_turn = $this->get_influence_income();
 		$this->food_growth_threshold = pow(2, $this->population);
+		
+		if ($this->influence_level >= 10){
+			$this->influence_size = 4;
+		}else if($this->influence_level >= 7){
+			$this->influence_size = 3;
+		}else if($this->influence_level >= 3){
+			$this->influence_size = 2;
+		}else {
+			$this->influence_size = 1;
+		}
+		
 	}
 	
 	public function apply(){
@@ -169,7 +205,8 @@ class VOID_SYSTEM {
 		$this->food_pool += $this->food_per_turn;
 		if ($this->food_pool >= $this->food_growth_threshold ){
 			$this->population++;			
-			$this->food_pool = 0;			
+			$this->food_pool = 0;
+			VOID_LOG::write($this->owner->id, "System at (".$this->x.",".$this->z.") has grown.");
 			$this->update();
 		}		
 	}
@@ -205,6 +242,22 @@ class VOID_SYSTEM {
 			$output = $output / 10;
 		}		
 		return ceil($output);
+	}
+	
+	public function get_influence_income(){
+		// returns the credit income from this system 
+		// apply tax rate here
+		$output = $this->population;		
+		if ($this->structures){
+			foreach($this->structures as $structure){
+				$modifier = $structure->class->get_modifier("influence");
+				if ($modifier){
+					$output += $modifier;
+				}
+			}
+		}
+		
+		return $output;
 	}
 	
 	public function get_credits_income(){
@@ -327,6 +380,9 @@ class VOID_SYSTEM {
 		$order->data = $target;		
 		$order->type = $type;
 		$order->progress = $target->work_required;
+		if ($type == "structure" && $target->is_unique("empire") ){
+			$this->owner->update_available_structure_class($target->id, true);
+		}
 		$this->build_queue->add($order);
 	}
 	public function delete_order(){
@@ -364,10 +420,12 @@ class VOID_SYSTEM {
 					$fleet->add_ship($ship);
 					$sector->add_fleet($fleet);
 				}
+				VOID_LOG::write($this->owner->id, "A ship (".$ship->class->name.") was built at (".$this->x.",".$this->z.")");
 			}else if ($item->type == "structure"){
 				$structure_class = $item->data;
 				$structure = new VOID_STRUCTURE($structure_class, $this->owner->id);
 				$this->add_structure($structure);
+				VOID_LOG::write($this->owner->id, "A structure (".$structure->class->name.") was built at (".$this->x.",".$this->z.")");
 			}
 		}
 		

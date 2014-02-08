@@ -1,5 +1,35 @@
 <?
 
+class VOID_UPGRADE_CLASS {
+	public $name;
+	public $id;
+	
+	// list of requirements to build it. such as a nebula
+	public $requirements;
+	
+	public $modifiers;
+	
+	function __construct(){
+		
+	}
+	
+	function get_modifier($type){
+		if (isset($this->modifiers[$type])){
+			return $this->modifiers[$type];
+		}
+	}
+	function set_modifier($type, $value){
+		//possibly handle custom function handlers for unique effects?
+		$this->modifiers[$type] = $value;
+	}
+	
+	function add_requirement($req){
+		$this->requirements[$req] = $req;
+	}
+}
+
+
+
 class VOID_SECTOR_STATE {
 	public $visible = false;
 	public $influence = 0;
@@ -117,6 +147,8 @@ class VOID_SECTOR_VIEW {
 class VOID_SECTOR {
 	public $name = "";
 	
+	public $id;
+	
 	public $fleets = array();
 	public $unknown = 0;
 	public $star = 0;
@@ -141,6 +173,7 @@ class VOID_SECTOR {
 	function __construct($x, $z){
 		$this->x = $x;
 		$this->z = $z;
+		$this->id = "x".$x."z".$z;
 		// default type is "space" ie. empty
 		$this->type = "space";
 		$this->home = 0;
@@ -223,10 +256,13 @@ class VOID_SECTOR {
 		$this->fleets[$fleet->owner][$fleet->id] = $fleet;
 	}
 	public function remove_fleet($fleet){
+		
+		//VOID_LOG::write($fleet->owner, print_r($this->fleets, 1) );
 		unset($this->fleets[$fleet->owner][$fleet->id]);
 		if (count($this->fleets[$fleet->owner]) <= 0){
 			unset($this->fleets[$fleet->owner]);
 		}
+		//VOID_LOG::write($fleet->owner, print_r($this->fleets, 1) );
 	}
 	
 	
@@ -242,7 +278,7 @@ class VOID_SECTOR {
 		// then resolve combat between any not in-transit fleets
 		$fleets = $this->get_combat_fleets();
 		if ($fleets){
-			$combat = new VOID_COMBAT($fleets);
+			$combat = new VOID_COMBAT($fleets, $this);
 			$combat->resolve();
 			$this->clean_up();
 		}
@@ -274,12 +310,24 @@ class VOID_SECTOR {
 		$this->state[$player_id]->$property = $value;
 	}
 	
+	public function get_vision(){
+		$player_ids = [];
+		foreach($this->state as $key => $state){
+			if ($state->sensor_power){
+				$player_ids[] = $key;
+			}
+		}
+		return $player_ids;
+	}
+	
 	// dump the sector data as an array for output to the client
 	// dump from the perspective of a specific player
 	public function dump_sector($player_id){
 		if (!isset($this->state[$player_id]) && isset($this->fog_state[$player_id]) && isset($this->fog_state[$player_id]['view']) ){
 			$fog = $this->fog_state[$player_id]['view'];
 			$fog->fog = true;
+			$fog->your_fleets = [];
+			$fog->enemy_fleets = [];
 			return $fog;
 		} else {
 			$view = new VOID_SECTOR_VIEW($this, $player_id);
@@ -357,16 +405,18 @@ class VOID_COMBAT {
 	public $ship_index;
 	public $target_index;
 	
-	function __construct($fleets){
+	public $sector;
+	
+	function __construct($fleets, $sector){
 		$this->fleets = $fleets;
-		
+		$this->sector = $sector;
 		$players = [];
 		foreach($this->fleets as &$fleet){
 			$players[$fleet->owner] = $fleet->owner;
 		}
 		
 		foreach($players as $player){
-			VOID_LOG::write($player, "Combat occured in sector X");
+			VOID_LOG::write($player, "Combat occured in (".$sector->x.",".$sector->z.")");
 		}
 		
 		foreach($this->fleets as &$fleet){
@@ -391,7 +441,9 @@ class VOID_COMBAT {
 		}
 		
 		foreach($this->fleets as $fleet){
-			$fleet->clean_up();
+			if ($fleet->clean_up()){
+				VOID_LOG::write($fleet->owner, "A fleet was lost at (".$this->sector->x.",".$this->sector->z.")");
+			}
 		}
 		
 		

@@ -23,6 +23,7 @@ function void_unique_id(){
 
 class VOID_LOG {
 	static $game_id;
+	static $turn;
 	
 	static function init($player_id){
 		file_put_contents("log/test.player".$player_id.".log", "");
@@ -32,6 +33,19 @@ class VOID_LOG {
 		if ($player_id){
 			file_put_contents("log/test.player".$player_id.".log", $text."\n", FILE_APPEND);
 		}
+	}
+	
+	static function get($player_id){
+		if ($player_id){
+			$contents = file_get_contents("log/test.player".$player_id.".log");
+			return VOID_LOG::parse($contents);
+		}
+	}
+	
+	static function parse($contents){
+		$entries = explode("\n", $contents);
+		array_pop($entries);
+		return $entries;
 	}
 }
 
@@ -114,12 +128,12 @@ class VOID_RESOURCES {
 
 
 class VOID {
-	public $players = array();
+	public $players = [];
 	public $map;
 	
-	public $ship_classes = array();
-	public $structure_classes = array();
-	
+	public $ship_classes = [];
+	public $structure_classes = [];
+	public $upgrade_classes = [];
 	public $fleets;
 	public $systems;
 
@@ -183,7 +197,19 @@ class VOID {
 		$ship_class->weapon_count = 0;
 		$ship_class->weapon_damage = 0;
 		$ship_class->movement_capacity = 4;
-		$tech = $this->tech_tree->get_tech(5);
+		$tech = $this->tech_tree->get_tech(3);
+		$tech->add_ship_class($ship_class);
+		$this->ship_classes[$ship_class->id] = $ship_class;
+		
+		$ship_class = new VOID_SHIP_CLASS();
+		$ship_class->id = 6;
+		$ship_class->name = "Constructor";
+		$ship_class->work_required = 40;
+		$ship_class->add_special("construct");
+		$ship_class->weapon_count = 0;
+		$ship_class->weapon_damage = 0;
+		$ship_class->movement_capacity = 6;
+		$tech = $this->tech_tree->get_tech(3);
 		$tech->add_ship_class($ship_class);
 		$this->ship_classes[$ship_class->id] = $ship_class;
 		
@@ -219,7 +245,7 @@ class VOID {
 		$structure_class->id = 4;
 		$structure_class->name = "Happy Place";		
 		$structure_class->set_modifier("morale", 10);
-		$tech = $this->tech_tree->get_tech(6);
+		$tech = $this->tech_tree->get_tech(4);
 		$tech->add_structure_class($structure_class);
 		$this->structure_classes[$structure_class->id] = $structure_class;
 		
@@ -235,9 +261,25 @@ class VOID {
 		$structure_class->id = 6;
 		$structure_class->name = "Research Lab";		
 		$structure_class->set_modifier("research", 10);
+		$tech = $this->tech_tree->get_tech(6);
+		$tech->add_structure_class($structure_class);
+		$this->structure_classes[$structure_class->id] = $structure_class;
+		
+		$structure_class = new VOID_STRUCTURE_CLASS();
+		$structure_class->id = 6;
+		$structure_class->name = "Galactic Radio Station";		
+		$structure_class->set_modifier("influence", 10);
 		$tech = $this->tech_tree->get_tech(5);
 		$tech->add_structure_class($structure_class);
 		$this->structure_classes[$structure_class->id] = $structure_class;
+		
+		
+		$ship_class = new VOID_UPGRADE_CLASS();
+		$ship_class->id = 5;
+		$ship_class->name = "Space Nebula Shop";
+		$ship_class->work_required = 40;						
+		$this->upgrade_classes[$ship_class->id] = $ship_class;
+		
 		
 		$starting_tech = $this->tech_tree->get_starting_tech();
 		
@@ -299,12 +341,14 @@ class VOID {
 		$return['map'] = $this->map->dump_map($player_id);
 		$return['players'] = $this->players;
 		$return['player'] = $this->players[$player_id];
+		$return['logs'] = VOID_LOG::get($player_id);
 		if ($first){
 			$return['planet_classes'] = $void_planet_classes;
 			$return['sector_classes'] = $void_sector_classes;
 			$return['ship_classes'] = $this->ship_classes;
+			$return['upgrade_classes'] = $this->upgrade_classes;
 			$return['structure_classes'] = $this->structure_classes;
-			$return['tech_tree'] = $this->tech_tree->dump();
+			$return['tech_tree'] = $this->tech_tree->dump();			
 		}
 		//$this->map->players = $this->players;
 		echo json_encode($return, JSON_NUMERIC_CHECK);
@@ -342,6 +386,11 @@ class VOID {
 	// resolve all orders and game events
 	// including moving, battle and research
 	public function process_turn(){
+		
+		
+		foreach($this->players as &$player){			
+			VOID_LOG::init($player->id);
+		}		
 		
 		$temp_fleet_cache = array();
 		$temp_sector_has_fleet = array();
