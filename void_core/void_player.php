@@ -1,5 +1,32 @@
 <?php
 
+class VOID_PLAYER_VIEW {
+	public $name;
+	public $id;
+	public $color;
+	public $done;
+	
+	public $sector_count;
+	public $tech_count;
+	
+	public $met;
+	
+	function __construct($player, $player_id){
+		$this->name = $player->name;
+		$this->id = $player->id;
+		$this->color = $player->color;
+		$this->done = $player->done;
+		
+		$this->sector_count = $player->sector_count;
+		$this->tech_count = $player->tech_count;
+		
+		if ($player->has_met($player_id)){
+			$this->met = true;
+		}else {
+			$this->met = false;
+		}
+	}
+}
 
 class VOID_PLAYER {
 	public $name;
@@ -27,6 +54,11 @@ class VOID_PLAYER {
 	
 	public $met_players;
 	
+	public $sector_count;
+	public $tech_count;
+	
+	public $sources;
+	
 	function __construct($id){
 		$this->id = $id;
 		$this->research_pool = 0;
@@ -34,7 +66,46 @@ class VOID_PLAYER {
 		$this->morale = 0;
 		$this->current_tech = false;
 		$this->met_players = [];
+		$this->sector_count = 0;
+		$this->tech_count = 0;
+		$this->sources = [];
 		VOID_LOG::init($id);
+	}
+	
+	public function dump($player_id){
+		$view = new VOID_PLAYER_VIEW($this, $player_id);
+		return $view;
+	}
+	
+	public function apply_resources(){
+		$this->credits_pool += $this->credits_per_turn;
+		$this->research_pool += $this->research_per_turn;
+	}
+	
+	public function update_resource($type, $value, $source=""){
+		if ($source ==""){
+			$source = "general";
+		}
+		if (!isset($this->sources[$type][$source] )){
+			$this->sources[$type][$source] = 0;
+		}
+		if ($type == "credits"){			
+			$this->credits_per_turn = $this->credits_per_turn + $value;				
+		}else if ($type == "research"){
+			$this->research_per_turn = $this->research_per_turn + $value;
+		}else if ($type == "morale"){
+			$this->morale = $this->morale + $value;
+		}else {
+			return false;
+		}
+		// update list of sources 
+		$this->sources[$type][$source] += $value;
+	}
+	
+	public function reset_per_turn(){
+		$this->credits_per_turn = 0;
+		$this->research_per_turn = 0;
+		$this->morale = 0;
 	}
 	
 	public function set_color($color){
@@ -115,11 +186,11 @@ class VOID_PLAYER {
 		}
 	}
 	
-	public function update_morale($morale){
+	public function update_morale($morale){		
 		$this->morale = $morale;
 	}
-	public function apply_morale($morale){
-		$this->morale = $this->morale + $morale;
+	public function apply_morale($morale, $source=""){
+		$this->update_resource("morale", $morale, $source);		
 	}
 	
 	public function add_met_player($player_id){
@@ -128,6 +199,13 @@ class VOID_PLAYER {
 		}
 		$this->met_players[$player_id] = $player_id;
 		return true;
+	}
+	
+	public function has_met($player_id){
+		if (isset($this->met_players[$player_id])){
+			return true;
+		}
+		return false;
 	}
 	
 }

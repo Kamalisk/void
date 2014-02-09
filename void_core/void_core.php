@@ -20,6 +20,17 @@ function void_unique_id(){
 	return uniqid("v".rand(100,999));
 }
 
+class VOID_DEBUG {
+	static $log;
+	
+	static function write($text){
+		self::$log = self::$log.print_r($text,1)."\n\n";
+	}
+	
+	static function dump(){
+		return self::$log;
+	}
+}
 
 class VOID_LOG {
 	static $game_id;
@@ -220,6 +231,10 @@ class VOID {
 		$structure_class->set_unique("empire");
 		$structure_class->set_modifier("food", 10);
 		$structure_class->set_modifier("morale", 10);
+		$structure_class->set_modifier("production", 10);
+		$structure_class->set_modifier("credits", 10);
+		$structure_class->set_modifier("influence", 10);
+		$structure_class->set_modifier("research", 10);
 		$tech = $this->tech_tree->get_tech(1);
 		$tech->add_structure_class($structure_class);
 		$this->structure_classes[$structure_class->id] = $structure_class;
@@ -227,6 +242,7 @@ class VOID {
 		$structure_class = new VOID_STRUCTURE_CLASS();
 		$structure_class->id = 2;
 		$structure_class->name = "Farm";
+		$structure_class->work_required = 30;
 		$structure_class->set_modifier("food", 5);
 		$structure_class->set_modifier("credits", -1);
 		$tech = $this->tech_tree->get_tech(3);
@@ -236,6 +252,7 @@ class VOID {
 		$structure_class = new VOID_STRUCTURE_CLASS();
 		$structure_class->id = 3;
 		$structure_class->name = "Bank";		
+		$structure_class->work_required = 30;
 		$structure_class->set_modifier("credits", 5);
 		$tech = $this->tech_tree->get_tech(4);
 		$tech->add_structure_class($structure_class);
@@ -243,42 +260,62 @@ class VOID {
 		
 		$structure_class = new VOID_STRUCTURE_CLASS();
 		$structure_class->id = 4;
-		$structure_class->name = "Happy Place";		
+		$structure_class->name = "Happy Place";
+		$structure_class->work_required = 30;
 		$structure_class->set_modifier("morale", 10);
+		$structure_class->set_modifier("credits", -1);
 		$tech = $this->tech_tree->get_tech(4);
 		$tech->add_structure_class($structure_class);
 		$this->structure_classes[$structure_class->id] = $structure_class;
 		
 		$structure_class = new VOID_STRUCTURE_CLASS();
 		$structure_class->id = 5;
-		$structure_class->name = "Factory";		
+		$structure_class->name = "Factory";
+		$structure_class->work_required = 60;
 		$structure_class->set_modifier("production", 10);
+		$structure_class->set_modifier("credits", -1);
 		$tech = $this->tech_tree->get_tech(2);
 		$tech->add_structure_class($structure_class);
 		$this->structure_classes[$structure_class->id] = $structure_class;
 		
 		$structure_class = new VOID_STRUCTURE_CLASS();
 		$structure_class->id = 6;
-		$structure_class->name = "Research Lab";		
+		$structure_class->name = "Research Lab";
+		$structure_class->work_required = 30;
 		$structure_class->set_modifier("research", 10);
+		$structure_class->set_modifier("credits", -1);
 		$tech = $this->tech_tree->get_tech(6);
 		$tech->add_structure_class($structure_class);
 		$this->structure_classes[$structure_class->id] = $structure_class;
 		
 		$structure_class = new VOID_STRUCTURE_CLASS();
 		$structure_class->id = 6;
-		$structure_class->name = "Galactic Radio Station";		
+		$structure_class->name = "Galactic Radio Station";
+		$structure_class->work_required = 60;
 		$structure_class->set_modifier("influence", 10);
+		$structure_class->set_modifier("credits", -10);
+		$tech = $this->tech_tree->get_tech(5);
+		$tech->add_structure_class($structure_class);
+		$this->structure_classes[$structure_class->id] = $structure_class;
+		
+		$structure_class = new VOID_STRUCTURE_CLASS();
+		$structure_class->id = 7;
+		$structure_class->name = "80s Cartoon Museum";
+		$structure_class->set_unique("world");
+		$structure_class->work_required = 300;
+		$structure_class->set_modifier("influence", 20);		
 		$tech = $this->tech_tree->get_tech(5);
 		$tech->add_structure_class($structure_class);
 		$this->structure_classes[$structure_class->id] = $structure_class;
 		
 		
-		$ship_class = new VOID_UPGRADE_CLASS();
-		$ship_class->id = 5;
-		$ship_class->name = "Space Nebula Shop";
-		$ship_class->work_required = 40;						
-		$this->upgrade_classes[$ship_class->id] = $ship_class;
+		$power_class = new VOID_UPGRADE_CLASS();
+		$power_class->id = 5;
+		$power_class->name = "Space Nebula Shop";
+		$power_class->work_required = 40;
+		$tech = $this->tech_tree->get_tech(4);
+		$tech->add_power_class($power_class);
+		$this->upgrade_classes[$power_class->id] = $power_class;
 		
 		
 		$starting_tech = $this->tech_tree->get_starting_tech();
@@ -338,8 +375,13 @@ class VOID {
 		
 		header("Content-type: application/json");
 		$return = array();
+		$return['debug'] = VOID_DEBUG::dump();
 		$return['map'] = $this->map->dump_map($player_id);
-		$return['players'] = $this->players;
+		$return['players'] = [];
+		foreach($this->players as $player){
+			$return['players'][$player->id] = $player->dump($player_id);
+		}
+		$return['players'][$player_id] = $this->players[$player_id];
 		$return['player'] = $this->players[$player_id];
 		$return['logs'] = VOID_LOG::get($player_id);
 		if ($first){
@@ -360,14 +402,19 @@ class VOID {
 		
 		header("Content-type: application/json");
 		$return = array();		
-		$return['players'] = $this->players;
-		$return['player'] = $this->players[$player_id];		
+		$return['players'] = [];
+		foreach($this->players as $player){
+			$return['players'][$player->id] = $player->dump($player_id);
+		}
+		$return['players'][$player_id] = $this->players[$player_id];
+		$return['player'] = $this->players[$player_id];
+		$return['debug'] = VOID_DEBUG::dump();	
 		//$this->map->players = $this->players;
 		echo json_encode($return, JSON_NUMERIC_CHECK);
 	}
 	
 	public function reset_player_state(){
-		foreach($this->players as &$player){
+		foreach($this->players as $player){
 			$player->done = false;
 			//$player->done = false;
 		}
@@ -375,7 +422,7 @@ class VOID {
 	public function are_players_finished(){
 		return true;
 		// for now return true, so turn can be processed quickly for testing		
-		foreach($this->players as &$player){
+		foreach($this->players as $player){
 			if (!$player->done){
 				return false;
 			}
@@ -387,9 +434,28 @@ class VOID {
 	// including moving, battle and research
 	public function process_turn(){
 		
-		
-		foreach($this->players as &$player){			
+		// reset player values 
+		foreach($this->players as $player){			
 			VOID_LOG::init($player->id);
+			$player->sector_count = 0;
+			$player->tech_count = 0;
+			$player->sources = [];
+		}
+		
+		// income and upkeep
+		foreach($this->players as $player){			
+			// update resources on the values calculate previously
+			$player->apply_resources();
+		}
+		
+		// resolve tech tree
+		foreach($this->players as $player){
+			$player->update_research($player->research_per_turn, $this->tech_tree);
+		}
+		
+		// reset players per turn to 0
+		foreach($this->players as $player){
+			$player->reset_per_turn();
 		}		
 		
 		$temp_fleet_cache = array();
@@ -400,29 +466,40 @@ class VOID {
 		$combat_sectors = [];
 		
 		// run through every fleet in the game and find the ones with orders
-		// calculate 
-		foreach($this->map->sectors as $key => &$sector){
+		foreach($this->map->sectors as $key => $sector){
 			if ($sector->fleets){
-				$combat_sectors[] =& $sector;
-				foreach($sector->fleets as $player_id => &$player_fleets){
-					foreach($player_fleets as &$fleet){
+				$combat_sectors[] = $sector;
+				foreach($sector->fleets as $player_id => $player_fleets){
+					foreach($player_fleets as $fleet){
 						$fleet->reset_movement_points();
-						$temp_fleet_cache[] =& $fleet;
-						
+						$temp_fleet_cache[] = $fleet;						
 					}
 				}
 			}
-			if ($sector->system && $sector->system->owner){
-				$sector->system->process_orders($sector, $this);
-				$temp_systems[] =& $sector->system;
+			if ($sector->system && $sector->system->owner){				
+				$temp_systems[] = $sector->system;
+				
+				$sector->system->upkeep();
+				
+				// construction
+				// here for now at least				
+				$sector->system->process_orders($sector, $this);			
 			}
 		}
+
+		
+		// combat + fleet orders
+		
+		// if two fleets cross paths resolve a battle
+		// if two fleets try to move to the same space, resolve a battle
+		// if more than two fleets trigger this, pick 2 opposing ones randomly
+		// first fleet to move into space cancels other moves 
 		
 		// loop until all fleets have used up all their movement capacity
 		$continue = true;
 		while ($continue){
 			$continue = false;
-			foreach($temp_fleet_cache as &$fleet){
+			foreach($temp_fleet_cache as $fleet){
 				$order = $fleet->get_order();
 				if ($order){
 					if ($order->type == "move" && $fleet->movement_points > 0){
@@ -436,7 +513,7 @@ class VOID {
 								//$sector2->add_fleet($fleet);
 								//$sector1->remove_fleet($fleet);
 								$fleet->move($order->x, $order->z, $this);
-								$combat_sectors[] =& $sector2;
+								$combat_sectors[] = $sector2;
 							}else {
 								$fleet->movement_points = 0;
 								if ($sector2->movement_cost > $fleet->movement_capacity){
@@ -450,10 +527,12 @@ class VOID {
 					}else if ($order->type == "colonise"){
 						$sector = $this->map->get_sector($fleet->x, $fleet->z);
 						if ($sector->system && $fleet->get_special("colony")){							
-							$sector->system->colonise($this->players[$fleet->owner], $this, $order->planet_id);
-							$fleet->movement_points = 0;
+							$sector->system->colonise($this->players[$fleet->owner], $this, $order->planet_id);							
+							$fleet->movement_points = 0;							
+							$sector->system->resolve();
+							$sector->system->update();							
 							if ($fleet->remove_special("colony")){
-								// delete the fleet!
+								// delete the fleet!								
 								$sector->clean_up();
 							}							
 							//$sector->system->owner = $fleet->owner;
@@ -466,58 +545,30 @@ class VOID {
 			}
 			
 			// resolve combat
-			foreach($combat_sectors as &$sector){
+			foreach($combat_sectors as $sector){
 				$sector->resolve_combat();
 			}
 			$combat_sectors = [];
 		}
 		
-		// find all planets with orders
+		// resolve building orders and growth
+		foreach($temp_systems as $system){
+			$system->resolve();
+		}				
 		
-		// process fleet move orders
 		
-		// if two fleets cross paths resolve a battle
-		// if two fleets try to move to the same space, resolve a battle
-		// if more than two fleets trigger this, pick 2 opposing ones randomly
-		// first fleet to move into space cancels other moves 
 		
-		// resolve income from all systems
-		foreach($this->players as &$player){
-			$player->credits_per_turn = 0;
-			$player->research_per_turn = 0;			
-		}		
-			
-		foreach($temp_systems as &$system){
-			$player =& $this->players[$system->owner->id];
-			$system->apply();
+		foreach($temp_systems as $system){
 			$system->update();
-			
-			$credits_per_turn = $system->get_credits_income();
-			$player->credits_pool += $credits_per_turn;
-			$player->credits_per_turn += $credits_per_turn;
-			
-			$research_per_turn = $system->get_research_income();
-			$player->research_pool += $research_per_turn;
-			$player->research_per_turn += $research_per_turn;				
 		}
+		foreach($temp_fleet_cache as $fleet){
+			$fleet->update($this);
+		}		
 		
-		foreach($this->players as &$player){
-			$player->update_morale(0);
-		}
-				
-		foreach($temp_systems as &$system){
-			$player = $system->owner;			
-			$player->apply_morale($system->get_morale($player));
-		}
-		
-		foreach($this->players as &$player){			
-			$player->update_research($player->research_per_turn, $this->tech_tree);
-		}
-				
+		//check for victory and update victory totals	
+
 		$this->map->update_map($this);
-		
 		$this->reset_player_state();
-		
 		//$this->save();
 	}
 	

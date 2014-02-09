@@ -26,6 +26,7 @@ class VOID_SYSTEM_VIEW {
 	public $production_per_turn;
 	
 	public $id;
+	public $name;
 	
 	public $build_queue;
 	public $structures;
@@ -37,6 +38,7 @@ class VOID_SYSTEM_VIEW {
 	function __construct($system, $player_id){
 		$this->id = $system->id;
 		$this->yours = false;
+		$this->name = $system->name;
 		if ($system->owner){
 			$this->owner = $system->owner->id;
 			$this->influence_pool = $system->influence_pool;
@@ -164,6 +166,14 @@ class VOID_SYSTEM {
 		return false;
 	}
 	
+	public function set_name($name){		
+		if ($name){
+			$this->name = $name;
+		}else {
+			$this->name = "";
+		}
+	}
+	
 	public function add_structure($structure){
 		// should check to see if it already exists etc..
 		if ($structure->class->is_unique("empire")){
@@ -176,12 +186,39 @@ class VOID_SYSTEM {
 		$this->influenced_sectors[$sector->id] = $sector;
 	}
 	
-	public function update(){		
+	// apply modifers to system itself and to player 
+	public function upkeep(){
+		$this->influence_pool += $this->influence_per_turn;
+		$this->food_pool += $this->food_per_turn;				
+	}
+	
+	// resolve orders
+	public function resolve(){				
+		if ($this->influence_pool >= $this->influence_growth_threshold ){
+			$this->influence_pool = 0;
+			$this->influence_level++;
+			$this->influence_growth_threshold = ($this->influence_level+1) * 3;
+		}
+		if ($this->food_pool >= $this->food_growth_threshold ){
+			$this->population++;			
+			$this->food_pool = 0;
+			$this->food_growth_threshold = pow(2, $this->population);
+			VOID_LOG::write($this->owner->id, "System at (".$this->x.",".$this->z.") has grown.");
+		}
+		$this->apply_morale();
+	}
+	
+	// recalcuate income from this system
+	public function update(){
+		$this->credits_per_turn = $this->get_credits_income();
+		$this->owner->update_resource("credits",$this->credits_per_turn,"system");
+		
+		$this->research_per_turn = $this->get_research_income();
+		$this->owner->update_resource("research",$this->research_per_turn,"system");
+	
 		$this->food_per_turn = $this->get_food_income();
-		$this->production_per_turn = $this->get_production_income();
-		$this->influence_growth_threshold = ($this->influence_level+1) * 3;	
+		$this->production_per_turn = $this->get_production_income();		
 		$this->influence_per_turn = $this->get_influence_income();
-		$this->food_growth_threshold = pow(2, $this->population);
 		
 		if ($this->influence_level >= 10){
 			$this->influence_size = 4;
@@ -196,19 +233,7 @@ class VOID_SYSTEM {
 	}
 	
 	public function apply(){
-		$this->influence_pool += $this->influence_per_turn;
-		if ($this->influence_pool >= $this->influence_growth_threshold ){
-			$this->influence_pool = 0;
-			$this->influence_level++;
-			$this->influence_growth_threshold = ($this->influence_level+1) * 3;
-		}
-		$this->food_pool += $this->food_per_turn;
-		if ($this->food_pool >= $this->food_growth_threshold ){
-			$this->population++;			
-			$this->food_pool = 0;
-			VOID_LOG::write($this->owner->id, "System at (".$this->x.",".$this->z.") has grown.");
-			$this->update();
-		}		
+		
 	}
 	
 	
@@ -325,6 +350,19 @@ class VOID_SYSTEM {
 		return $output;
 	}
 	
+	public function apply_morale(){				
+		$this->owner->apply_morale(-$this->population, "population");
+		$this->owner->apply_morale(-3, "system");		
+		if ($this->structures){
+			foreach($this->structures as $structure){
+				$modifier = $structure->class->get_modifier("morale");
+				if ($modifier){
+					$this->owner->apply_morale($modifier, "structures");
+				}
+			}
+		}				
+	}
+	
 	public function get_morale(){
 		$morale = 0;
 		$morale = $morale - $this->population;
@@ -367,8 +405,7 @@ class VOID_SYSTEM {
 						
 		$planet->colonise();
 		$this->owner = $owner;				
-		
-		$this->update();
+				
 		$this->docked_fleet = new VOID_FLEET();
 		$this->docked_fleet->capacity = 10;
 		$core->fleets[$this->docked_fleet->id] = $this->docked_fleet;
@@ -395,7 +432,6 @@ class VOID_SYSTEM {
 	public function process_orders($sector, $core){
 		global $ship_classes;
 		// if a construction order get the systems production and see if the item is done yet
-		$this->production_per_turn = $this->get_production_income();
 		
 		// apply the progress, if an item is returned, the progress is done, otherwise it is not
 		$item = $this->build_queue->progress($this->production_per_turn);
@@ -420,12 +456,22 @@ class VOID_SYSTEM {
 					$fleet->add_ship($ship);
 					$sector->add_fleet($fleet);
 				}
-				VOID_LOG::write($this->owner->id, "A ship (".$ship->class->name.") was built at (".$this->x.",".$this->z.")");
+				
+				VOID_LOG::write($this->owner->id, "[ship] A ship (".$ship->class->name.") was built at (".$this->x.",".$this->z.")");
 			}else if ($item->type == "structure"){
 				$structure_class = $item->data;
-				$structure = new VOID_STRUCTURE($structure_class, $this->owner->id);
+				// check for world uniqueness
+				if ($structure_class->world_unique){
+					// make sure no one else can build it now.
+					foreach($core->players as $player){
+						$player->update_available_structure_class($structure_class->id, true);
+					}
+					// if 2 people finish at the same time, for now let both build
+					// at the end of process turn, purge items from queues they cannot build.
+				}
+				$structure = new VOID_STRUCTURE($structure_class, $this->owner->id);				
 				$this->add_structure($structure);
-				VOID_LOG::write($this->owner->id, "A structure (".$structure->class->name.") was built at (".$this->x.",".$this->z.")");
+				VOID_LOG::write($this->owner->id, "[structure] A structure (".$structure->class->name.") was built at (".$this->x.",".$this->z.")");
 			}
 		}
 		

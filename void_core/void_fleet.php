@@ -135,6 +135,18 @@ class VOID_FLEET {
 		return false;
 	} 
 	
+	public function upkeep($core){
+		foreach($this->ships as $ship){
+			//$core->players[$this->owner]->update_resource("credits", -2, "fleet");
+		}
+	}
+	
+	public function update($core){
+		foreach($this->ships as $ship){
+			$ship->update($core);
+		}
+	}
+	
 }
 
 
@@ -230,6 +242,10 @@ class VOID_SHIP {
 	
 	public function get_special($special=""){
 		return $this->class->get_special();
+	}
+	
+	public function update($core){
+		$core->players[$this->owner]->update_resource("credits", -2, "ship");
 	}
 	
 }

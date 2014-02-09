@@ -35,6 +35,8 @@ class VOID_MAP {
 	}
 	public function generate($width, $height, $core){
 		global $void_planet_classes;
+		global $void_system_names;
+		shuffle($void_system_names);
 		
 		$this->map_width = $width;
 		$this->map_height = $height;
@@ -42,9 +44,12 @@ class VOID_MAP {
 			for ($x = -floor($z/2); $x < $width - floor($z/2); $x++){
 				$this->sectors['x'.$x.'z'.$z] = new VOID_SECTOR($x, $z);
 				$current_sector =& $this->sectors['x'.$x.'z'.$z];
-				if (rand(1,10) < 3){
+				if (rand(1,10) < 2){
 					$current_sector->star = 1;
 					$current_sector->system = new VOID_SYSTEM($x, $z);
+					$name = array_pop($void_system_names);					
+					$current_sector->system->set_name($name);
+					
 					$core->systems[$current_sector->system->id] =& $current_sector->system;
 					while (count($current_sector->system->planets) < rand(3,6)){
 						$planet = new VOID_PLANET();
@@ -54,7 +59,7 @@ class VOID_MAP {
 					}
 				}
 				$current_sector->set_type(1);
-				if (rand(1,10) < 2){
+				if (rand(1,11) < 3){
 					$current_sector->set_type(2);
 				}else {
 					if (rand(1,15) < 2){
@@ -74,15 +79,15 @@ class VOID_MAP {
 		$colors = [
 			["background" => "rgba(0,155,0,0.2)", "border"=>"rgba(0,155,0,1)"],
 			["background" => "rgba(155,0,0,0.2)", "border" => "rgba(155,0,0,1)"],
-			["background" => "rgba(0,0,155,0.2)", "border" => "rgba(0,0,155,1)"],
-			["background" => "rgba(155,155,0,0.2)", "border" => "rgba(155,155,0,0.6)"],
-			["background" => "rgba(155,0,155,0.2)", "border" => "rgba(155,0,155,0.6)"],
-			["background" => "rgba(0,155,155,0.2)", "border" => "rgba(0,155,155,0.6)"],
-			["background" => "rgba(155,255,155,0.2)", "border" => "rgba(155,255,155,0.6)"],
-			["background" => "rgba(0,255,255,0.2)", "border" => "rgba(0,255,255,0.6)"],
-			["background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)"],
-			["background" => "rgba(255,205,0,0.2)", "border" => "rgba(255,205,0,0.6)"],
-			["background" => "rgba(205,255,0,0.2)", "border" => "rgba(205,255,0,0.6)"],
+			["background" => "rgba(0,71,251,0.2)", "border" => "rgba(0,71,251,1)"],
+			["background" => "rgba(255,174,0,0.2)", "border" => "rgba(255,174,0,1)"],
+			["background" => "rgba(162,0,186,0.2)", "border" => "rgba(162,0,186,1)"],
+			["background" => "rgba(7,245,231,0.2)", "border" => "rgba(7,245,231,1)"],
+			["background" => "rgba(255,246,0,0.2)", "border" => "rgba(255,246,0,1)"],
+			["background" => "rgba(250,147,254,0.2)", "border" => "rgba(250,147,254,1)"],
+			["background" => "rgba(161,255,151,0.2)", "border" => "rgba(161,255,151,1)"],
+			["background" => "rgba(244,169,169,0.2)", "border" => "rgba(244,169,169,1)"],
+			["background" => "rgba(72,44,0,0.2)", "border" => "rgba(118,78,31,1)"],
 			["background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)"],
 			["background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)"],
 		];
@@ -111,11 +116,9 @@ class VOID_MAP {
 			
 			//$this->sectors[$key]->system->food_per_turn = mt_rand(1,10);
 			
-			$player->credits_per_turn = $this->sectors[$key]->system->get_credits_income();
-			$player->research_per_turn = $this->sectors[$key]->system->get_research_income();
-			
-			
-			
+			//$player->credits_per_turn = $this->sectors[$key]->system->get_credits_income();
+			//$player->research_per_turn = $this->sectors[$key]->system->get_research_income();
+
 			// create new fleet
 			$fleet = new VOID_FLEET();
 			$core->fleets[$fleet->id] = $fleet; 
@@ -123,18 +126,14 @@ class VOID_MAP {
 			$ship = new VOID_SHIP($core->ship_classes[1], $player->id);
 			$fleet->add_ship($ship);
 			$this->sectors[$key]->add_fleet($fleet);
+			$fleet->update($core);
 			
 			$structure = new VOID_STRUCTURE($core->structure_classes[1]);
 			$this->sectors[$key]->system->add_structure($structure);
-			
-			$player->apply_morale($this->sectors[$key]->system->get_morale());
-			$this->sectors[$key]->system->update();
-			
-			
-			//$key = array_rand($this->sectors,1);
-			//$ship = new VOID_SHIP($ship_classes[1], $player->id);
-			//$this->sectors[$key]->add_ship($ship, $core);
-			
+						
+			$this->sectors[$key]->system->resolve();						
+			$this->sectors[$key]->system->update();			
+
 		}
 		
 		$this->update_map($core);
@@ -224,13 +223,19 @@ class VOID_MAP {
 		
 		
 		// update meeting of new players 
-		foreach($this->sectors as &$sector){			
+		foreach($this->sectors as $sector){			
 			$player_ids = $sector->get_vision();
 			foreach($player_ids as $player_id){
 				if ($sector->owner){
 					if ($core->players[$player_id]->add_met_player($sector->owner->id)){
 						VOID_LOG::write($player_id, "You have met ".$sector->owner->name);
 					}
+				}else if ($sector->get_fleet_owners()){
+					foreach($sector->get_fleet_owners() as $owner_id){
+						if ($core->players[$player_id]->add_met_player($owner_id)){
+							VOID_LOG::write($player_id, "You have met ".$core->players[$owner_id]->name);
+						}
+					} 
 				}
 			}
 		}

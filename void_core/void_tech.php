@@ -69,40 +69,40 @@ class VOID_TECH_TREE {
 		$tech = new VOID_TECH(1, "Space Flight", 10);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(2, "Geothermal Frakking", 30);
+		$tech = new VOID_TECH(2, "Geothermal Frakking", 40);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(3, "Xenobiology", 30);
+		$tech = new VOID_TECH(3, "Xenobiology", 40);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(4, "Interstellar Trade", 30);
+		$tech = new VOID_TECH(4, "Interstellar Trade", 40);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(5, "Subspace Communications", 30);
+		$tech = new VOID_TECH(5, "Subspace Communications", 40);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(6, "Lukas String Theory", 30);
+		$tech = new VOID_TECH(6, "Lukas String Theory", 40);
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(7, "Galactic Currency", 200);
+		$tech = new VOID_TECH(7, "Galactic Currency", 800);
 		$tech->add_req(4);
 		$tech->add_req(5);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(8, "Organic Manufacturing", 200);
+		$tech = new VOID_TECH(8, "Organic Manufacturing", 800);
 		$tech->add_req(3);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(9, "Laser Amplification", 200);
+		$tech = new VOID_TECH(9, "Laser Amplification", 800);
 		$tech->add_req(2);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(10, "Gravitational Mapping", 200);
+		$tech = new VOID_TECH(10, "Gravitational Mapping", 800);
 		$tech->add_req(5);
 		$tech->add_req(6);
 		$this->add_tech($tech);
@@ -131,6 +131,7 @@ class VOID_TECH {
 	
 	public $ship_classes;
 	public $structure_classes;
+	public $power_classes;
 	
 	function __construct($id, $name, $cost){
 		$this->id = $id;
@@ -171,6 +172,9 @@ class VOID_TECH {
 	}
 	public function add_structure_class($structure_class){
 		$this->structure_classes[] = $structure_class;
+	}
+	public function add_power_class($power_class){
+		$this->power_classes[] = $power_class;
 	}
 }
 

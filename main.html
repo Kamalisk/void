@@ -50,7 +50,8 @@
 				<button type="button" onclick="map_zoom(0);"> - </button></li>
 				-->
 				<li class="menu_item"><button id="tactical_button" type="button" onclick="change_view('tactical');">Tactical</button></li>
-				<li class="menu_item"><button id="reearch_button" type="button" onclick="change_view('research');">Research</button></li>
+				<li class="menu_item"><button id="research_button" type="button" onclick="change_view('research');">Research</button></li>
+				<li class="menu_item"><button id="diplomacy_button" type="button" onclick="change_view('diplomacy');">Diplomacy</button></li>
 				<li class="menu_item"><button id="end_turn_button" type="button" onclick="end_turn();"> End Turn</button></li>
 				<li class="menu_item"><button id="reset_game_button" type="button" onclick="reset_game();"> Reset</button></li>
 		  </ul>
@@ -114,13 +115,54 @@
 		</div>
 	</div>
 	
+	<div id="diplomacy_view" style="display : none;" class="view">
+		
 	</div>
+	
+	</div>
+	
+	<script id="diplomacy_template" type="text/x-handlebars-template">
+		<div id="diplomacy_player_list_container">
+			<ul class="diplomacy_player_list">
+				{{#each players}}
+				
+				<li class="diplomacy_player_item" onclick="show_diplomacy_detail({{this.id}})" style="background-color : {{this.color.background}}; border-color : {{this.color.border}}">
+				<h3>{{name}}</h3>
+				{{#if this.met}}
+				<p>{{sector_count}}</p>
+				{{/if}}
+				</li>
+				
+				{{/each}}
+			</ul>
+		</div>
+		<div id="diplomacy_detail_view">
+		
+		</div>
+	</script>
+	
+	<script id="diplomacy_detail_template" type="text/x-handlebars-template">
+		<div class="diplomacy_detail_view" style="border-color : {{color.border}}">
+			<h2>{{name}}</h2>
+			<h3>Trade</h3>
+			<h3>Status</h3>
+			<p>{{sector_count}}</p>
+		</div>
+	</script>
 	
 	<script id="event_log_template" type="text/x-handlebars-template">
 		<div>
 			<ul>
 			{{#each logs}}
-				<li class="event_log_item"><img src="images/icons/production.png" alt="Production" title="Production"> {{this}}</li>
+				<li class="event_log_item">
+				{{#compare this.category "==" "ship"}}
+				<img src="images/icons/production.png" alt="ship" title="ship">
+				{{/compare}}
+				{{#compare this.category "==" "generic"}}
+				<img src="images/icons/happy.png" alt="Generic" title="Generic">
+				{{/compare}}
+				{{this.text}}
+				</li>
 			{{/each}}
 			</ul>
 		</div>
@@ -164,15 +206,19 @@
 						{{/if}}
 						
 					{{/if}}			
-					<div class="tech_rewards">
-					
-					
+					<div class="tech_rewards">										
 					{{#each ship_classes}}
-					<span><img src="images/fleet_f.png"> {{name}}</span>
+					<span><img width="16" height="16" src="images/ship.png"> {{name}}</span>
 					{{/each}}
 					{{#each structure_classes}}
-					<span><img src="images/icons/production.png"> {{name}}</span>
+					<span><img width="16" height="16" src="images/structure.png"> {{name}}</span>
 					{{/each}}
+					{{#each power_classes}}
+					<span><img width="16" height="16" src="images/power.png"> {{name}}</span>
+					{{/each}}
+					{{#each upgrade_classes}}
+					<span><img width="16" height="16" src="images/power.png"> {{name}}</span>
+					{{/each}}					
 					</div>
 				</div>
 			{{/each}}
@@ -237,6 +283,13 @@
 					{{/if}}
 				{{/if}}
 			</tr>			
+			
+			{{#if system.name}}
+				<tr>
+				<th>Name</th>
+				<td>{{system.name}}</td>
+				</tr>
+			{{/if}}
 			
 			{{#if system.influence_level}}
 			<tr>
@@ -310,12 +363,12 @@
 			{{#if system.owner}}	
 			{{#if space_dock}}
 				<tr>
-				<th>Space dock</th>
+				<th>Space dock (Max 3)</th>
 				<td>
 				{{#if space_dock.fleet}}
 				<ul>
 				{{#each space_dock.fleet.ships}}
-				<li>Ship {{id}} </li>
+				<li>{{class.name}}</li>
 				{{/each}}
 				</ul>
 				{{else}}
@@ -586,30 +639,36 @@
 	
 	
 	<script id="player_resources_template" type="text/x-handlebars-template">
-		<img src="images/icons/credits.png"> {{credits_pool}} (+{{credits_per_turn}})
-    <span  class="tooltip-template" data-tooltip-id="player-research-tooltip">
+		<img src="images/icons/credits.png"> {{credits_pool}} (+{{credits_per_turn}})    
+		<span  class="tooltip-template" data-tooltip-id="player-morale-tooltip">
+    <img src="images/icons/happy.png"> 
+    <span class="{{#compare morale "<" 0}}negative{{/compare}}{{#compare morale ">" 0}}positive{{/compare}}"> 
+    {{morale}} 
+   	</span>
+    </span>
+    <div class="tooltip" id="player-morale-tooltip">
+			{{#compare morale "<" 0}}
+			<p>Negative morale lowers your systems growth to 10% of normal</p>
+			{{/compare}}
+			{{#if sources.morale}}
+			{{#with sources.morale}}
+			<ul>				
+				<li>Population: {{population}}</li>
+				<li>Systems: {{system}}</li>
+				<li>Structures: {{structures}}</li>
+			</ul>
+			{{/with}}
+			{{/if}}
+			
+		</div>
+		
+		<span  class="tooltip-template" data-tooltip-id="player-research-tooltip">
     <img src="images/icons/research.png"> {{current_tech.class.name}} ({{research_time}} turns) 
     </span>
     <div class="tooltip" id="player-research-tooltip">
 			{{current_tech.progress}} / {{current_tech.class.cost}}  +{{research_per_turn}}
 		</div>
-		<span  class="tooltip-template" data-tooltip-id="player-morale-tooltip">
-    <img src="images/icons/happy.png"> <span class="{{#compare morale "<" 0}}negative{{/compare}}{{#compare morale ">" 0}}positive{{/compare}}"> {{morale}} </span>
-    </span>
-    <div class="tooltip" id="player-morale-tooltip">
-			{{#compare morale "<" 0}}
-			<p></p>
-			{{/compare}}
-			<p>
-			
-		</div>
-		<div class="events">
-			<ul>
-			{{#each logs}}
-				<li>{{this}}</li>
-			{{/each}}
-			</ul>
-		</div>
+		
 	</script>
 	
 	

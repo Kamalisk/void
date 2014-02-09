@@ -188,7 +188,27 @@ $void_sector_classes[5] = [
 ];
 
 
-
+$void_system_names = [
+"Tau", "Sol", "Notts", "Trygve", "Strongem", "Allan", "Camp", 
+"Einar", "Cylon", "Caprica", "Trunk", "Cato", "Pike", "Cerberus", "Wotan",
+"Odin", "Crichton", "Omega", "Dominus", "Rygel", "Metacol Rex", "Zeus", "Hera", 
+"Xena", "Gabrielle", "Lawless", "Nene", "Priss", "Lena", "Sylia", "Yotsuba", 
+"Manilla", "Oddish", "Pikachu", "Ash", "Pinkie", "Fluttershy", "Rarity", 
+"Cheese", "Carmex", "Oscilon", "Drewan", "Omicron", "Triscolon", "Frodo", 
+"Andromeda", "Tyr", "Eli", "Heimdall", "Thor", "Apophis", "Edea", 
+"Risa", "Crima", "Muan", "Nerv", "Lansbury", "Gosling", "Damon", "Pine",
+"Sharoo", "Lambtron", "Lister", "Esseb", "Quinton", "Quade", "Riker", 
+"Crusher", "Worf", "Yar", "Torres", "Neelix", "Nazgul", "Shepard",
+"Abydos", "Aegis", "Alderaan", "Athena", "Antar", "Avalon", "Belzagor", 
+"Chiron", "Darwin", "Demeter", "Dosadi", "Dothraki", "Eternia", 
+"Gaia", "Gallifrey", "Hesikos", "Hydros", "Ishtar", "Ireta", 
+"Krull", "Lithia", "Lumen", "Minerva", "Nidor", "Yggdrasil", 
+"Pandora", "Pern", "Skaro", "Takis", "Thundera", "Tiamat", "Tirol", "Titan",
+"Vekta", "Zahir", "Zeist", "Blostrupmoen", "Clements", "Leder", "Rist", 
+"Sondre", "Dyson", "Niobium", "Parker", "Hardison", "Chaos", "Drakon",
+"Baratheon", "Armitage", "Tyrell", "Lanister", "Stark", "Targaryn", 
+"Hyrule", "Brimstar", "Zebes"
+];
 
 
 

@@ -61,7 +61,11 @@ class VOID_STRUCTURE_CLASS {
 	}
 	
 	function set_unique($type="empire"){
-		$this->empire_unique = true;
+		if ($type == "world"){
+			$this->world_unique = true;
+		}else {
+			$this->empire_unique = true;
+		}
 	}
 	
 	function is_unique($type){

@@ -40,6 +40,8 @@ var first_loading_complete = false;
 
 var waiting_for_players = false;
 
+var void_debug;
+
 $(document).ready(function (){
 	Handlebars.registerHelper('compare', function (lvalue, operator, rvalue, options) {
 
@@ -117,8 +119,29 @@ function update_interface(){
 		show_map_panel_system(hex_selected);	
 	}
 	render_research();
+	//render_diplomacy();
 }
 
+
+function parse_logs(lines){
+	var logs = [];
+	$.each(lines, function(index, value){
+		var log_obj = {};
+		log_obj.text = value;
+		
+		var matches = log_obj.text.match(/^\[(.+)\]/i, "");
+		if (matches && matches[1]){
+			log_obj.category = matches[1];
+		}else {
+			log_obj.category = "generic";
+		}
+		log_obj.text = log_obj.text.replace(/^\[.+\]/i, "");
+		
+		logs.push(log_obj);
+	});	
+	
+	return logs;
+}
 
 
 var minimap_drag = false;
@@ -199,6 +222,11 @@ function append_template(template_id, data, element_id){
             'top': $($el).position().top - ($($el).position().top + $($el).height() - $(window).height() ) - 40
         });
         }
+        if ($($el).position().top <= 0){
+        	$el.css({
+            'top':  40
+        });
+        }
     	}
 		});
 	});
@@ -217,6 +245,9 @@ function change_view(view_id){
 	$('.view').hide();
 	if (view_id == "research"){
 		render_research();
+	}
+	if (view_id == "diplomacy"){
+		render_diplomacy();
 	}
 	
 	$('#'+view_id+'_view').show();
@@ -248,6 +279,23 @@ function render_research(){
 		temp_obj['tiers'][this.tier].push(this);
 	});
 	append_template("tech_tree_template",temp_obj,"tech_tree_items");
+}
+
+function render_diplomacy(){
+	var temp_obj = new Object();	
+	temp_obj['players'] = players;	
+	append_template("diplomacy_template",temp_obj,"diplomacy_view");
+	/*
+	$("#diplomacy_player_list_container").customScrollbar({
+		hScroll: false,
+		vScroll: true, 
+		skin: "default-skin"	
+	});
+	*/
+}
+
+function show_diplomacy_detail(player_id) {		
+	append_template("diplomacy_detail_template",players[player_id],"diplomacy_detail_view");
 }
 
 function show_map_panel_system(hex){
@@ -290,6 +338,11 @@ function show_map_panel_system(hex){
 			}
 			show_map_panel_fleet(this.id);
 		});		
+	}
+	if (hex.space_dock && hex.space_dock.fleet && hex.space_dock.fleet.ships){
+		$.each(hex.space_dock.fleet.ships, function (){
+			this.class = ship_class_cache[this.class_id];					
+		});
 	}
 	
 	redraw_overlay();
@@ -337,7 +390,7 @@ function show_system_view(x, z){
 	
 	if (hex.owner){
 		hex.owner_object = players[hex.owner];
-	}
+	}	
 	
 	if (hex.system){
 		$.each(hex.system.planets, function (){
@@ -393,8 +446,8 @@ function show_system_view(x, z){
 			this.turns = turns;
 		});
 	}
-	if (hex.owner_object.available_ship_classes){
-		$.each(hex.owner_object.available_ship_classes, function (){
+	if (hex.owner_object && hex.owner_object.id == player.id && player.available_ship_classes){
+		$.each(player.available_ship_classes, function (){
 			if (hex.system.production_per_turn){
 				var turns = Math.ceil(this.work_required / hex.system.production_per_turn);		
 			}else {
@@ -801,9 +854,14 @@ function handle_fetch_game_data(data){
 		hex_map = data.map.sectors;
 		player = data.player;
 		players = data.players;
+		if (data.debug){
+			//void_debug = data.debug;
+		}
+		
 		if (data.logs){
 			event_logs = data.logs;
 			player.logs = data.logs;
+			player.logs = parse_logs(player.logs);
 		}
 		if (data.planet_classes){
 			planet_class_cache = data.planet_classes;
@@ -851,12 +909,16 @@ function status_check(){
 	$.get("main.php"+location.search,{'action':'status'},handle_status_check);	
 }
 function handle_status_check(data){
+	if (data.debug){
+		void_debug = data.debug;
+	}
 	if (data && data.player){
 		if (data.player.done == false){
 			fetch_game_data();
 			return;
 		}
 	}
+	
 	setTimeout(status_check, 4000);
 }
 

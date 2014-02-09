@@ -232,6 +232,14 @@ class VOID_SECTOR {
 		return false;
 	}
 	
+	public function get_fleet_owners(){
+		$return = [];
+		foreach ($this->fleets as $player_id => $player_fleets){
+			$return[] = $player_id;
+		}
+		return $return;
+	}
+	
 	public function get_combat_fleets(){
 		$fleets = array();
 		foreach ($this->fleets as $player_id => &$player_fleets){
@@ -356,6 +364,7 @@ class VOID_SECTOR {
 	
 	public function update_owner($core){
 		if (isset($this->system->owner)){
+			$this->owner->sector_count++;
 			$this->owner = $this->system->owner;
 			return true;
 		}
@@ -377,8 +386,11 @@ class VOID_SECTOR {
 		}
 		//echo " -- ".$this->owner."  (".$this->x.", ".$this->z.") ";
 		if ($current_highest){
-			//echo "wtf ".$current_highest." ---";
-			$this->owner = $core->players[$current_highest];
+			//echo "wtf ".$current_highest." ---";			
+			$this->owner = $core->players[$current_highest];			
+		}
+		if ($this->owner){
+			$this->owner->sector_count++;
 		}
 		//echo "\n";
 	}

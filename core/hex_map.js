@@ -364,7 +364,7 @@ function redraw_overlay(){
 	}
 	if (hex_selected && hex_map['x'+hex_selected.x+'z'+hex_selected.z]){
 		var coords = hex_to_pixel(hex_selected, map_scroll_offset);
-		draw_hex(canvas, coords.x,  coords.y, hex_size-1, "red", "none");
+		draw_hex(canvas, coords.x,  coords.y, hex_size-3, "red", "none");
 		var system = hex_map['x'+hex_selected.x+'z'+hex_selected.z];
 		if (system && system.influence_size){
 			// draw border around range of influence
