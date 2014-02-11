@@ -189,7 +189,15 @@ class VOID_SYSTEM {
 	// apply modifers to system itself and to player 
 	public function upkeep(){
 		$this->influence_pool += $this->influence_per_turn;
-		$this->food_pool += $this->food_per_turn;				
+		
+		// check if a colony ship is being built
+		$item = $this->build_queue->get_front();
+		if ($item && $item->type == "ship" && $item->data->get_special("colony")){
+			// possibly add food to production
+			//$this->food_pool += $this->food_per_turn;	
+		}else {
+			$this->food_pool += $this->food_per_turn;	
+		}
 	}
 	
 	// resolve orders

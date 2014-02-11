@@ -12,7 +12,9 @@
 	<script type="text/javascript" src="core/jquery.custom-scrollbar.js"></script>
 	
 	<script type="text/javascript" src="core/jquery-ui-1.10.3.custom.min.js"></script>
-	
+		
+	<script type="text/javascript" src="core/ractive.js"></script>	
+		
 	<script type="text/javascript" src="core/handlebars.js"></script>
 	<script type="text/javascript" src="core/tooltipsy.js"></script>
 	
@@ -55,73 +57,77 @@
 				<li class="menu_item"><button id="end_turn_button" type="button" onclick="end_turn();"> End Turn</button></li>
 				<li class="menu_item"><button id="reset_game_button" type="button" onclick="reset_game();"> Reset</button></li>
 		  </ul>
+		  
     </nav>
     <div id="player_resources">
-    	
+    	rah 
+    	<span data-bind="text: player.id"></span>
     </div>
 	</div>
 	
 	<div id="view_container">
-	<div id="tactical_view" class="view">
-		<div id="galactic_map_container" style="position : absolute;">
-			<div id="galactic_map_dragger"></div>
-			<canvas id="galactic_map_hexes" width="2000px" height="2000px"></canvas>
-			<canvas id="galactic_map_objects" width="2000px" height="2000px"></canvas>
-			<canvas id="galactic_map_buffer_hexes" width="2000px" height="2000px" style="display : none;"></canvas>				
-			<canvas id="galactic_map_buffer_objects" width="2000px" height="2000px" style="display : none;"></canvas>				
-			<canvas id="galactic_map_overlay"></canvas>
+		<div id="tactical_view" class="view">
+			<div id="galactic_map_container" style="position : absolute;">
+				<div id="galactic_map_dragger"></div>
+				<canvas id="galactic_map_hexes" width="2000px" height="2000px"></canvas>
+				<canvas id="galactic_map_objects" width="2000px" height="2000px"></canvas>
+				<canvas id="galactic_map_buffer_hexes" width="2000px" height="2000px" style="display : none;"></canvas>				
+				<canvas id="galactic_map_buffer_objects" width="2000px" height="2000px" style="display : none;"></canvas>				
+				<canvas id="galactic_map_overlay"></canvas>			
+			</div>		
+			<div id="galactic_map_panel">
+				<div id="galactic_map_panel_content" style="display : none">
+					
+				</div>			
+			</div>
+			<div id="galactic_map_minimap">
+				<div id="galactic_map_mini_container">
+				<canvas id="galactic_map_mini" width="200px" height="200px"></canvas>
+				<canvas class="dragger" id="galactic_map_mini_overlay" width="200px" height="200px"></canvas>
+				</div>
+			</div>
 			
-		</div>
-		<div id="galactic_map_container_other" style="display : none;">
-			<canvas id="galactic_map2" width="1200px" height="1200px"></canvas>
-			<canvas id="galactic_map_objects2" width="1200px" height="1200px"></canvas>
-			<canvas class="dragger" id="galactic_map_overlay2" width="1200px" height="1200px"></canvas>
-		</div>
-		<div id="galactic_map_panel">
-			<div id="galactic_map_panel_content" style="display : none">
+			<div id="galactic_map_panel_fleet">
 				
-			</div>			
-		</div>
-		<div id="galactic_map_minimap">
-		<div id="galactic_map_mini_container">
-		<canvas id="galactic_map_mini" width="200px" height="200px"></canvas>
-		<canvas class="dragger" id="galactic_map_mini_overlay" width="200px" height="200px"></canvas>
-		</div>
-		</div>
-		
-		<div id="galactic_map_panel_fleet">
+			</div>
+			
+			<div id="galactic_map_event_list">
+				
+			</div>
+			
+			<div id="tooltip_block">
+			
+			</div>
+			
+			<div id="tooltip_box" style="border : solid white 3px; background-color : red; position : absolute; display : none; z-index : 50000">
+				tooltip content here!
+			</div>
 			
 		</div>
 		
-		<div id="galactic_map_event_list">
+		<div id="research_view" style="display : none;" class="view">
+			<!-- canvas used to drew line between techs 
+			<canvas id="tech_tree_back" width="800px" height="800px"></canvas>-->
+			<div id="tech_tree_items">
+				
+			</div>
+		</div>
+		
+		<div id="diplomacy_view" style="display : none;" class="view">
 			
-		</div>
-		
-		<div id="tooltip_block">
-		
-		</div>
-		
-		<div id="tooltip_box" style="border : solid white 3px; background-color : red; position : absolute; display : none; z-index : 50000">
-			tooltip content here!
-		</div>
-		
-	</div>
-	
-	<div id="research_view" style="display : none;" class="view">
-		<!-- canvas used to drew line between techs 
-		<canvas id="tech_tree_back" width="800px" height="800px"></canvas>-->
-		<div id="tech_tree_items">
-			
-		</div>
-	</div>
-	
-	<div id="diplomacy_view" style="display : none;" class="view">
-		
-	</div>
+		</div>			
 	
 	</div>
 	
-	<script id="diplomacy_template" type="text/x-handlebars-template">
+	<div id="big_dialog">
+	
+	</div>
+	
+	<script id="diplomacy_template" type="text/ractive">
+		<p>My mother is a fish</p>
+  </script>
+	
+	<script id="diplomacy_template2" type="text/x-handlebars-template">
 		<div id="diplomacy_player_list_container">
 			<ul class="diplomacy_player_list">
 				{{#each players}}
@@ -331,7 +337,9 @@
 			</tr>
 			<tr>
 				<th>Growth</th>
-				<td class="tooltip-template" data-tooltip-id="system-growth-tooltip">{{system.food_pool}} / {{system.food_growth_threshold}} (+{{system.food_per_turn}})</td>
+				<td class="tooltip-template" data-tooltip-id="system-growth-tooltip">				
+				{{progress system.food_pool system.food_growth_threshold "growth"}}			
+				</td>
 			</tr>
 			{{#if friendly}}
 			
@@ -424,6 +432,7 @@
 		</div>
 		<div class="tooltip" id="system-growth-tooltip">
 			The population will grow in {{system.growth_turns}} turns.
+			{{system.food_pool}} / {{system.food_growth_threshold}} (+{{system.food_per_turn}})
 		</div>
 		<div class="tooltip" id="system-influence-tooltip">
 			{{system.influence_per_turn}} influence per turn. ({{system.influence_pool}}  / {{system.influence_growth_threshold}})
@@ -512,13 +521,16 @@
 		{{/if}}
 		
 		{{#if system.yours}}
-			<h4>Output</h4>	
-			<p>
-			<img src="images/icons/food.png" alt="Food" title="Food"> {{system.food_per_turn}}
-			<img src="images/icons/production.png" alt="Production" title="Production"> {{system.production_per_turn}}
-			<img src="images/icons/research.png" alt="Research" title="Research"> {{system.research_per_turn}}
-			<img src="images/icons/credits.png" alt="Credits" title="Credits"> {{system.credits_per_turn}}
-			<img src="images/icons/influence.png" alt="Influence" title="Influence"> {{system.influence_per_turn}}</p>
+			<ul class="planet_output">			
+			<li><img src="images/icons/food.png" alt="Food" title="Food"> {{system.food_per_turn}}</li>
+			<li class="planet_output_bar">
+			{{progress system.food_pool system.food_growth_threshold "growth"}}			
+			</li>
+			<li><img src="images/icons/production.png" alt="Production" title="Production"> {{system.production_per_turn}}</li>
+			<li><img src="images/icons/research.png" alt="Research" title="Research"> {{system.research_per_turn}}</li>
+			<li><img src="images/icons/credits.png" alt="Credits" title="Credits"> {{system.credits_per_turn}}</li>
+			<li><img src="images/icons/influence.png" alt="Influence" title="Influence"> {{system.influence_per_turn}}</li>
+			</ul>
 			
 			<div class="system_view_list">
 			<h4>Available Ship Classes</h4>
@@ -669,6 +681,12 @@
 			{{current_tech.progress}} / {{current_tech.class.cost}}  +{{research_per_turn}}
 		</div>
 		
+	</script>
+	
+	<script id="progress_bar_template" type="text/x-handlebars-template">
+		<div class="progress_bar {{this.class}}_bar">
+			<div class="progress_bar_inner" style="width : {{this.percent}}%"></div>
+		</div>
 	</script>
 	
 	

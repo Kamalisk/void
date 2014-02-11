@@ -42,6 +42,11 @@ var waiting_for_players = false;
 
 var void_debug;
 
+var view_data = {
+	'player': player
+}
+var view_model;
+
 $(document).ready(function (){
 	Handlebars.registerHelper('compare', function (lvalue, operator, rvalue, options) {
 
@@ -83,11 +88,21 @@ $(document).ready(function (){
 
 	});
 	
+	Handlebars.registerHelper('progress', function (value, max, type) {    
+    if (arguments.length < 2) {
+        throw new Error("Handlerbars Helper 'progress' needs 2 parameters");
+    }
+    var data = {"percent": Math.round(value / max * 100), "class":type};    
+    var string = fetch_template("progress_bar_template", data );
+    return new Handlebars.SafeString(string);	
+	});
+	
 	
 	Handlebars.registerPartial("planet", $("#planet_template").html());
 	Handlebars.registerPartial("ship_class", $("#ship_class_template").html());
 	Handlebars.registerPartial("structure_class", $("#structure_class_template").html());		
-	
+	Handlebars.registerPartial("progress_bar", $("#progress_bar_template").html());		
+
 	fetch_game_data(true);
 	// fetch map data from the server
 	
@@ -109,7 +124,7 @@ function update_interface(){
 		if (player.current_tech && player.research_per_turn){
 			player.research_time = Math.ceil(player.current_tech.progress / player.research_per_turn);
 		}
-		append_template("player_resources_template", player, "player_resources");
+		//append_template("player_resources_template", player, "player_resources");
 		
 		append_template("event_log_template", player, "galactic_map_event_list");
 		$("#galactic_map_event_list").show();
@@ -853,6 +868,7 @@ function handle_fetch_game_data(data){
 		fleet_orders = new Object();
 		hex_map = data.map.sectors;
 		player = data.player;
+		
 		players = data.players;
 		if (data.debug){
 			//void_debug = data.debug;

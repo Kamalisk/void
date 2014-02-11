@@ -241,7 +241,7 @@ class VOID_SHIP {
 	}
 	
 	public function get_special($special=""){
-		return $this->class->get_special();
+		return $this->class->get_special($special);
 	}
 	
 	public function update($core){
