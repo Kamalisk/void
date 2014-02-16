@@ -15,7 +15,7 @@
 		
 	<script type="text/javascript" src="core/ractive.js"></script>	
 		
-	<script type="text/javascript" src="core/handlebars.js"></script>
+	<!-- <script type="text/javascript" src="core/handlebars.js"></script> -->
 	<script type="text/javascript" src="core/tooltipsy.js"></script>
 	
 	<script type="text/javascript" src="core/hex_map.js"></script>
@@ -31,11 +31,11 @@
 </head>
 
 <body>
-
-	<script>
+	<div id="void_app">
 		
-	</script>
+	</div>
 	
+	<script id="primary_template" type="text/ractive">
 	<div id="main_loading">
 		<img src="images/voidwars.png">
 		<p><img src="images/ajax-loader-big.gif"> Loading...</p>
@@ -60,8 +60,7 @@
 		  
     </nav>
     <div id="player_resources">
-    	rah 
-    	<span data-bind="text: player.id"></span>
+    	{{>player_resources_template}}
     </div>
 	</div>
 	
@@ -74,12 +73,15 @@
 				<canvas id="galactic_map_buffer_hexes" width="2000px" height="2000px" style="display : none;"></canvas>				
 				<canvas id="galactic_map_buffer_objects" width="2000px" height="2000px" style="display : none;"></canvas>				
 				<canvas id="galactic_map_overlay"></canvas>			
-			</div>		
-			<div id="galactic_map_panel">
-				<div id="galactic_map_panel_content" style="display : none">
-					
+			</div>	
+			{{#hex_selected}}
+			<div id="galactic_map_panel">				
+				<div id="galactic_map_panel_content">
+					{{>galactic_map_panel_sector_template}}
 				</div>			
 			</div>
+			{{/hex_selected}}
+			
 			<div id="galactic_map_minimap">
 				<div id="galactic_map_mini_container">
 				<canvas id="galactic_map_mini" width="200px" height="200px"></canvas>
@@ -87,17 +89,24 @@
 				</div>
 			</div>
 			
+			{{#fleet_selected}}
 			<div id="galactic_map_panel_fleet">
-				
+				{{>galactic_map_panel_fleet_template}}
 			</div>
 			
+			{{#fleet_selected.sub}}
+				<div id="galactic_map_panel_fleet_sub" decorator="lock:galactic_map_panel_fleet">				
+				{{>construction_template}}
+				</div>
+			{{/fleet_selected.sub}}
+			
+			{{/fleet_selected}}						
+			
+			{{#player.logs}}
 			<div id="galactic_map_event_list">
-				
+				{{> event_log_template}}
 			</div>
-			
-			<div id="tooltip_block">
-			
-			</div>
+			{{/player.logs}}						
 			
 			<div id="tooltip_box" style="border : solid white 3px; background-color : red; position : absolute; display : none; z-index : 50000">
 				tooltip content here!
@@ -105,17 +114,29 @@
 			
 		</div>
 		
+		{{#tech_tree}}
 		<div id="research_view" style="display : none;" class="view">
 			<!-- canvas used to drew line between techs 
 			<canvas id="tech_tree_back" width="800px" height="800px"></canvas>-->
 			<div id="tech_tree_items">
-				
+				{{>tech_tree_template}}
 			</div>
 		</div>
+		{{/tech_tree}}
 		
 		<div id="diplomacy_view" style="display : none;" class="view">
-			
+			{{>diplomacy_template}}
 		</div>			
+	
+	</div>
+	
+	{{#global_error}}
+	<div id="error_display">
+		{{global_error}}
+	</div>
+	{{/global_error}}
+	
+	<div id="tooltip_display">
 	
 	</div>
 	
@@ -123,31 +144,66 @@
 	
 	</div>
 	
-	<script id="diplomacy_template" type="text/ractive">
-		<p>My mother is a fish</p>
-  </script>
+	<div id="tooltip_block">
+		{{#ship_class_cache:key}}
+		<div class="tooltip" id="ship-class-tooltip-{{id}}">
+			{{> ship_class_template}}
+		</div>
+		{{/ship_class_cache}}
+		{{#structure_class_cache:key}}
+		<div class="tooltip" id="structure-class-tooltip-{{id}}">
+			{{> structure_class_template}}
+		</div>
+		{{/structure_class_cache}}
+	</div>
 	
-	<script id="diplomacy_template2" type="text/x-handlebars-template">
+	{{#system_view}}	
+	{{#system_view.system}}
+	<div id="system_view_window" class="dialog">
+		<div class="dialog_body">
+			<div class="dialog_header">
+				<h2> <span id="dialog_title">{{#name}}{{name}}{{/name}}{{^name}}System{{/name}} at ({{x}}, {{z}})</span> 
+				<button class="close_window" onclick="void_view.set('system_view', {})">Return to Map</button></h2>				
+			</div>
+			<div id="dialog_content" class="dialog_content">
+				{{# mode == "colonise"}}
+				{{>system_view_colonise_template}}
+				{{/ mode == "colonise"}}
+				{{# mode == "full"}}
+				{{>system_view_template}}
+				{{/ mode == "full"}}
+			</div>
+		</div>
+	</div>	
+	{{/system_view.system}}
+	{{/system_view}}
+	
+	</script>
+
+	
+	<script id="diplomacy_template" type="text/ractive">
 		<div id="diplomacy_player_list_container">
 			<ul class="diplomacy_player_list">
-				{{#each players}}
+				{{#players:key}}
 				
-				<li class="diplomacy_player_item" onclick="show_diplomacy_detail({{this.id}})" style="background-color : {{this.color.background}}; border-color : {{this.color.border}}">
+				<li class="diplomacy_player_item" onclick="show_diplomacy_detail({{id}})" style="background-color : {{color.background}}; border-color : {{color.border}}">
 				<h3>{{name}}</h3>
-				{{#if this.met}}
+				{{#met}}
 				<p>{{sector_count}}</p>
-				{{/if}}
-				</li>
+				{{/met}}
+				</li>				
+				{{/players}}
 				
-				{{/each}}
 			</ul>
 		</div>
 		<div id="diplomacy_detail_view">
-		
+			{{#diplomacy.selected_player}}
+				{{>diplomacy_detail_template}}
+			{{/diplomacy.selected_player}}
 		</div>
 	</script>
 	
-	<script id="diplomacy_detail_template" type="text/x-handlebars-template">
+	<script id="diplomacy_detail_template" type="text/ractive">
 		<div class="diplomacy_detail_view" style="border-color : {{color.border}}">
 			<h2>{{name}}</h2>
 			<h3>Trade</h3>
@@ -156,86 +212,75 @@
 		</div>
 	</script>
 	
-	<script id="event_log_template" type="text/x-handlebars-template">
+	<script id="event_log_template" type="text/ractive">
 		<div>
 			<ul>
-			{{#each logs}}
+			{{#player.logs:key}}
 				<li class="event_log_item">
-				{{#compare this.category "==" "ship"}}
+				{{# category == "ship"}}
 				<img src="images/icons/production.png" alt="ship" title="ship">
-				{{/compare}}
-				{{#compare this.category "==" "generic"}}
+				{{/category}}
+				{{# category == "generic"}}
 				<img src="images/icons/happy.png" alt="Generic" title="Generic">
-				{{/compare}}
-				{{this.text}}
+				{{/category}}
+				{{text}}
 				</li>
-			{{/each}}
+			{{/player.logs}}
 			</ul>
 		</div>
 	</script>
 	
-	<div id="system_view_window" class="dialog">
-		<div class="dialog_body">
-			<div class="dialog_header">
-				<h2> <span id="dialog_title"></span> <button class="close_window" onclick="$('#system_view_window').hide();">Return to Map</button></h2>				
-			</div>
-			<div id="dialog_content" class="dialog_content">
-			</div>
-		</div>
-	</div>
 	
-	<script id="ship_class_tooltip_templates" type="text/x-handlebars-template">
-		{{#each this}}
-		<div class="tooltip" id="ship-class-tooltip-{{id}}">
-			{{> ship_class this}}
-		</div>
-		{{/each}}
+	
+	<script id="ship_class_tooltip_templates" type="text/ractive">
+		
 	</script>
 	
-	<script id="tech_tree_template" type="text/x-handlebars-template">
-		<div>
-		
-		{{#each tiers}}
-			<div class="tech_tier tech_tier_{{@key}}">
-			{{#each this}}
-				<div class="tech_tree_item {{#if this.player_has}}researched_tech{{/if}} {{#if this.player_available}}available_tech{{/if}} tier_{{tier}} tech_{{id}} {{#if this.player_current}}current_tech{{/if}}" onclick="select_tech({{id}})">
+	<script id="tech_tree_template" type="text/ractive">
+		<div>		
+		{{#tiers:key}}
+			<div class="tech_tier tech_tier_{{key}}">
+			{{#.}}
+				<div class="tech_tree_item {{#.player_has}}researched_tech{{/.player_has}} {{#.player_available}}available_tech{{/.player_available}} tier_{{tier}} tech_{{id}} {{#.player_current}}current_tech{{/.player_current}}" onclick="select_tech({{id}})">
 					<h4>{{name}}</h4>
 					
-					{{#if this.player_available}}
+					{{#.player_available}}
 						<p>This tech is available to research.</p>
-						<p>{{this.player_available.progress}} research points needed</p>
-					{{else}}
-						{{#if this.player_has}}
+						<p>{{.player_available.progress}} research points needed</p>
+					{{/.player_available}}
+					{{^.player_available}}
+						{{#.player_has}}
 						This tech has been researched
-						{{else}}
+						{{/.player_has}}
+						{{^.player_has}}
 						<p>{{cost}} research points needed</p>
-						{{/if}}
-						
-					{{/if}}			
+						{{/.player_has}}		
+					{{/.player_available}}			
+					
 					<div class="tech_rewards">										
-					{{#each ship_classes}}
+					{{#ship_classes}}
 					<span><img width="16" height="16" src="images/ship.png"> {{name}}</span>
-					{{/each}}
-					{{#each structure_classes}}
+					{{/ship_classes}}
+					{{#structure_classes}}
 					<span><img width="16" height="16" src="images/structure.png"> {{name}}</span>
-					{{/each}}
-					{{#each power_classes}}
+					{{/structure_classes}}
+					{{#power_classes}}
 					<span><img width="16" height="16" src="images/power.png"> {{name}}</span>
-					{{/each}}
-					{{#each upgrade_classes}}
+					{{/power_classes}}
+					{{#upgrade_classes}}
 					<span><img width="16" height="16" src="images/power.png"> {{name}}</span>
-					{{/each}}					
+					{{/upgrade_classes}}					
 					</div>
 				</div>
-			{{/each}}
+			{{/.}}
 			</div>
-		{{/each}}
+		{{/tiers}}
 		
 		</div>	
 	</script>
 	
 	
-	<script id="galactic_map_panel_fleet_template" type="text/x-handlebars-template">		
+	<script id="galactic_map_panel_fleet_template" type="text/ractive">		
 		<h3 class="map_panel_header">{{id}} ({{x}}, {{z}})</h3>
 		<h4>Actions</h4>
 		<p>
@@ -245,217 +290,176 @@
 		<button type="button" onclick="cancel_fleet_orders()">Cancel All Orders</button>
 		</p>
 		<h4>Ships</h4>
-		{{#if ships}}			
+		{{#ships.length > 0}}			
 			<ul>
-			{{#each ships}}
-			<li class="tooltip-template" data-tooltip-id="panel-ship-class-tooltip-{{id}}">{{class.name}} (Shields: {{shields}} Hull: {{hull}})</li>						
-			<div class="tooltip" id="panel-ship-class-tooltip-{{id}}">
-				{{> ship_class this.class}}
-			</div>
-				
+			{{#ships}}
+			<li decorator="tooltip" data-decorator="ship-class-tooltip-{{class.id}}">
+			{{class.name}} (Shields: {{shields}} Hull: {{hull}})</li>				
 			</li>
-			
-			{{/each}}
+			{{/ships}}
 			</ul>
-		{{else}}
+		{{/ships.length > 0}}
+		{{^ships}}
 			None
-		{{/if}}
+		{{/ships}}
 	</script>
 	
-	<script id="galactic_map_panel_system_template" type="text/x-handlebars-template">
+	<script id="galactic_map_panel_sector_template" type="text/ractive">
 		<h3 class="map_panel_header">Sector {{x}}, {{z}}</h3>
 		<div class="map_panel_content">
-
-		{{#if system}}
-		<button class="wide_button" type="button" onclick="show_system_view({{x}}, {{z}} );"><img width="16" height="16" src="images/default.png"> View System</button>		
-		{{/if}}
-
-		<table class="data_block">			
-			{{#if type}}
-				<tr>
-				<th>Type</th>
-				<td>{{class.name}}</td>
-				</tr>
-			{{/if}}
-			<tr> 
-				<th>Owner</th>
-				{{#if friendly}}
-				<td class="friendly" style="color : {{owner_object.color.border}}">You</td>
-				{{else}}
-					{{#if enemy}}
-					<td class="enemy" style="color : {{owner_object.color.border}}">{{owner_object.name}}</td>
-					{{else}}
-					<td>None</td>
-					{{/if}}
-				{{/if}}
-			</tr>			
+			{{#system}}
+			<button class="wide_button" type="button" onclick="show_system_view({{x}}, {{z}} );"><img width="16" height="16" src="images/default.png"> View System</button>		
+			{{/system}}
 			
-			{{#if system.name}}
-				<tr>
-				<th>Name</th>
-				<td>{{system.name}}</td>
-				</tr>
-			{{/if}}
-			
-			{{#if system.influence_level}}
-			<tr>
-				<th>Influence</th>
-				<td class="tooltip-template" data-tooltip-id="system-influence-tooltip">
-				Level {{system.influence_level}} ({{system.influence_growth_turns}} turns) 
+			<table class="data_block">
+				{{#type_id}}
+					<tr>
+					<th>Type</th>
+					<td>{{sector_class_cache[type_id].name}}</td>
+					</tr>
+				{{/type_id}}
 				
-				</td>
-			</tr>
-			{{/if}}
-			
-			{{#if system.planets}}
-			<tr>
-			<th>Planets</th>
-			<td>
-			<ul class="small_planet_list">
-			{{#each system.planets}}
-				<li class="tooltip-template{{#if terraformed}} terraformed{{/if}}" data-tooltip-id="planet-class-tooltip-{{id}}-{{class.id}}">
-					<img width="30" height="30" src="{{#if terraformed}}{{class.image_populated}}{{else}}{{class.image}}{{/if}}" alt="{{class.name}}">
-					<div class="tooltip" id="planet-class-tooltip-{{id}}-{{class.id}}">						
-						<h4>{{class.name}}</h4>						
-						{{> planet}}
-					</div>
-				</li>
-			{{/each}}
-			</ul>
-			</td>
-			</tr>
-			{{/if}}
-			
-			{{#if system.owner}}
-			<tr>
-				<th>Population</th>
-				<td>{{system.population}}</td>
-			</tr>
-			<tr>
-				<th class="tooltip-title" title="testing">Output</th>
-				<td><span class="tooltip-template" data-tooltip-id="tooltip1"><img src="images/icons/credits.png"> {{system.credits_per_turn}}</span> <img src="images/icons/research.png"> {{system.research_per_turn}}</td>
-			</tr>
-			<tr>
-				<th>Growth</th>
-				<td class="tooltip-template" data-tooltip-id="system-growth-tooltip">				
-				{{progress system.food_pool system.food_growth_threshold "growth"}}			
-				</td>
-			</tr>
-			{{#if friendly}}
-			
-			<tr>
-				<th>Queue	
-				</th>
-				<td>
+				{{#upgrade_id}}
+					<tr>
+					<th>Type</th>
+					<td>{{upgrade_class_cache[upgrade_id].name}}</td>
+					</tr>
+				{{/upgrade_id}}
 				
-				{{#if system.build_queue.items}}
-				<ul>
-				{{#with system.build_queue.items.[0]}}
-				<li>				
-				<span class="tooltip-template" data-tooltip-id="ship-class-tooltip-{{id}}">{{target.name}} {{#if turns}} ({{turns}} turns){{/if}}</span>
-				
-				</li>
-				{{/with}}
-				<li>{{system.build_queue.items.length}} total items</li>
-		
-				</ul>
-				{{else}}
-				<p>Empty</p>
-				{{/if}}
-				</td>
-			</tr>
-			
-			{{/if}}
-			{{/if}}
-			
-			{{#if system.owner}}	
-			{{#if space_dock}}
-				<tr>
-				<th>Space dock (Max 3)</th>
-				<td>
-				{{#if space_dock.fleet}}
-				<ul>
-				{{#each space_dock.fleet.ships}}
-				<li>{{class.name}}</li>
-				{{/each}}
-				</ul>
-				{{else}}
-				<p>No Ships</p>
-				{{/if}}
-				</td>
+				<tr> 
+					<th>Owner</th>
+					{{#friendly}}
+					<td class="friendly" style="color : {{owner_object.color.border}}">You</td>
+					{{/friendly}}
+					{{^friendly}}
+						{{#enemy}}
+						<td class="enemy" style="color : {{owner_object.color.border}}">{{owner_object.name}}</td>
+						{{/enemy}}
+						{{^enemy}}
+						<td>None</td>
+						{{/enemy}}
+					{{/friendly}}
 				</tr>
-			{{/if}}
+				
+				{{#system.name}}
+					<tr>
+					<th>Name</th>
+					<td>{{system.name}}</td>
+					</tr>
+				{{/system.name}}
+				
+				{{#system.influence_level}}
+				<tr>
+					<th>Influence</th>
+					<td class="tooltip-template" data-tooltip-id="system-influence-tooltip">
+					Level {{system.influence_level}} ({{system.influence_growth_turns}} turns) 					
+					</td>
+				</tr>
+				{{/system.influence_level}}
+				
+				{{# system.planets.length > 0}}
+				<tr>
+					<th>Planets</th>
+					<td>
+					<ul class="small_planet_list">
+					{{#system.planets}}
+	
+						{{# planet_class_cache[class_id] }}
+						<li class="{{#terraformed}} terraformed{{/terraformed}}">
+							<img decorator="tooltip" data-decorator="planet-class-tooltip-{{id}}-{{class.id}}" width="30" height="30" src="{{#terraformed}}{{image_populated}}{{/terraformed}}{{^terraformed}}{{image}}{{/terraformed}}" alt="{{name}}">
+							<div class="tooltip" id="planet-class-tooltip-{{id}}-{{class.id}}">						
+								<h4>{{name}}</h4>	
+								{{> planet_template}}
+							</div>
+						</li>
+						{{/planet_class_cache}}
+					{{/system.planets}}
+					</ul>
+					</td>
+				</tr>
+				{{/ end of filter }}
+				
+				{{#system.owner}}
+				<tr>
+					<th>Population</th>
+					<td>{{system.population}} </td>
+				</tr>
+				<tr>
+					<th>Output</th>
+					<td>
+					<img src="images/icons/credits.png"> {{void.per_turn_value(system.credits_per_turn)}} 
+					<img src="images/icons/research.png"> {{void.per_turn_value(system.research_per_turn)}}
+					</td>
+				</tr>
+				
+				{{#friendly}}
+				<tr>
+					<th>Queue	
+					</th>
+					<td>
 					
-				
-			{{/if}}
+					{{#system.build_queue.items.length > 0}}
+					<ul>
+					{{# system.build_queue.items.0 }}
+					<li>				
+					<span>{{target.class.name}} {{#turns}} ({{turns}} turns){{/turns}}</span>					
+					</li>
+					{{/ system.build_queue.items.0 }}
+					
+					<li>{{ system.build_queue.items.length }} total items</li>
 			
-			{{#if false}}
-			<tr>
-				<th>Your fleets</th>
-				<td>
-				<ul>
-				{{#each your_fleets}}
-				<li>Fleet {{id}} ({{used_capacity}}/{{capacity}})
-				<button onclick="show_map_panel_fleet('{{id}}');">View Fleet</button>
-				{{#if ships}}
-				<ul>
-				{{#each ships}}
-				<li>{{class.name}} {{shields}} {{hull}}</li>
-				{{/each}}
-				</ul>
-				{{/if}}
-				</li>
-				{{/each}}
-				</ul>
-				</td>
-			</tr>
-			{{/if}}
-			
-			{{#if enemy_fleets}}
-				<tr>
-				<th>Enemy fleets</th>
-				<td>
-				<ul>
-				{{#each enemy_fleets}}
-				<li>Fleet</li>
-				{{/each}}
-				</ul>
-				</td>
+					</ul>
+					{{/system.build_queue.items.length > 0}}
+					
+					{{^system.build_queue.items}}
+					<p>Empty</p>
+					{{/system.build_queue.items}}
+					</td>
 				</tr>
-				{{/if}}
-			
-			
-		</table>
-		
-		<div class="tooltip" id="tooltip1">
-			Credits per turn
-		</div>
-		<div class="tooltip" id="system-growth-tooltip">
-			The population will grow in {{system.growth_turns}} turns.
-			{{system.food_pool}} / {{system.food_growth_threshold}} (+{{system.food_per_turn}})
-		</div>
-		<div class="tooltip" id="system-influence-tooltip">
-			{{system.influence_per_turn}} influence per turn. ({{system.influence_pool}}  / {{system.influence_growth_threshold}})
-		</div>
-		
-		
-		
-		
+				
+				
+				{{#space_dock}}
+					<tr>
+					<th>Space dock (Max 3)</th>
+					<td>
+					{{#space_dock.fleet}}
+					<ul>
+					{{#space_dock.fleet.ships}}
+					<li>{{class.name}}</li>
+					{{/space_dock.fleet.ships}}
+					</ul>
+					{{/space_dock.fleet}}
+					
+					{{^space_dock}}
+					<p>No Ships</p>
+					{{/space_dock}}
+					</td>
+					</tr>
+				{{/space_dock}}
+				
+				{{/friendly}}
+				
+				{{/system.owner}}
+				
+			</table>
+						
 		</div>
 	</script>
 	
-	<script id="planet_template" type="text/x-handlebars-template">
-		<img src="{{#if terraformed}}{{class.image_populated}}{{else}}{{class.image}}{{/if}}" alt="{{class.name}}" title="{{class.name}}" oncontextmenu="context_menu(event, {})">
+
+	
+	<script id="planet_template" type="text/ractive">
+		<img src="{{#terraformed}}{{image_populated}}{{/terraformed}}{{^terraformed}}{{image}}{{/terraformed}}" alt="{{name}}" title="{{name}}" oncontextmenu="context_menu(event, {})">
 			<ul class="planet_class_output">
-				<li class="food"><img src="images/icons/food.png" alt="Food" title="Food"> +{{class.output.food}}</li>
-				<li class="production"><img src="images/icons/production.png" alt="Production" title="Production"> +{{class.output.production}}</li>
-				<li class="research"><img src="images/icons/research.png" alt="Research" title="Research"> +{{class.output.research}}</li>
-				<li class="credits"><img src="images/icons/credits.png" alt="Credits" title="Credits"> +{{class.output.credits}}</li>
+				<li class="food"><img src="images/icons/food.png" alt="Food" title="Food"> +{{output.food}}</li>
+				<li class="production"><img src="images/icons/production.png" alt="Production" title="Production"> +{{output.production}}</li>
+				<li class="research"><img src="images/icons/research.png" alt="Research" title="Research"> +{{output.research}}</li>
+				<li class="credits"><img src="images/icons/credits.png" alt="Credits" title="Credits"> +{{output.credits}}</li>
 			</ul>
-			{{#if terraformed}}Terraformed{{else}}Uninhabited{{/if}}
+			{{#terraformed}}Terraformed{{/terraformed}}{{^terraformed}}Uninhabited{{/terraformed}}
 	</script>
 	
-	<script id="ship_class_template" type="text/x-handlebars-template">			
+	<script id="ship_class_template" type="text/ractive">			
 			<h4>{{name}}</h4>
 			<ul class="ship_class">				
 				<li>Weapons: {{weapon_count}}x{{weapon_damage}} ({{weapon_type}})</li>				
@@ -467,152 +471,207 @@
 			</ul>
 	</script>
 	
-	<script id="structure_class_template" type="text/x-handlebars-template">			
+	<script id="structure_class_template" type="text/ractive">			
 			<h4>{{name}}</h4>
 			<ul class="structure_class">				
-				{{#if modifiers}}
+				{{#modifiers}}
 					<ul>
-					{{#if modifiers.production}}
-						<li class="production"><img src="images/icons/production.png" alt="Production" title="Production"> {{modifiers.production}}</li>
-					{{/if}}
-					{{#if modifiers.food}}
-						<li class="food"><img src="images/icons/food.png" alt="Food" title="Food"> {{modifiers.food}}</li>					
-					{{/if}}
-					{{#if modifiers.research}}
-						<li class="research"><img src="images/icons/research.png" alt="Research" title="Research"> {{modifiers.research}}</li>
-					{{/if}}
-					{{#if modifiers.credits}}
-						<li class="credits"><img src="images/icons/credits.png" alt="Credits" title="Credits"> {{modifiers.credits}}</li>
-					{{/if}}
-					{{#if modifiers.morale}}
-						<li class="morale"><img src="images/icons/happy.png" alt="Morale" title="Morale"> {{modifiers.morale}}</li>
-					{{/if}}
+					{{#modifiers.production}}
+						<li class="production modifier"><img src="images/icons/production.png" alt="Production" title="Production"> {{modifiers.production}}</li>
+					{{/modifiers.production}}
+					{{#modifiers.food}}
+						<li class="food modifier"><img src="images/icons/food.png" alt="Food" title="Food"> {{modifiers.food}}</li>					
+					{{/modifiers.food}}
+					{{#modifiers.research}}
+						<li class="research modifier"><img src="images/icons/research.png" alt="Research" title="Research"> {{modifiers.research}}</li>
+					{{/modifiers.research}}
+					{{#modifiers.credits}}
+						<li class="credits modifier"><img src="images/icons/credits.png" alt="Credits" title="Credits"> {{modifiers.credits}}</li>
+					{{/modifiers.credits}}
+					{{#modifiers.morale}}
+						<li class="morale modifier"><img src="images/icons/happy.png" alt="Morale" title="Morale"> {{modifiers.morale}}</li>
+					{{/modifiers.morale}}
+					{{#modifiers.influence}}
+						<li class="influence modifier"><img src="images/icons/influence.png" alt="Influence" title="Influence"> {{modifiers.influence}}</li>
+					{{/modifiers.influence}}
 					</ul>					
-				{{/if}}
+				{{/modifiers}}
 			</ul>
 	</script>
 	
-	<script id="system_view_basic_template" type="text/x-handlebars-template">
+	
+	<script id="sector_class_template" type="text/ractive">			
+			<h4>{{name}}</h4>
+			<ul class="sector_class">				
+				{{#modifiers}}
+					<ul>
+					{{#modifiers.production}}
+						<li class="production modifier"><img src="images/icons/production.png" alt="Production" title="Production"> {{modifiers.production}}</li>
+					{{/modifiers.production}}
+					{{#modifiers.food}}
+						<li class="food modifier"><img src="images/icons/food.png" alt="Food" title="Food"> {{modifiers.food}}</li>					
+					{{/modifiers.food}}
+					{{#modifiers.research}}
+						<li class="research modifier"><img src="images/icons/research.png" alt="Research" title="Research"> {{modifiers.research}}</li>
+					{{/modifiers.research}}
+					{{#modifiers.credits}}
+						<li class="credits modifier"><img src="images/icons/credits.png" alt="Credits" title="Credits"> {{modifiers.credits}}</li>
+					{{/modifiers.credits}}
+					{{#modifiers.morale}}
+						<li class="morale modifier"><img src="images/icons/happy.png" alt="Morale" title="Morale"> {{modifiers.morale}}</li>
+					{{/modifiers.morale}}
+					{{#modifiers.influence}}
+						<li class="influence modifier"><img src="images/icons/influence.png" alt="Influence" title="Influence"> {{modifiers.influence}}</li>
+					{{/modifiers.influence}}
+					</ul>					
+				{{/modifiers}}
+			</ul>
+	</script>
+	
+	
+	<script id="system_view_colonise_template" type="text/ractive">
 		<div id="system_view">
-		{{#if system.planets}}		
+		{{#system.planets.length > 0}}		
 		<ul class="system_view_planet_list">
-		{{#each system.planets}}
-			<li onclick="$('#system_view_window').hide(); add_fleet_colonise_order('{{id}}')" class="system_view_planet class{{class}} selectable">
-				{{> planet}}
+		{{#system.planets}}
+			<li onclick="void_view.set('system_view', {}); add_fleet_colonise_order('{{id}}')" class="system_view_planet class{{class.id}} selectable">
+				{{# planet_class_cache[class_id]}}
+				{{> planet_template}}
+				{{/planet_class_cache[class_id]}}
 			</li>
-		{{/each}}
+		{{/system.planets}}
 		</ul>
-		{{/if}}
+		{{/system.planets.length > 0}}
 		</div>
 	</script>
 	
-	<script id="system_view_template" type="text/x-handlebars-template">
+	<script id="construction_template" type="text/ractive">
+		<div>
+			<ul>
+			{{#player.available_upgrade_classes:key}}
+				<li><button onclick="add_fleet_construct_order({{id}})">{{upgrade_class_cache[id].name}}</button></li>
+			{{/player.available_upgrade_classes}}
+			</ul>
+		</div>
+	</script>
+	
+	<script id="system_view_template" type="text/ractive">
 		<div id="system_view">
-		
-		
-		{{#if system.planets}}		
+				
+		{{# planets.length > 0}}		
 		<ul class="system_view_planet_list">
-		{{#each system.planets}}
-			<li class="system_view_planet class{{class}}">
-				{{> planet}}
+		{{#planets}}
+			<li class="system_view_planet class{{class_id}}">
+				{{# planet_class_cache[class_id]}}
+				{{> planet_template}}
+				{{/ planet_class_cache}}
 			</li>
-		{{/each}}
+		{{/planets}}
 		</ul>
-		{{/if}}
+		{{/planets}}
 		
-		{{#if system.yours}}
+		{{#yours}}
 			<ul class="planet_output">			
-			<li><img src="images/icons/food.png" alt="Food" title="Food"> {{system.food_per_turn}}</li>
+			<li><img src="images/icons/food.png" alt="Food" title="Food"> {{food_per_turn}}</li>
 			<li class="planet_output_bar">
-			{{progress system.food_pool system.food_growth_threshold "growth"}}			
+			
 			</li>
-			<li><img src="images/icons/production.png" alt="Production" title="Production"> {{system.production_per_turn}}</li>
-			<li><img src="images/icons/research.png" alt="Research" title="Research"> {{system.research_per_turn}}</li>
-			<li><img src="images/icons/credits.png" alt="Credits" title="Credits"> {{system.credits_per_turn}}</li>
-			<li><img src="images/icons/influence.png" alt="Influence" title="Influence"> {{system.influence_per_turn}}</li>
+			<li><img src="images/icons/production.png" alt="Production" title="Production"> {{production_per_turn}}</li>
+			<li><img src="images/icons/research.png" alt="Research" title="Research"> {{research_per_turn}}</li>
+			<li><img src="images/icons/credits.png" alt="Credits" title="Credits"> {{credits_per_turn}}</li>
+			<li><img src="images/icons/influence.png" alt="Influence" title="Influence"> {{influence_per_turn}}</li>
 			</ul>
 			
 			<div class="system_view_list">
 			<h4>Available Ship Classes</h4>
-			<ul class="selector_list">
-			{{#each owner_object.available_ship_classes}}
-				<li class="tooltip-template system_view_selector" data-tooltip-id="ship-class-tooltip-{{id}}">
+			<ul class="selector_list" decorator="custom_scroll">
+			{{#player.available_ship_classes:key}}
+				<li class="system_view_selector" decorator="tooltip" data-decorator="ship-class-tooltip-{{id}}">
 					<img src="images/ship.png">
 					<h4>{{name}}</h4>
 					<p>
-					{{#if turns}} ({{turns}} turns){{/if}}
+					{{#turns}} ({{turns}} turns){{/turns}}
 					<button type="button" onclick="build_ship('{{id}}');">Build</button>
 					</p>
 				</li>
 				
-			{{/each}}
+			{{/player.available_ship_classes}}
 			</ul>
 			</div>
 			
 			<div class="system_view_list">
 			<h4>Available Structure Classes</h4>
-			<ul class="selector_list">
-			{{#each system.available_structure_classes}}
-				<li class="tooltip-template system_view_selector" data-tooltip-id="system-structure-class-tooltip-{{id}}">
+			<ul class="selector_list" decorator="custom_scroll">
+			{{#available_structure_classes}}				
+				
+				<li class="system_view_selector" decorator="tooltip" data-decorator="structure-class-tooltip-{{id}}">
 					<img src="images/structure.png">
 					<h4>{{name}}</h4>
 					<p>
-					{{#if turns}} ({{turns}} turns){{/if}}
+					{{#turns}} ({{turns}} turns){{/turns}}
 					<button type="button" onclick="build_structure('{{id}}');">Build</button>
 					</p>
-					<div class="tooltip" id="system-structure-class-tooltip-{{id}}">
-						{{> structure_class}}	
-					</div>
+
 				</li>
-			{{/each}}
+				
+			{{/available_structure_classes}}
 			</ul>
 			</div>
 			
 			<div class="system_view_list">
 			<h4>System Queue</h4>
 			
-			<ul class="selector_list">
-			{{#if system.build_queue.items}}
-				{{#each system.build_queue.items}}
-				<li class="system_view_selector">				
-				{{#compare type "==" "ship"}}
+			{{#.}}
+			<div class="selector_list custom_scroll" decorator="custom_scroll">
+			<ul class="selector_list" >
+			{{# build_queue.items.length > 0}}
+				{{#build_queue.items}}
+						
+				{{# type == "ship"}}
+				<li class="system_view_selector" decorator="tooltip" data-decorator="ship-class-tooltip-{{target_id}}">		
 				<img src="images/ship.png">
-				{{/compare}}
-				{{#compare type "==" "structure"}}
-				<img src="images/structure.png">
-				{{/compare}}
-				<h4>{{target.name}}</h4>
-				<p> {{#if turns}} ({{turns}} turns){{/if}}</p>
+				<h4>{{ship_class_cache[target_id].name}}</h4>
+				<p> {{#turns}} ({{turns}} turns){{/turns}}</p>
 				</li>
-				{{/each}}			
-			{{else}}
+				{{/ type}}
+				{{# type == "structure"}}
+				<li class="system_view_selector" decorator="tooltip" data-decorator="structure-class-tooltip-{{target_id}}">		
+				<img src="images/structure.png">
+				<h4>{{structure_class_cache[target_id].name}}</h4>
+				<p> {{#turns}} ({{turns}} turns){{/turns}}</p>
+				</li>
+				{{/ type}}				
+				
+				{{/build_queue.items}}			
+			{{/build_queue.items}}
+			{{^build_queue.items}}
 			<li>Empty</li>
-			{{/if}}
-			</ul>			
+			{{/build_queue.items}}
+			</ul>
+			</div>
+			{{/.}}
 			</div>
 			
 			<div class="system_view_list">
 			<h4>Structures</h4>
-			{{#if system.structures}}
-			<ul class="selector_list">
-			{{#each system.structures}}
-				<li class="tooltip-template system_view_selector" data-tooltip-id="system-structure-class-tooltip-{{class.id}}">
+			{{# structures.length > 0}}
+			<ul class="selector_list" >
+			{{#structures}}
+				<li class="system_view_selector" decorator="tooltip" data-decorator="structure-class-tooltip-{{class_id}}">
 				<img src="images/structure.png">
 				<h4>{{name}}</h4>
-				<div class="tooltip" id="system-structure-class-tooltip-{{class.id}}">
-					{{#with class}}
-					{{> structure_class}}	
-					{{/with}}
-				</div>
+				
 				</li>
-				{{/each}}
+				{{/structures}}
 			</ul>			
-			{{else}}
+			{{/structures}}
+			
+			{{^structures}}
 			<p>None</p>
-			{{/if}}
+			{{/structures}}
 			</div>
 			
-		{{/if}}
+		{{/yours}}
 		
 		
 		
@@ -650,38 +709,51 @@
 	
 	
 	
-	<script id="player_resources_template" type="text/x-handlebars-template">
-		<img src="images/icons/credits.png"> {{credits_pool}} (+{{credits_per_turn}})    
-		<span  class="tooltip-template" data-tooltip-id="player-morale-tooltip">
+	<script id="player_resources_template" type="text/ractive">
+		<span decorator="tooltip" data-decorator="player-credits-tooltip">
+		<img src="images/icons/credits.png"> {{player.credits_pool}} ({{void.per_turn_value(player.credits_per_turn)}})    
+		</span>
+
+		<span decorator="tooltip" data-decorator="player-morale-tooltip">
     <img src="images/icons/happy.png"> 
-    <span class="{{#compare morale "<" 0}}negative{{/compare}}{{#compare morale ">" 0}}positive{{/compare}}"> 
-    {{morale}} 
+		<span class="{{# player.morale > 0 }}positive{{/ end of filter }}{{# player.morale < 0 }}negative{{/ end of filter }}"> 
+    {{player.morale}} 
    	</span>
-    </span>
-    <div class="tooltip" id="player-morale-tooltip">
-			{{#compare morale "<" 0}}
+   	</span>
+   	
+   	<div class="tooltip" id="player-morale-tooltip">
+			{{# player.morale < 0}}
 			<p>Negative morale lowers your systems growth to 10% of normal</p>
-			{{/compare}}
-			{{#if sources.morale}}
-			{{#with sources.morale}}
+			{{/ player.morale < 0}}
+			{{#player.sources.morale}}
 			<ul>				
-				<li>Population: {{population}}</li>
-				<li>Systems: {{system}}</li>
-				<li>Structures: {{structures}}</li>
+				<li>Population: {{void.per_turn_value(population)}}</li>
+				<li>Systems: {{void.per_turn_value(system)}}</li>
+				<li>Structures: {{void.per_turn_value(structures)}}</li>
 			</ul>
-			{{/with}}
-			{{/if}}
+			{{/player.sources.morale}}			
+		</div>
+		
+		<div class="tooltip" id="player-credits-tooltip">
 			
+			{{#player.sources.credits}}
+			<ul>				
+				<li>Fleet Upkeep: {{void.per_turn_value(ship)}}</li>
+				<li>Systems: {{void.per_turn_value(system)}}</li>
+			</ul>
+			{{/player.sources.credits}}			
 		</div>
-		
-		<span  class="tooltip-template" data-tooltip-id="player-research-tooltip">
-    <img src="images/icons/research.png"> {{current_tech.class.name}} ({{research_time}} turns) 
-    </span>
-    <div class="tooltip" id="player-research-tooltip">
-			{{current_tech.progress}} / {{current_tech.class.cost}}  +{{research_per_turn}}
+   	
+   	<span decorator="tooltip" data-decorator="player-research-tooltip">
+   	<img src="images/icons/research.png"> {{player.current_tech.class.name}} ({{ Math.ceil(player.current_tech.progress / player.research_per_turn) }} turns) 
+   	</span>
+   	
+   	<div class="tooltip" id="player-research-tooltip">
+			{{void.per_turn_value(player.research_per_turn)}} ({{player.current_tech.progress}} / {{player.current_tech.class.cost}})
 		</div>
-		
+   	
 	</script>
+	
 	
 	<script id="progress_bar_template" type="text/x-handlebars-template">
 		<div class="progress_bar {{this.class}}_bar">

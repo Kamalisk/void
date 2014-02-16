@@ -59,6 +59,7 @@ class VOID_SECTOR_VIEW {
 	public $z;
 	
 	public $type;
+	public $type_id;
 	public $movement_cost;
 	public $owner;
 	
@@ -69,6 +70,8 @@ class VOID_SECTOR_VIEW {
 	
 	public $class_id;
 	
+	public $upgrade_id;
+	
 	//public $space_dock;
 	
 	function __construct($sector, $player_id){
@@ -78,12 +81,20 @@ class VOID_SECTOR_VIEW {
 		$this->z = $sector->z;
 		$this->movement_cost = 2;
 		if (isset($sector->state[$player_id])){
+			
+			if ($sector->upgrade){
+				$this->upgrade_id = $sector->upgrade->id;
+			}else {
+				$this->upgrade_id = false;
+			}
+			
 			$this->movement_cost = $sector->class['movement_cost'];
 			$this->class_id = $sector->class['id'];
 			if ($sector->owner){
 				$this->owner = $sector->owner->id;
 			}
 			$this->type = $sector->type;
+			$this->type_id = $sector->class['id'];
 			if ($sector->system){
 				$this->system = $sector->system->dump($player_id);
 			}
@@ -169,6 +180,7 @@ class VOID_SECTOR {
 	public $home;
 	
 	public $class;
+	public $upgrade;
 	
 	function __construct($x, $z){
 		$this->x = $x;
@@ -179,6 +191,11 @@ class VOID_SECTOR {
 		$this->home = 0;
 		$this->fog_state = [];
 		$this->set_type(1);
+		$this->upgrade = false;
+	}
+	
+	public function add_upgrade($upgrade){
+		$this->upgrade = $upgrade;		
 	}
 	
 	// adds a planet to the system

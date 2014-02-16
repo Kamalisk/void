@@ -29,6 +29,7 @@ for ($i = 0 ; $i < 6; $i++){
 		$z = $z+$void_hex_adjacent[$i][1];
 	}
 }
+
 $range = 3;
 $x = -3;
 $z = 3;
@@ -41,6 +42,41 @@ for ($i = 0 ; $i < 6; $i++){
 	}
 }
 
+$range = 4;
+$x = -4;
+$z = 4;
+$void_ranges[$range] = array();
+for ($i = 0 ; $i < 6; $i++){
+	for ($j = 0; $j < $range; $j++){
+		$void_ranges[$range][] = array('x'=>$x, 'z'=>$z);
+		$x = $x+$void_hex_adjacent[$i][0];
+		$z = $z+$void_hex_adjacent[$i][1];
+	}
+}
+
+$range = 5;
+$x = -5;
+$z = 5;
+$void_ranges[$range] = array();
+for ($i = 0 ; $i < 6; $i++){
+	for ($j = 0; $j < $range; $j++){
+		$void_ranges[$range][] = array('x'=>$x, 'z'=>$z);
+		$x = $x+$void_hex_adjacent[$i][0];
+		$z = $z+$void_hex_adjacent[$i][1];
+	}
+}
+
+$range = 6;
+$x = -6;
+$z = 6;
+$void_ranges[$range] = array();
+for ($i = 0 ; $i < 6; $i++){
+	for ($j = 0; $j < $range; $j++){
+		$void_ranges[$range][] = array('x'=>$x, 'z'=>$z);
+		$x = $x+$void_hex_adjacent[$i][0];
+		$z = $z+$void_hex_adjacent[$i][1];
+	}
+}
 
 // system types
 // space

@@ -77,6 +77,7 @@ class VOID_ORDER {
 	public $x;
 	public $z;
 	public $planet_id;
+	public $upgrade_id;
 	
 	function __construct($type){
 		$this->type = $type;
@@ -91,6 +92,9 @@ class VOID_ORDER {
 		}
 		if (isset($params['planet_id'])){
 			$this->planet_id = $params['planet_id'];
+		}
+		if (isset($params['upgrade_id'])){
+			$this->upgrade_id = $params['upgrade_id'];
 		}
 	}
 	
@@ -152,12 +156,16 @@ class VOID {
 	
 	function __construct(){
 		$this->map = new VOID_MAP();
-		VOID_LOG::$game_id = 1;
+		VOID_LOG::$game_id = 1;		
 	}
 	
 	public function setup($width, $height){
 		
 		$this->setup_tech_tree();
+		
+		$this->ship_classes = [];		
+		$this->structure_classes = [];
+		$this->upgrade_classes = [];
 		
 		$tech = $this->tech_tree->get_tech(1);
 		
@@ -310,11 +318,11 @@ class VOID {
 		
 		
 		$power_class = new VOID_UPGRADE_CLASS();
-		$power_class->id = 5;
+		$power_class->id = 1;
 		$power_class->name = "Space Nebula Shop";
 		$power_class->work_required = 40;
 		$tech = $this->tech_tree->get_tech(4);
-		$tech->add_power_class($power_class);
+		$tech->add_upgrade_class($power_class);
 		$this->upgrade_classes[$power_class->id] = $power_class;
 		
 		
@@ -537,6 +545,18 @@ class VOID {
 							}							
 							//$sector->system->owner = $fleet->owner;
 						}
+					}else if ($order->type == "construct"){						
+						$sector = $this->map->get_sector($fleet->x, $fleet->z);
+						VOID_DEBUG::write($order);
+						if ($fleet->get_special("construct") && $order->upgrade_id){							
+							$upgrade = $this->upgrade_classes[$order->upgrade_id];
+							$sector->add_upgrade($upgrade);							
+							$fleet->movement_points = 0;														
+							if ($fleet->remove_special("construct")){
+								// delete the fleet!								
+								$sector->clean_up();
+							}														
+						}
 					}else {
 						$fleet->movement_points = 0;
 						$fleet->put_order($order);
@@ -589,6 +609,8 @@ class VOID {
 									$this->fleets[$key]->add_order("move", array("x"=>$order['x'], "z"=>$order['z']));
 								}else if ($order['type'] == "colonise"){									
 									$this->fleets[$key]->add_order("colonise", array("x"=>$order['x'], "z"=>$order['z'], "planet_id" => $order['planet_id']));
+								}else if ($order['type'] == "construct"){									
+									$this->fleets[$key]->add_order("construct", array("x"=>$order['x'], "z"=>$order['z'], "upgrade_id" => $order['upgrade_id']));
 								}
 							}
 						}

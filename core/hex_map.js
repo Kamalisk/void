@@ -377,15 +377,15 @@ function redraw_overlay(){
 	var fleet_order_movement_counter = 0;
 	var last_hex = null;
 	// draw the current fleet orders
-	if (fleet_selected && fleet_orders && fleet_orders[fleet_selected]){
+	if (fleet_selected && fleet_orders && fleet_orders[fleet_selected.id]){
 		
-			$.each(fleet_orders[fleet_selected], function (key2, value){
+			$.each(fleet_orders[fleet_selected.id], function (key2, value){
 				if (value.type == "move"){
 					var hex = get_hex(value.x, value.z);
 					var coords = hex_to_pixel(value, map_scroll_offset);
 					fleet_order_movement_counter += hex.movement_cost;
 										
-					if(fleet_order_movement_counter > fleet_cache[fleet_selected].movement_capacity - fleet_order_movement_counter){
+					if(fleet_order_movement_counter > fleet_cache[fleet_selected.id].movement_capacity - fleet_order_movement_counter){
 						fleet_order_movement_counter = 0;
 						fleet_order_turn_counter++;						
 					}
@@ -416,7 +416,7 @@ function redraw_overlay(){
 	}	
 	
 	if (fleet_selected && fleet_order_mode && fleet_order_start_hex && hex_highlighted && get_hex(hex_highlighted.x,hex_highlighted.z) ){
-		var path = get_path_between_hexes(fleet_order_start_hex, hex_highlighted, fleet_cache[fleet_selected].movement_capacity);
+		var path = get_path_between_hexes(fleet_order_start_hex, hex_highlighted, fleet_cache[fleet_selected.id].movement_capacity);
 		//console.log(hex_highlighted);
 		//var path = false;		
 		if (path){
@@ -426,7 +426,7 @@ function redraw_overlay(){
 					
 					fleet_order_movement_counter += path[i].movement_cost;
 															
-					if(fleet_order_movement_counter > fleet_cache[fleet_selected].movement_capacity - fleet_order_movement_counter){
+					if(fleet_order_movement_counter > fleet_cache[fleet_selected.id].movement_capacity - fleet_order_movement_counter){
 						fleet_order_movement_counter = 0;
 						fleet_order_turn_counter++;								
 					}						
@@ -520,6 +520,7 @@ function preload_images(data, callback){
 	sources.push({'name':'morale', 'image':'images/icons/happy.png'});
 	sources.push({'name':'influence', 'image':'images/icons/influence.png'});
 	
+	sources.push({'name':'map_upgrade', 'image':'images/map_upgrade.png'});
 	
 	// add image data from server for preloading
 	for(key in sector_class_cache){		
@@ -629,17 +630,11 @@ function draw_map(map_id, first, custom_offset){
 	
 	for(var i = 0; i < hexes_to_draw.length; i++){
 		draw_map_tile(canvas, hexes_to_draw[i]);
-		if (first){
-			//draw_map_tile(mini_canvas, hexes_to_draw[i], true);
-		}
 	}
 	
 	for(var i = 0; i < hexes_to_draw.length; i++){
 		var hex = hexes_to_draw[i];
 		draw_tile_overlay(canvas, hex);
-		if (first){
-			//draw_tile_overlay(mini_canvas, hex, true);
-		}
 	}
 	
 	// draw objects
@@ -674,6 +669,14 @@ function draw_map(map_id, first, custom_offset){
 			  x: hex.pixel_x+35, y: hex.pixel_y
 			});
 		}
+		
+		if (hex.upgrade_id){
+			$(canvas_objects).drawImage({
+			  source: image_cache['map_upgrade'],
+			  x: hex.pixel_x, y: hex.pixel_y + 27
+			});
+		}
+		
 		if (hex.system && hex.system.population){
 			$(canvas_objects).drawText({
 			  fillStyle: "black",

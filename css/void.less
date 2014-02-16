@@ -2,6 +2,22 @@
 @primary_text_color : white;
 @primary_background_color : #2f2f2f;
 
+@map_layer = 5;
+@back_layer = 10;
+@middle_layer = 50;
+@top_layer = 100;
+
+.ractive-tooltip {
+	display: block;
+  position: fixed;
+  max-width: 300px;
+  background-color: #f4f4f4;
+  border: 1px solid #eee;
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+  padding: 0.5em;
+  font-size: 0.8em;
+}
+
 body {
 	background-color : @primary_background_color;
 	font-family : "verdana";
@@ -156,6 +172,18 @@ button:active {
 	display : none;
 }
 
+#tooltip_display {
+	display : none;
+	z-index : @top_layer;
+	position : absolute;
+	padding: 10px;
+  max-width: 200px;
+  color : #afafaf;
+  background-color: #2f2f2f;
+  border: 2px solid #6f6f6f;
+  border-radius : 4px;
+}
+
 .tooltipsy {
     padding: 10px;
     max-width: 200px;
@@ -189,8 +217,8 @@ button:active {
 	bottom : 0em;
 	left : 0em;
 	right : 0em;	
-	z-index : 10000;
-	display : none;
+	z-index : @middle_layer;
+	
 }
 .dialog_body {
 	width : 60%;		
@@ -199,7 +227,7 @@ button:active {
 	background : @primary_background_color;
 	border : solid white 2px;
 	border-radius : 5px;
-	z-index : 10000;
+	z-index : @middle_layer;
 }
 .dialog_header h2 button {
 	float : right;
@@ -242,7 +270,7 @@ div#player_resources {
 
 #main_loading{
 	position : absolute;
-	z-index : 2000;
+	z-index : @top_layer;
 	width : 100%;
 	height : 100%;
 	text-align : center;
@@ -277,7 +305,7 @@ div#player_resources {
 	left : 0px;
 	right : 0px;
 	bottom : 0px;
-	z-index : 1000;
+	z-index : @map_layer;
 	cursor : pointer;
 }
 
@@ -340,8 +368,8 @@ div#player_resources {
 	border-bottom : solid #3f3f3f 2px;
 	background-color : @primary_background_color;
 	border-radius : 0 0 0 5px;
-	display : none;
-	z-index : 1000;	
+	
+	z-index : @back_layer;	
 }
 #galactic_map_panel_content {
 	
@@ -354,7 +382,7 @@ div#player_resources {
 	right : 0px;
 	width : 300px;
 	
-	z-index : 1000;
+	z-index : @back_layer;	
 }
 
 #galactic_map_context_menu {
@@ -376,8 +404,22 @@ div#player_resources {
 	border-radius : 0 5px 0 0;
 	background-color : @primary_background_color;
 	padding : 0.2em;
-	display : none;
-	z-index : 1000;
+	
+	z-index : @back_layer;	
+}
+
+#galactic_map_panel_fleet_sub {
+	z-index : @back_layer;
+	position : absolute;
+	left : 0;
+	bottom : 0;
+	min-height : 50px;
+	width : 280px;
+	border-top : solid grey 2px;
+	border-right : solid grey 2px;
+	border-radius : 0 5px 0 0;
+	background-color : @primary_background_color;
+	padding : 0.2em;
 }
 
 #galactic_map_event_list {
@@ -385,10 +427,10 @@ div#player_resources {
 	top : 0;
 	left : 0;	
 	
-	background-color : rgba(70, 70, 70, 0.3);
+	background-color : rgba(70, 70, 70, 0.8);
 	padding : 0.3em;
-	display : none;
-	z-index : 1000;
+	
+	z-index : @back_layer;	
 }
 
 .event_log_item {
@@ -517,6 +559,8 @@ div.window_control .close_window {
 .selector_list {
 	height : 230px;	
 	overflow : auto;
+	overflow-x : hidden;
+	overflow : hidden;
 	border : solid #434343 1px;
 	border-bottom : solid #434343 1px;
 	margin-bottom : 0.1em;
@@ -630,7 +674,11 @@ div.window_control .close_window {
 
 /* resources */
 
-.food, .credits, .production, .research, mroale {
+.modifier {
+	
+}
+
+.food, .credits, .production, .research, .morale {
 	font-weight : bold;
 }
 
@@ -688,4 +736,22 @@ div.window_control .close_window {
 	margin : 0.8em;
 	min-width : 500px;
 	padding : 0.5em;
+}
+
+/* errors */
+
+#error_display {
+	position : absolute;
+	margin : auto;
+	bottom : 0px;	
+	z-index : @top_layer;	
+	border : solid grey 2px;
+	border-bottom : none;
+	border-radius : 5px 5px 0px 0px;
+	color : red;
+	font-weight : bold;
+	padding : 1em;
+	background-color : @primary_background_color;
+	left : 400px;
+	font-size : 1.2em;
 }

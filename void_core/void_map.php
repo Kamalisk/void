@@ -163,7 +163,11 @@ class VOID_MAP {
 				$sector->add_state($sector->system->owner->id, "sensor_power", 1);
 				
 				$neighbours = $sector->get_neighbours();
-				if ($sector->system->influence_level >= 10){
+				if ($sector->system->influence_level >= 20){
+					$influence_size = 6;
+				}else if ($sector->system->influence_level >= 15){
+					$influence_size = 5;
+				}else if ($sector->system->influence_level >= 10){
 					$influence_size = 4;
 				}else if($sector->system->influence_level >= 7){
 					$influence_size = 3;
@@ -173,16 +177,18 @@ class VOID_MAP {
 					$influence_size = 1;	
 				}
 				
-				for ($ring = 1; $ring < $influence_size; $ring++){					
+				for ($ring = 1; $ring <= $influence_size; $ring++){					
 					foreach($void_ranges[$ring] as $range){
 						$x = $sector->x + $range['x'];
 						$z = $sector->z + $range['z'];
 					
 						if (isset($this->sectors['x'.$x.'z'.$z])){
-							$n =& $this->sectors['x'.$x.'z'.$z];
-							$sector->system->add_influenced_sector($n);
+							$n =& $this->sectors['x'.$x.'z'.$z];							
 							$n->add_state($sector->system->owner->id, "sensor_power", 1);
-							$n->add_state($sector->system->owner->id, "influence", $sector->system->influence_level/$ring);
+							if ($ring < $influence_size ){
+								$sector->system->add_influenced_sector($n);
+								$n->add_state($sector->system->owner->id, "influence", $sector->system->influence_level/$ring);
+							}
 						}
 						
 					}
@@ -196,7 +202,7 @@ class VOID_MAP {
 				foreach($fleets as &$player_fleets){
 					foreach($player_fleets as &$fleet){
 						$sector->add_state($fleet->owner, "unknown", 0);
-						for ($ring = 1; $ring < 3; $ring++){
+						for ($ring = 1; $ring < 2; $ring++){
 							
 							foreach($void_ranges[$ring] as $range){
 								$x = $sector->x + $range['x'];

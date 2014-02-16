@@ -48,6 +48,8 @@ class VOID_PLAYER {
 	
 	public $available_ship_classes;
 	public $available_structure_classes;
+	public $available_upgrade_classes;
+	
 	public $built_structures;
 	
 	public $done;
@@ -131,6 +133,7 @@ class VOID_PLAYER {
 				$this->tech[$this->current_tech->class->id] = $this->current_tech;
 				$this->add_new_ship_classes($this->current_tech->class);
 				$this->add_new_structure_classes($this->current_tech->class);
+				$this->add_new_upgrade_classes($this->current_tech->class);
 				unset($this->available_tech[$this->current_tech->class->id]);
 				$this->current_tech = false;
 				$this->update_available_tech($tech_tree);
@@ -148,6 +151,11 @@ class VOID_PLAYER {
 	public function add_new_structure_classes($tech){
 		foreach($tech->structure_classes as &$class){
 			$this->available_structure_classes[$class->id] = $class;
+		}
+	}
+	public function add_new_upgrade_classes($tech){
+		foreach($tech->upgrade_classes as &$class){
+			$this->available_upgrade_classes[$class->id] = $class;
 		}
 	}
 	
