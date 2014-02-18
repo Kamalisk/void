@@ -120,6 +120,7 @@ class VOID_PLAYER {
 			$this->tech[$tech->id] = new VOID_TECH_ITEM($tech);
 			$this->add_new_ship_classes($tech);
 			$this->add_new_structure_classes($tech);
+			$this->add_new_upgrade_classes($tech);
 		}
 		$this->update_available_tech($tech_tree);
 	}

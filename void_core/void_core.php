@@ -78,6 +78,8 @@ class VOID_ORDER {
 	public $z;
 	public $planet_id;
 	public $upgrade_id;
+	public $fleet_id;
+	public $ship_id;
 	
 	function __construct($type){
 		$this->type = $type;
@@ -95,6 +97,12 @@ class VOID_ORDER {
 		}
 		if (isset($params['upgrade_id'])){
 			$this->upgrade_id = $params['upgrade_id'];
+		}
+		if (isset($params['fleet_id'])){
+			$this->fleet_id = $params['fleet_id'];
+		}
+		if (isset($params['ship_id'])){
+			$this->ship_id = $params['ship_id'];
 		}
 	}
 	
@@ -228,7 +236,7 @@ class VOID {
 		$ship_class->weapon_count = 0;
 		$ship_class->weapon_damage = 0;
 		$ship_class->movement_capacity = 6;
-		$tech = $this->tech_tree->get_tech(3);
+		$tech = $this->tech_tree->get_tech(1);
 		$tech->add_ship_class($ship_class);
 		$this->ship_classes[$ship_class->id] = $ship_class;
 		
@@ -317,13 +325,51 @@ class VOID {
 		$this->structure_classes[$structure_class->id] = $structure_class;
 		
 		
-		$power_class = new VOID_UPGRADE_CLASS();
-		$power_class->id = 1;
-		$power_class->name = "Space Nebula Shop";
-		$power_class->work_required = 40;
-		$tech = $this->tech_tree->get_tech(4);
-		$tech->add_upgrade_class($power_class);
-		$this->upgrade_classes[$power_class->id] = $power_class;
+		$upgrade_class = new VOID_UPGRADE_CLASS();
+		$upgrade_class->id = 1;
+		$upgrade_class->name = "Space Nebula Shop";
+		$upgrade_class->set_modifier("credits", 10);
+		$upgrade_class->work_required = 40;
+		$upgrade_class->add_requirement(3);
+		$upgrade_class->add_requirement(4);
+		$upgrade_class->add_requirement(5);
+		$tech = $this->tech_tree->get_tech(1);
+		$tech->add_upgrade_class($upgrade_class);
+		$this->upgrade_classes[$upgrade_class->id] = $upgrade_class;
+		
+		$upgrade_class = new VOID_UPGRADE_CLASS();
+		$upgrade_class->id = 2;
+		$upgrade_class->name = "Asteroid Amusement Park";
+		$upgrade_class->set_modifier("morale", 5);
+		$upgrade_class->work_required = 40;
+		$upgrade_class->add_requirement(2);
+		$tech = $this->tech_tree->get_tech(10);
+		$tech->add_upgrade_class($upgrade_class);
+		$this->upgrade_classes[$upgrade_class->id] = $upgrade_class;
+		
+		$upgrade_class = new VOID_UPGRADE_CLASS();
+		$upgrade_class->id = 3;
+		$upgrade_class->name = "Gaseous Anomaly Station";
+		$upgrade_class->set_modifier("research", 5);
+		$upgrade_class->work_required = 40;
+		$upgrade_class->add_requirement(3);
+		$upgrade_class->add_requirement(4);
+		$upgrade_class->add_requirement(5);
+		$tech = $this->tech_tree->get_tech(8);
+		$tech->add_upgrade_class($upgrade_class);
+		$this->upgrade_classes[$upgrade_class->id] = $upgrade_class;
+		
+		$upgrade_class = new VOID_UPGRADE_CLASS();
+		$upgrade_class->id = 4;
+		$upgrade_class->name = "Nebula Enrichment Facility";
+		$upgrade_class->set_modifier("influence", 20);
+		$upgrade_class->work_required = 40;
+		$upgrade_class->add_requirement(3);
+		$upgrade_class->add_requirement(4);
+		$upgrade_class->add_requirement(5);
+		$tech = $this->tech_tree->get_tech(3);
+		$tech->add_upgrade_class($upgrade_class);
+		$this->upgrade_classes[$upgrade_class->id] = $upgrade_class;
 		
 		
 		$starting_tech = $this->tech_tree->get_starting_tech();
@@ -480,24 +526,24 @@ class VOID {
 				foreach($sector->fleets as $player_id => $player_fleets){
 					foreach($player_fleets as $fleet){
 						$fleet->reset_movement_points();
-						$temp_fleet_cache[] = $fleet;						
+						$temp_fleet_cache[] = $fleet;	
 					}
 				}
 			}
 			if ($sector->system && $sector->system->owner){				
-				$temp_systems[] = $sector->system;
-				
+				$temp_systems[] = $sector->system;				
 				$sector->system->upkeep();
-				
-				// construction
-				// here for now at least				
-				$sector->system->process_orders($sector, $this);			
+				if($sector->system->docked_fleet){
+					$temp_fleet_cache[] = $sector->system->docked_fleet;
+				}							
 			}
 		}
-
 		
 		// combat + fleet orders
 		
+		// fleet transfers happen first
+		// cancel all other orders of fleets which perform transfers
+
 		// if two fleets cross paths resolve a battle
 		// if two fleets try to move to the same space, resolve a battle
 		// if more than two fleets trigger this, pick 2 opposing ones randomly
@@ -545,17 +591,23 @@ class VOID {
 							}							
 							//$sector->system->owner = $fleet->owner;
 						}
-					}else if ($order->type == "construct"){						
-						$sector = $this->map->get_sector($fleet->x, $fleet->z);
-						VOID_DEBUG::write($order);
+					}else if ($order->type == "transfer"){						
+						$from_fleet = $fleet;
+						$to_fleet = $this->fleets[$order->fleet_id];
+						$from_fleet->transfer_ship($order->ship_id, $to_fleet);
+						$continue = true;					
+					}else if ($order->type == "construct"){
+						$sector = $this->map->get_sector($fleet->x, $fleet->z);						
 						if ($fleet->get_special("construct") && $order->upgrade_id){							
 							$upgrade = $this->upgrade_classes[$order->upgrade_id];
-							$sector->add_upgrade($upgrade);							
-							$fleet->movement_points = 0;														
-							if ($fleet->remove_special("construct")){
-								// delete the fleet!								
-								$sector->clean_up();
-							}														
+							if ($upgrade->requirements_met($sector)){								
+								$sector->add_upgrade($upgrade);							
+								$fleet->movement_points = 0;														
+								if ($fleet->remove_special("construct")){
+									// delete the fleet!								
+									$sector->clean_up();
+								}
+							}											
 						}
 					}else {
 						$fleet->movement_points = 0;
@@ -571,17 +623,22 @@ class VOID {
 			$combat_sectors = [];
 		}
 		
+		foreach($temp_systems as $system){
+			$system->process_orders($this);
+		}
+		
 		// resolve building orders and growth
 		foreach($temp_systems as $system){
 			$system->resolve();
-		}				
-		
-		
-		
+		}	
+						
 		foreach($temp_systems as $system){
 			$system->update();
 		}
 		foreach($temp_fleet_cache as $fleet){
+			if (!$fleet->docked){
+				$this->map->get_sector($fleet->x, $fleet->z)->clean_up();
+			}
 			$fleet->update($this);
 		}		
 		
@@ -617,6 +674,20 @@ class VOID {
 					}
 				}
 				
+				if (isset($_POST['fleet_transfers'])){
+					$fleet_transfers = $_POST['fleet_transfers'];
+					foreach($fleet_transfers as $key => $transfer){
+						// reset all orders again. no transfer and orders allowed
+						$this->fleets[$key]->reset_orders();
+						if ($transfer['fleet_id']){
+							$this->fleets[$transfer['fleet_id']]->reset_orders();
+							if ($transfer['ship_id']){
+								$this->fleets[$key]->add_order("transfer", array("ship_id"=>$transfer['ship_id'], "fleet_id"=>$transfer['fleet_id']));								
+							}
+						}
+					}
+				}
+				
 				if (isset($_POST['system_orders'])){
 					$system_orders = $_POST['system_orders'];
 					//print_r($system_orders);
@@ -625,16 +696,26 @@ class VOID {
 						
 						if (isset($this->systems[$key])){
 							//$this->systems[$key]->reset_orders();
-							foreach($orders as $order){
-								//echo $key."  -- \n";				
-								//echo $order['target_id'];
-								if ($order['type'] == "ship"){
-									$target = $this->ship_classes[$order['target_id']];
-								}else if ($order['type'] == "structure"){
-									$target = $this->structure_classes[$order['target_id']];
+							foreach($orders as $order_key => $order){
+								$queue_item = $this->systems[$key]->build_queue->get($order_key);
+								if ($queue_item){
+									// updating an existing item
+									if (isset($order['purchased']) && $order['purchased']){
+										$queue_item->purchase($this->systems[$key]->owner);
+									}
+								}else {
+									// adding a new one
+									if ($order['type'] == "ship"){
+										$target = $this->ship_classes[$order['target_id']];
+									}else if ($order['type'] == "structure"){
+										$target = $this->structure_classes[$order['target_id']];
+									}
+									
+									$queue_item = $this->systems[$key]->add_order($order['type'], $target);
+									if (isset($order['purchased']) && $order['purchased']){
+										$queue_item->purchase($this->systems[$key]->owner);
+									}
 								}
-								
-								$this->systems[$key]->add_order($order['type'], $target);
 							}
 						}
 					}

@@ -58,6 +58,7 @@ class VOID_SYSTEM_VIEW {
 				$this->yours = true;
 				$this->build_queue = $system->build_queue->dump($system->production_per_turn);
 				
+				
 				$this->available_structures = [];
 				// generate a list of ids of the structures which can be built here
 				foreach($system->owner->available_structure_classes as $structure){
@@ -75,19 +76,19 @@ class VOID_SYSTEM_VIEW {
 			}
 			if ($system->influenced_sectors){
 				foreach($system->influenced_sectors as $sector){
-					$this->influenced_sectors[] = $sector->id;
+					$this->influenced_sectors[$sector->id] = $sector->id;
 				}
 			}
 			
 			
 		}
 		if ($system->planets){
-			foreach($system->planets as &$planet){
+			foreach($system->planets as $planet){
 				$this->planets[] = $planet->dump($player_id);
 			}
 		}
 		if ($system->structures){
-			foreach($system->structures as &$structure){
+			foreach($system->structures as $structure){
 				$this->structures[] = $structure->dump($player_id);
 			}
 		}
@@ -152,6 +153,9 @@ class VOID_SYSTEM {
 		
 		$this->build_queue = new VOID_QUEUE();
 		$this->structures = [];
+		
+		$this->influenced_sectors = [];				
+		
 	}
 	
 	public function add_planet($planet){
@@ -226,7 +230,7 @@ class VOID_SYSTEM {
 	
 		$this->food_per_turn = $this->get_food_income();
 		$this->production_per_turn = $this->get_production_income();		
-		$this->influence_per_turn = $this->get_influence_income();
+		$this->influence_per_turn = $this->get_influence_income();				
 		
 		if ($this->influence_level >= 10){
 			$this->influence_size = 4;
@@ -246,7 +250,7 @@ class VOID_SYSTEM {
 	
 	
 	public function update_planets(){
-		foreach($this->planets as &$planet){
+		foreach($this->planets as $planet){
 			if ($planet->terraformed){
 				$this->update();
 			}
@@ -257,10 +261,19 @@ class VOID_SYSTEM {
 		// returns the credit income from this system 
 		// apply tax rate here
 		$output = 0;
-		foreach($this->planets as &$planet){
+		foreach($this->planets as $planet){
 			if ($planet->terraformed){
 				$output += $planet->get_food_output() * $this->population * $planet->development;
 			}			
+		}
+		
+		if ($this->influenced_sectors){
+			foreach($this->influenced_sectors as $sector){
+				if ($sector->upgrade && $sector->owner->id == $this->owner->id){
+					$modifier = $sector->upgrade->get_modifier("food");
+					$output += $modifier;
+				}
+			}
 		}
 		
 		if ($this->structures){
@@ -281,6 +294,16 @@ class VOID_SYSTEM {
 		// returns the credit income from this system 
 		// apply tax rate here
 		$output = $this->population;		
+		
+		if ($this->influenced_sectors){
+			foreach($this->influenced_sectors as $sector){
+				if ($sector->upgrade && $sector->owner->id == $this->owner->id){
+					$modifier = $sector->upgrade->get_modifier("influence");
+					$output += $modifier;
+				}
+			}
+		}
+		
 		if ($this->structures){
 			foreach($this->structures as $structure){
 				$modifier = $structure->class->get_modifier("influence");
@@ -297,9 +320,18 @@ class VOID_SYSTEM {
 		// returns the credit income from this system 
 		// apply tax rate here
 		$output = 0;
-		foreach($this->planets as &$planet){
+		foreach($this->planets as $planet){
 			if ($planet->terraformed){
 				$output += $planet->get_credits_output() * $this->population * $planet->development;
+			}
+		}
+		
+		if ($this->influenced_sectors){
+			foreach($this->influenced_sectors as $sector){
+				if ($sector->upgrade && $sector->owner->id == $this->owner->id){
+					$modifier = $sector->upgrade->get_modifier("credits");
+					$output += $modifier;
+				}
 			}
 		}
 		
@@ -319,9 +351,18 @@ class VOID_SYSTEM {
 		// returns the research income from this system 
 		// apply tax rate here
 		$output = 0;
-		foreach($this->planets as &$planet){
+		foreach($this->planets as $planet){
 			if ($planet->terraformed){
 				$output += $planet->get_research_output() * $this->population * $planet->development;
+			}
+		}
+		
+		if ($this->influenced_sectors){
+			foreach($this->influenced_sectors as $sector){
+				if ($sector->upgrade && $sector->owner->id == $this->owner->id){
+					$modifier = $sector->upgrade->get_modifier("research");
+					$output += $modifier;
+				}
 			}
 		}
 		
@@ -340,9 +381,18 @@ class VOID_SYSTEM {
 		// returns the production income from this system 
 		// apply tax rate here
 		$output = 0;
-		foreach($this->planets as &$planet){
+		foreach($this->planets as $planet){
 			if ($planet->terraformed){
 				$output += $planet->get_production_output() * $this->population * $planet->development;
+			}
+		}
+		
+		if ($this->influenced_sectors){
+			foreach($this->influenced_sectors as $sector){
+				if ($sector->upgrade && $sector->owner->id == $this->owner->id){
+					$modifier = $sector->upgrade->get_modifier("production");
+					$output += $modifier;
+				}
 			}
 		}
 		
@@ -416,6 +466,7 @@ class VOID_SYSTEM {
 				
 		$this->docked_fleet = new VOID_FLEET();
 		$this->docked_fleet->capacity = 10;
+		$this->docked_fleet->docked = true;
 		$core->fleets[$this->docked_fleet->id] = $this->docked_fleet;
 		VOID_LOG::write($owner->id, "System was colonised");
 	}
@@ -429,6 +480,7 @@ class VOID_SYSTEM {
 			$this->owner->update_available_structure_class($target->id, true);
 		}
 		$this->build_queue->add($order);
+		return $order;
 	}
 	public function delete_order(){
 		
@@ -437,7 +489,8 @@ class VOID_SYSTEM {
 		
 	}
 	
-	public function process_orders($sector, $core){
+	public function process_orders($core){
+		$sector = $core->map->get_sector($this->x, $this->z);
 		global $ship_classes;
 		// if a construction order get the systems production and see if the item is done yet
 		
@@ -457,8 +510,7 @@ class VOID_SYSTEM {
 							$this->docked_fleet->add_ship($ship);
 						}
 					}
-				}else {
-					
+				}else {					
 					$fleet = new VOID_FLEET();
 					$core->fleets[$fleet->id] = $fleet;
 					$fleet->add_ship($ship);

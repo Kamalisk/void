@@ -46,6 +46,12 @@ var void_debug;
 
 var void_view;
 
+var changes = {
+	fleet_orders: {},
+	system_orders: {},
+	fleet_transfers: {}	
+};
+
 $(document).ready(function (){
 	
 	var custom_scroll_decorator = function ( node, content ) {
@@ -138,6 +144,14 @@ $(document).ready(function (){
 		  			return "+" + number;
 		  		}else {
 		  			return number;
+		  		}
+		  	},
+		  	turns: function (target, per_turn){
+		  		var turns = Math.ceil(target / per_turn);
+		  		if (turns == 1){
+		  			return turns+" turn";
+		  		}else {
+		  			return turns+" turns";
 		  		}
 		  	}
 	  	}
@@ -605,9 +619,69 @@ function context_menu(event, params){
 	event.preventDefault();
 }
 
+function start_fleet_management(){
+	var adj_hexes = [];
+	adj_hexes.push(get_adjacent_hex(hex_selected, 0));
+	adj_hexes.push(get_adjacent_hex(hex_selected, 1));
+	adj_hexes.push(get_adjacent_hex(hex_selected, 2));
+	adj_hexes.push(get_adjacent_hex(hex_selected, 3));
+	adj_hexes.push(get_adjacent_hex(hex_selected, 4));
+	adj_hexes.push(get_adjacent_hex(hex_selected, 5));	
+	void_view.set("fleet_management", fleet_selected);
+	void_view.set("fleet_management_hexes", adj_hexes);
+}
+
+function fleet_management_drag(event){
+	$("#tooltip_display").hide();	
+	event.dataTransfer.setData("from_fleet",$(event.target).attr("data-fleet") );
+	event.dataTransfer.setData("from_ship",$(event.target).attr("data-index") );
+}
+
+function fleet_management_drop(event){
+	//console.log( event.dataTransfer.getData("from_fleet"));
+	// now move the ship from one fleet to another somehow? :P
+	var from_fleet = fleet_cache[event.dataTransfer.getData("from_fleet")];
+	var from_ship_index = event.dataTransfer.getData("from_ship")
+	
+	var to_fleet = fleet_cache[$(event.target).attr("data-fleet")];
+	//var to_ship_index = $(event.target).attr("data-index");
+	
+	//console.log($(event.target).attr("data-fleet"));
+	if (!to_fleet.ships){
+		to_fleet.ships = [];
+	}
+	// player.fleet_size
+	if (to_fleet.ships.length >= 3){
+		show_error("A fleet cannot exceed 3 ships");
+		return false;
+	}
+	if (!from_fleet.ships[from_ship_index].from_fleet){
+		from_fleet.ships[from_ship_index].from_fleet = from_fleet.id;
+	}
+	from_fleet.transfer = true;
+	to_fleet.transfer = true;
+	
+	if (!changes.fleet_transfers[from_fleet.id]){
+		changes.fleet_transfers[from_fleet.id] = {};
+	}
+	changes.fleet_transfers[from_fleet.id].ship_id = from_fleet.ships[from_ship_index].id;
+	changes.fleet_transfers[from_fleet.id].fleet_id = to_fleet.id;
+	
+	to_fleet.ships.push(from_fleet.ships[from_ship_index]);
+	from_fleet.ships.splice(from_ship_index, 1);
+	
+	void_view.update();
+	
+}
+
 function start_fleet_order_mode(id){
 	// get the current fleet details 
 	var fleet = fleet_cache[id];
+	
+	if (fleet.transfer == true){
+		show_error("Cannot move a fleet undergoing ship transfers.");
+		return false;
+	}
 	
 	map_context_menu_type = "default";
 	map_right_click = "fleet_move";
@@ -708,6 +782,19 @@ function select_tech(id){
 	render_research();
 }
 
+function buy_queue_item(id){
+	player.credits_pool = player.credits_pool - 10;
+	// update player resources
+	// flag this queue item for speed up
+	if (!system_orders[hex_selected.id]){
+		system_orders[hex_selected.id] = {};
+	}
+	if (!system_orders[hex_selected.id][id]){
+		system_orders[hex_selected.id][id] = {};
+	}
+	system_orders[hex_selected.id][id].purchased = true;	
+	void_view.update("player");
+}
 
 function build_ship(ship_class_id){
 	var system = hex_map['x'+hex_selected.x+'z'+hex_selected.z].system;
@@ -739,6 +826,7 @@ function build_ship(ship_class_id){
 	system_orders[system.id][item.id] = item;
 	
 	void_view.update("system_view");
+	void_view.update("hex_selected");
 	//void_view.update("system_view.system");
 	
 	$(".custom_scroll").customScrollbar("resize", true);
@@ -785,6 +873,7 @@ function build_structure(structure_class_id){
 	
 	//show_map_panel_system(hex_selected);
 	void_view.update("system_view");
+	void_view.update("hex_selected");
 }
 
 
@@ -815,7 +904,7 @@ function click_to_hex(x, y, param, event){
 			if (hex_hover_history.length > 5){
 				hex_hover_history.pop();
 			}
-			redraw_overlay();
+			
 			fleet_selected = null;
 			if (hex_selected.your_fleets){
 				$.each(hex_selected.your_fleets, function(){
@@ -827,10 +916,12 @@ function click_to_hex(x, y, param, event){
 					fleet_selected = this;
 				});		
 			}
-			
+			redraw_overlay();
 			void_view.set("hex_selected", hex_selected);
 			void_view.set("fleet_selected", fleet_selected);
-			void_view.set("fleet_selected.sub", false);
+			if(fleet_selected){
+				void_view.set("fleet_selected.sub", false);
+			}
 			//show_map_panel_system(hex_selected);
 			//console.log(hex_map['x'+coords[0]+'z'+coords[2]]);			
 		}
@@ -852,16 +943,6 @@ function click_to_hex(x, y, param, event){
 	}
 }
 
-
-
-
-
-function galactic_map_panel_system_data($scope){
-	$scope.name = function (){
-		return "hey";
-	}
-}
-
 function reset_game(){
 	$.get("main.php"+location.search,{"action":"reset"},handle_end_turn);
 }
@@ -880,68 +961,6 @@ function fetch_game_data(first){
 	}
 	$.get(url,params,handle_fetch_game_data);
 
-}
-function create_fake_game_data(){
-	var data = new Object();
-	var width = 18;
-	var height = 18;
-	var hex_map2 = new Object();
-	for (var z = 0; z < height; z++){
-		for (var x = -Math.floor(z/2); x < width - Math.floor(z/2); x++){
-			
-			hex_map2['x'+x+'z'+z] = {'x':x,'z':z};
-			if (x < 3 || x > 10 || z < 5 || z > 16){
-				hex_map2['x'+x+'z'+z].unknown = 1;
-			}else {
-				if (Math.random() < 0.2){
-					hex_map2['x'+x+'z'+z].star = 1;
-					hex_map2['x'+x+'z'+z].planets = new Array();
-					var system_size = 0;
-					var max_system_size = 0;
-					for (var i = 0; i < Math.random()*6+1; i++){
-						hex_map2['x'+x+'z'+z].planets[i] = {
-							'name' : 'Planet '+i,
-							'class' : 'M',
-							'population' : 3
-						}
-						system_size += 3;
-						max_system_size += 5;
-					}
-					hex_map2['x'+x+'z'+z].size = system_size;
-					hex_map2['x'+x+'z'+z].max_size = max_system_size;
-				}
-				if (Math.random() < 0.2){
-					hex_map2['x'+x+'z'+z].fleet = 1;
-					hex_map2['x'+x+'z'+z].fleets = new Array();
-					for (var i = 1; i < Math.random()*2+1; i++){
-						hex_map2['x'+x+'z'+z].fleets[i] = new Object();
-					}
-				}
-				if (x > 5 && x < 10 && z > 5 && z < 10){
-					hex_map2['x'+x+'z'+z].friendly = 1;					
-				}else if (Math.random() < 0.2){
-					hex_map2['x'+x+'z'+z].enemy = 1;
-				}
-			} 
-		}
-	}
-	data.map = hex_map2;
-	data.map_width = width;
-	data.map_height = height;
-	
-	// the player object for the logged in players
-	data.player = new Object();
-	data.player.name = 'Kam';
-	data.player.home = {'x':7, 'z': 8};
-	data.player.resources = 'No Resources!';
-	data.players = new Object();
-	
-	data.tech = new Object();
-	data.ships = new Object();
-	data.planets = new Object();
-	
-	
-	return data;
 }
 
 function handle_fetch_game_data(data){
@@ -1050,8 +1069,9 @@ function end_turn(){
 	// send all committed orders to the server
 	$("#end_turn_button").attr("disabled", true);
 	$("#end_turn_button").html('<img src="images/ajax-loader.png"> End Turn ');
-	$.post("main.php"+location.search,{'action':'end_turn', 'fleet_orders':fleet_orders, 'system_orders':system_orders, 'current_tech':current_tech},handle_end_turn);
+	$.post("main.php"+location.search,{'action':'end_turn', 'fleet_transfers':changes.fleet_transfers, 'fleet_orders':fleet_orders, 'system_orders':system_orders, 'current_tech':current_tech},handle_end_turn);
 	system_orders = new Object();
+	changes.fleet_transfers = {};
 	current_tech = null;
 }
 

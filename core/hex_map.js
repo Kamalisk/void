@@ -365,10 +365,23 @@ function redraw_overlay(){
 	if (hex_selected && hex_map['x'+hex_selected.x+'z'+hex_selected.z]){
 		var coords = hex_to_pixel(hex_selected, map_scroll_offset);
 		draw_hex(canvas, coords.x,  coords.y, hex_size-3, "red", "none");
-		var system = hex_map['x'+hex_selected.x+'z'+hex_selected.z];
-		if (system && system.influence_size){
+		var system = hex_map['x'+hex_selected.x+'z'+hex_selected.z].system;
+		if (system && system.influenced_sectors){
 			// draw border around range of influence
-			
+			$.each(system.influenced_sectors, function(key, value){
+				var current_hex = hex_map[key];
+				var coords = hex_to_pixel(current_hex, map_scroll_offset);
+				if (current_hex){
+					// get adjacent hexes
+					// if adjacent hex is not in this group, draw a line on that side.
+					draw_hex_borders(canvas, coords.x,  coords.y, current_hex, "#ff00ff", function(tile1, tile2){						
+						if (system.influenced_sectors[tile2.id] || tile2.id == hex_selected.id){							
+							return false;
+						}
+						return true;
+					});
+				}
+			});				
 		}
 	}
 		
@@ -650,6 +663,7 @@ function draw_map(map_id, first, custom_offset){
 			
 			if (first){
 				// really needs to be temporary
+				// XXXX Move it from here!
 				$.each(hex.your_fleets, function (){
 					fleet_cache[this.id]  = this;
 				});
@@ -673,7 +687,7 @@ function draw_map(map_id, first, custom_offset){
 		if (hex.upgrade_id){
 			$(canvas_objects).drawImage({
 			  source: image_cache['map_upgrade'],
-			  x: hex.pixel_x, y: hex.pixel_y + 27
+			  x: hex.pixel_x, y: hex.pixel_y + 30
 			});
 		}
 		
@@ -694,6 +708,9 @@ function draw_map(map_id, first, custom_offset){
 				  x: hex.pixel_x, y: hex.pixel_y,
 				  width: 32, height: 32
 				});
+			}
+			if (hex.space_dock && hex.space_dock.fleet){				
+				fleet_cache[hex.space_dock.fleet.id]  = hex.space_dock.fleet;				
 			}
 		}
 	}
@@ -727,7 +744,7 @@ function draw_tile_overlay(canvas, map_tile, small){
 			if (map_tile.fog){
 				draw_hex(canvas, map_tile.pixel_x,  map_tile.pixel_y, hex_size, "rgba(0,0,0,0)", "rgba(80,80,80,0.4)");
 			}
-			draw_hex_borders(canvas, map_tile.pixel_x, map_tile.pixel_y, map_tile, "friendly");
+			draw_hex_borders(canvas, map_tile.pixel_x, map_tile.pixel_y, map_tile, players[map_tile.owner].color.border);
 		}
 	}
 	
@@ -774,25 +791,30 @@ function draw_map_tile(canvas, map_tile, small){
 }
 
 
-function draw_hex_borders(canvas, x, y, map_tile, property){
-
+function draw_hex_borders(canvas, x, y, map_tile, stroke_color, func){
 	
-	var stroke_color = players[map_tile.owner].color.border;
-	//var stroke_color = "#fff";
-	var adjacent_tile = get_adjacent_hex(map_tile, 0);
-	if (!adjacent_tile || (adjacent_tile.owner != map_tile.owner)){
+	if (!func){
+		func = function(tile1, tile2){
+			if (tile1.owner != tile2.owner){
+				return true;
+			}
+			return false;
+		};
+	}	
+	
+	var adjacent_tile = get_adjacent_hex(map_tile, 0);	
+	if (!adjacent_tile || func(map_tile, adjacent_tile)){
 		// north west
 		$(canvas).drawVector({
 		  strokeStyle: stroke_color,
 		  strokeWidth: 3,
 		  "x": x, "y": y-hex_size,
 		  a1: 240, l1: hex_size
-		});
-		
+		});		
 	}
 	
 	adjacent_tile = get_adjacent_hex(map_tile, 1);
-	if (!adjacent_tile || adjacent_tile.owner != map_tile.owner){
+	if (!adjacent_tile || func(map_tile, adjacent_tile)){
 		// north east border 
 		$(canvas).drawVector({
 		  strokeStyle: stroke_color,
@@ -803,7 +825,7 @@ function draw_hex_borders(canvas, x, y, map_tile, property){
 	}
 	
 	adjacent_tile = get_adjacent_hex(map_tile, 2);
-	if (!adjacent_tile || adjacent_tile.owner != map_tile.owner){
+	if (!adjacent_tile || func(map_tile, adjacent_tile)){
 		// east border??
 		$(canvas).drawVector({
 		  strokeStyle: stroke_color,
@@ -814,7 +836,7 @@ function draw_hex_borders(canvas, x, y, map_tile, property){
 	}
 
 	adjacent_tile = get_adjacent_hex(map_tile, 3);
-	if (!adjacent_tile || adjacent_tile.owner != map_tile.owner){
+	if (!adjacent_tile || func(map_tile, adjacent_tile)){
 		// south east border??
 		$(canvas).drawVector({
 		  strokeStyle: stroke_color,
@@ -825,7 +847,7 @@ function draw_hex_borders(canvas, x, y, map_tile, property){
 	}
 	
 	adjacent_tile = get_adjacent_hex(map_tile, 4);
-	if (!adjacent_tile || adjacent_tile.owner != map_tile.owner){
+	if (!adjacent_tile || func(map_tile, adjacent_tile)){
 		// south west border??
 		$(canvas).drawVector({
 		  strokeStyle: stroke_color,
@@ -836,7 +858,7 @@ function draw_hex_borders(canvas, x, y, map_tile, property){
 	}
 	
 	adjacent_tile = get_adjacent_hex(map_tile, 5);
-	if (!adjacent_tile || adjacent_tile.owner != map_tile.owner){
+	if (!adjacent_tile || func(map_tile, adjacent_tile)){
 		// west border??
 		$(canvas).drawVector({
 		  strokeStyle: stroke_color,

@@ -43,10 +43,13 @@ class VOID_STRUCTURE_CLASS {
 	
 	public $work_required;
 	
+	public $rush_cost;
+	
 	function __construct(){
 		$this->work_required = 10;
 		$this->empire_unique = false;
 		$this->world_unique = false;
+		$this->rush_cost = 20;
 		$this->modifiers = [];
 	}
 	

@@ -678,7 +678,7 @@ div.window_control .close_window {
 	
 }
 
-.food, .credits, .production, .research, .morale {
+.food, .credits, .production, .research, .morale, .influence {
 	font-weight : bold;
 }
 
@@ -754,4 +754,28 @@ div.window_control .close_window {
 	background-color : @primary_background_color;
 	left : 400px;
 	font-size : 1.2em;
+}
+
+/* fleet management */
+
+.fleet_management_fleet {
+	min-height : 150px;
+	border : solid grey 1px;
+	border-radius : 5px;
+	width : 200px;
+	display : inline-block;
+	vertical-align : top;
+	margin : 0.3em;
+	padding : 0.1em;
+	
+}
+
+.fleet_management_ship {
+	width : 150px;
+	border : dotted #121212 2px;
+	border-radius : 5px;
+}
+
+.fleet_management_ship_allowed {
+	border-color : #23c423;
 }

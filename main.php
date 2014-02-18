@@ -1,7 +1,7 @@
 <?
 
 error_reporting(E_ALL);
-ini_set("memory_limit","234217728");
+ini_set("memory_limit","274217728");
 
 include_once("void_core/void_core.php");
 

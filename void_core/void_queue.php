@@ -9,6 +9,7 @@ class VOID_QUEUE {
 	}
 	public function add($item){
 		$this->index[$item->type.$item->data->id] = 1;
+		$this->index[$item->id] = $item;
 		$this->items[] =& $item;
 	}
 	public function remove(){
@@ -26,7 +27,11 @@ class VOID_QUEUE {
 	public function progress($work){
 		$item = $this->get_front();
 		if ($item){
-			$item->progress = $item->progress - $work;
+			if ($item->purchased){
+				$item->progress = 0;
+			}else {
+				$item->progress = $item->progress - $work;
+			}						
 			if ($item->progress <= 0){
 				return $this->pop();
 			}
@@ -42,13 +47,21 @@ class VOID_QUEUE {
 		}
 		return false;
 	}
+	
+	public function get($id){
+		if (isset($this->index[$id])){
+			return $this->index[$id];
+		}
+		return false;
+	}
+	
 }
 
 class VOID_QUEUE_VIEW {
 	public $items;
 	function __construct($queue, $work=0){
 		$this->items = array();
-		foreach($queue->items as &$item){
+		foreach($queue->items as $item){
 			$this->items[] = $item->dump($work);
 		}
 	}
@@ -61,11 +74,19 @@ class VOID_QUEUE_ITEM {
 	public $progress;
 	public $target;
 	public $type;
-	
+	public $purchased;
 	function __construct(){
 		// generate a "random" unique id for the queue
-		$this->id = uniqid(rand(100,999));
+		$this->id = "v".uniqid(rand(100,999));
+		$this->purchased = false;
+	}
+	
+	function purchase($player){
 		
+		if ($player->credits_pool >= $this->data->rush_cost){			
+			$player->credits_pool = $player->credits_pool - $this->data->rush_cost;
+			$this->purchased = true;
+		}
 	}
 }
 
@@ -81,14 +102,22 @@ class VOID_SYSTEM_QUEUE_ITEM_VIEW {
 	public $id;
 	public $target_id;
 	public $turns;
-	
+	public $purchased;
+	public $progress;
 	function __construct($item, $work=0){
 		$this->id = $item->id;
 		$this->type = $item->type;
 		$this->target_id = $item->data->id;
-		if ($work){
-			$this->turns = ceil($item->progress / $work);
+
+		if ($item->progress <= 0){
+			$this->turns = 1;
+		}else if ($work && $work > 0){
+			$this->turns = ceil($item->progress / $work);		
+		}else {
+			$this->turns = 10000;
 		}
+		$this->purchased = $item->purchased;
+		$this->progress = $item->progress;
 	}
 }
 

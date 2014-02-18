@@ -16,7 +16,7 @@ class VOID_FLEET {
 	
 	public $capacity;
 	
-	public $docked;
+	public $docked;	
 	
 	function __construct(){
 		$this->id = void_unique_id();
@@ -38,10 +38,18 @@ class VOID_FLEET {
 		}
 	}
 	
+	public function remove_ship($ship_to_remove){
+		foreach($this->ships as $key => $ship){			
+			if ($ship->id == $ship_to_remove->id){
+				unset($this->ships[$key]);
+			}
+		}
+	}
+	
 	public function update_fleet_stats(){
 		$lowest_movement_points = 0;
 		if (count($this->ships)){			
-			foreach($this->ships as &$ship){
+			foreach($this->ships as $ship){
 				if (!$lowest_movement_points){
 					$lowest_movement_points = $ship->class->movement_capacity;
 				}
@@ -64,12 +72,27 @@ class VOID_FLEET {
 	}
 	
 	public function dump_view($player_id){
-		if (count($this->ships)){
+		if (count($this->ships) || $this->docked){
 			$view = new VOID_FLEET_VIEW($this, $player_id);
 			return $view;
 		}else {
 			return false;
 		}
+	}
+	
+	public function get_ship($id){
+		foreach($this->ships as $ship){
+			if ($ship->id == $id){
+				return $ship;
+			}
+		}
+		return false;
+	}
+	
+	public function transfer_ship($ship_id, $fleet){
+		$ship_to_move = $this->get_ship($ship_id);
+		$fleet->add_ship($ship_to_move);
+		$this->remove_ship($ship_to_move);
 	}
 	
 	public function move($x, $z, $core){
@@ -92,12 +115,18 @@ class VOID_FLEET {
 		$this->movement_points = $this->movement_capacity;
 	}
 	
-	public function clean_up(){
+	public function clean_up(){		
 		// remove any dead ships
 		foreach($this->ships as $key => $ship){
+			if (!$ship){
+				unset($this->ships[$key]);
+			}
 			if ($ship->shields <= 0){
 				unset($this->ships[$key]);
 			}
+		}
+		if ($this->docked){
+			return true;
 		}
 		if (count($this->ships) <= 0){
 			return true;
@@ -108,7 +137,7 @@ class VOID_FLEET {
 	public function get_special(){
 		if (count($this->ships)){
 			$special = [];
-			foreach($this->ships as &$ship){
+			foreach($this->ships as $ship){
 				if ($list = $ship->get_special()){
 					foreach($list as $item){
 						$special[$item] = $item;
@@ -123,7 +152,7 @@ class VOID_FLEET {
 	
 	public function remove_special($special){
 		if (count($this->ships) && $special){
-			foreach($this->ships as $key => &$ship){
+			foreach($this->ships as $key => $ship){
 				if ($ship->get_special($special)){
 					unset($this->ships[$key]);
 					if (count($this->ships) <= 0){
@@ -293,7 +322,7 @@ class VOID_SHIP_CLASS {
 		$this->weapon_count = 1;
 		$this->weapon_damage = 10;
 		$this->work_required = 10;
-		$this->rush_cost = 100;
+		$this->rush_cost = 20;
 		$this->movement_capacity = 2;
 	}
 	

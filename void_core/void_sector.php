@@ -26,6 +26,13 @@ class VOID_UPGRADE_CLASS {
 	function add_requirement($req){
 		$this->requirements[$req] = $req;
 	}
+	
+	function requirements_met($sector){
+		if (isset($this->requirements[$sector->class['id']])){
+			return true;
+		}
+		return false;
+	}
 }
 
 
@@ -57,6 +64,7 @@ class VOID_SECTOR_VIEW {
 	
 	public $x;
 	public $z;
+	public $id;
 	
 	public $type;
 	public $type_id;
@@ -80,6 +88,7 @@ class VOID_SECTOR_VIEW {
 		$this->x = $sector->x;
 		$this->z = $sector->z;
 		$this->movement_cost = 2;
+		$this->id = $sector->id;
 		if (isset($sector->state[$player_id])){
 			
 			if ($sector->upgrade){
@@ -113,8 +122,8 @@ class VOID_SECTOR_VIEW {
 				$this->enemy = 0;
 			}
 			
-			foreach($sector->fleets as $key => &$player_fleets){
-				foreach($player_fleets as $key => &$fleet){
+			foreach($sector->fleets as $key => $player_fleets){
+				foreach($player_fleets as $key => $fleet){
 					if ($fleet->owner == $player_id){
 						$this->your_fleets[] = $fleet->dump_view($player_id);
 					}else {
@@ -221,7 +230,7 @@ class VOID_SECTOR {
 	
 	public function get_primary_fleet($player_id){
 		if (isset($this->fleets[$player_id])){
-			foreach($this->fleets[$player_id] as &$fleet){
+			foreach($this->fleets[$player_id] as $fleet){
 				if ($fleet->in_transit == false){
 					return $fleet;
 				}
@@ -233,7 +242,7 @@ class VOID_SECTOR {
 	
 	public function get_fleet($id, $player_id){
 		if (isset($this->fleets[$player_id])){
-			foreach($this->fleets[$player_id] as &$fleet){
+			foreach($this->fleets[$player_id] as $fleet){
 				if ($fleet->id == $id){
 					return $fleet;
 				}
@@ -259,8 +268,8 @@ class VOID_SECTOR {
 	
 	public function get_combat_fleets(){
 		$fleets = array();
-		foreach ($this->fleets as $player_id => &$player_fleets){
-			foreach ($player_fleets as $fleet_id => &$fleet){
+		foreach ($this->fleets as $player_id => $player_fleets){
+			foreach ($player_fleets as $fleet_id => $fleet){
 				if (!$fleet->in_transit){
 					$fleets[] = $fleet;
 				}
@@ -312,7 +321,7 @@ class VOID_SECTOR {
 	public function clean_up(){
 		foreach($this->fleets as $player_id => $fleets){
 			foreach($fleets as $key => $fleet){
-				if (count($fleet->ships) <= 0){
+				if (count($fleet->ships) <= 0 && !$fleet->docked){
 					unset($this->fleets[$player_id][$key]);
 					if (count($this->fleets[$player_id]) <= 0){
 						unset($this->fleets[$player_id]);
@@ -332,7 +341,17 @@ class VOID_SECTOR {
 		if (!isset($this->state[$player_id])){
 			$this->state[$player_id] = new VOID_SECTOR_STATE();
 		}
-		$this->state[$player_id]->$property = $value;
+		if ($property == "influence"){
+			if ($this->state[$player_id]->$property){
+				if ($value >= $this->state[$player_id]->$property){
+					$this->state[$player_id]->$property = $value;
+				}
+			}else {
+				$this->state[$player_id]->$property = $value;
+			}
+		}else {
+			$this->state[$player_id]->$property = $value;
+		}		
 	}
 	
 	public function get_vision(){
@@ -393,7 +412,7 @@ class VOID_SECTOR {
 		}else {
 			$highest_influence = 1;
 		}
-		foreach($this->state as $player_id => &$state){
+		foreach($this->state as $player_id => $state){
 			if ($state->influence > $highest_influence && ($state->influence / $highest_influence) > 1.5){
 				$current_highest = $player_id;
 				$highest_influence = $state->influence;
@@ -419,7 +438,7 @@ class VOID_SECTOR {
 	}
 	
 	public function update_fog(){
-		foreach($this->state as $player_id => &$state){
+		foreach($this->state as $player_id => $state){
 			$this->fog_state[$player_id]['owner'] = $this->owner;
 			$this->fog_state[$player_id]['view'] = $this->dump_sector($player_id);
 		}
@@ -440,7 +459,7 @@ class VOID_COMBAT {
 		$this->fleets = $fleets;
 		$this->sector = $sector;
 		$players = [];
-		foreach($this->fleets as &$fleet){
+		foreach($this->fleets as $fleet){
 			$players[$fleet->owner] = $fleet->owner;
 		}
 		
@@ -448,8 +467,8 @@ class VOID_COMBAT {
 			VOID_LOG::write($player, "Combat occured in (".$sector->x.",".$sector->z.")");
 		}
 		
-		foreach($this->fleets as &$fleet){
-			foreach($fleet->ships as &$ship){
+		foreach($this->fleets as $fleet){
+			foreach($fleet->ships as $ship){
 				$this->ship_index[$ship->id] = $ship;
 				foreach($players as $player_id){
 					if ($player_id != $ship->owner){
