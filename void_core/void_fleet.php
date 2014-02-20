@@ -18,6 +18,8 @@ class VOID_FLEET {
 	
 	public $docked;	
 	
+	public $done;
+	
 	function __construct(){
 		$this->id = void_unique_id();
 		$this->in_transit = false;
@@ -25,6 +27,7 @@ class VOID_FLEET {
 		$this->docked = false;
 		$this->movement_points = 2;
 		$this->movement_capacity = 2;
+		$this->done = false;
 	}
 	
 	public function add_ship($ship){
@@ -102,17 +105,31 @@ class VOID_FLEET {
 		$core->map->get_sector($x, $z)->add_fleet($this);
 	}
 	
+	public function has_orders(){
+		if (count($this->orders) > 0){
+			return true;
+		}
+		return false;
+	}
+	
 	public function get_order($tick=0){
 		if ($this->orders){
-			return array_shift($this->orders);
+			return reset($this->orders);
 		}
 	}
+	public function complete_order(){
+		if ($this->orders){
+			array_shift($this->orders);
+		}
+	}
+	
 	public function put_order($order){
 		array_unshift($this->orders, $order);		
 	}
 	
 	public function reset_movement_points(){
 		$this->movement_points = $this->movement_capacity;
+		$this->done = false;
 	}
 	
 	public function clean_up(){		
@@ -163,6 +180,19 @@ class VOID_FLEET {
 		}
 		return false;
 	} 
+	
+	public function get_vision_range(){
+		$max_vision_range = 1;
+		if (count($this->ships)){
+			foreach($this->ships as $key => $ship){
+				if ($ship->class->vision_range && $ship->class->vision_range > $max_vision_range){
+					$max_vision_range = $ship->class->vision_range;
+				}
+			}
+		}
+		return $max_vision_range;
+	}
+	
 	
 	public function upkeep($core){
 		foreach($this->ships as $ship){
@@ -241,8 +271,8 @@ class VOID_SHIP {
 		$this->class = $class;
 		$this->owner = $player_id;
 		$this->id = void_unique_id();
-		$this->hull = 100;
-		$this->shields = 100;
+		$this->hull = $class->hull;
+		$this->shields = $class->shields;
 	}
 	
 	function dump($player_id){
@@ -309,12 +339,18 @@ class VOID_SHIP_CLASS {
 	public $weapon_type;
 	public $weapon_count;
 	
+	public $damage;
+	
 	public $movement_capacity;
+	public $vision_range;
 	
 	public $special;
 	
 	public $work_required;
 	public $rush_cost;
+	
+	public $hull;
+	public $shields;
 	
 	function __construct(){
 		$this->special = [];
@@ -322,8 +358,11 @@ class VOID_SHIP_CLASS {
 		$this->weapon_count = 1;
 		$this->weapon_damage = 10;
 		$this->work_required = 10;
+		$this->vision_range = 1;
 		$this->rush_cost = 20;
 		$this->movement_capacity = 2;
+		$this->hull = 100;
+		$this->shields = 10;
 	}
 	
 	function add_special($special){

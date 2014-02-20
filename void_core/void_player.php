@@ -61,6 +61,8 @@ class VOID_PLAYER {
 	
 	public $sources;
 	
+	public $player;
+	
 	function __construct($id){
 		$this->id = $id;
 		$this->research_pool = 0;
@@ -71,6 +73,7 @@ class VOID_PLAYER {
 		$this->sector_count = 0;
 		$this->tech_count = 0;
 		$this->sources = [];
+		$this->player = true;
 		VOID_LOG::init($id);
 	}
 	

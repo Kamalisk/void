@@ -234,7 +234,13 @@ $(document).ready(function (){
 
 
 
-
+function allow_actions(){
+	if (player.done){
+		return false;
+	}else {
+		return true;
+	}
+}
 
 
 
@@ -311,68 +317,6 @@ function fetch_template(id, data){
 	
 	//var html = template(data);
 	return source;
-}
-
-function append_template(template_id, data, element_id){
-	$("#"+element_id).hide();
-	$("#"+element_id).empty();
-	var html = fetch_template(template_id, data);	
-	$("#"+element_id).append(html);
-	
-	/*
-	$('.tooltip-template').bind('mouseenter',function(event){
-		if ($(event.target).attr("data-tooltip-id")){
-			//var target_tip_data_id = $(event.target).attr("data-tooltip-id");
-			//$("#tooltip_box").html($("#"+target_tip_data_id).html());
-			//$("#tooltip_box").css({"top":200, "left": 200});
-			//$("#tooltip_box").show();
-			console.log("boo");
-		}
-	})
-	.bind('mouseleave', function(event){
-		//$("#tooltip_box").hide();
-	});
-	*/
-	
-	clean_up_tooltips();
-	$('.tooltip-template', $("#"+element_id)).each(function() {
-		var selector = '#' + $(this).data('tooltip-id');		
-		$(this).tooltipsy({
-			content: $(selector).html(),
-			delay : 600,
-			alignTo: 'element',
-			offset: [1, 0], 
-			show: function (e, $el) {
-        $el.css({
-            'display': 'block'
-        });
-        if ($($el).position().left + $($el).width() > $(window).width()){
-        	$el.css({
-            'left': $($el).position().left - ($($el).position().left + $($el).width() - $(window).width() ) - 10
-        });
-        }
-        if ($($el).position().top + $($el).height() > $(window).height()){
-        	$el.css({
-            'top': $($el).position().top - ($($el).position().top + $($el).height() - $(window).height() ) - 40
-        });
-        }
-        if ($($el).position().top <= 0){
-        	$el.css({
-            'top':  40
-        });
-        }
-    	}
-		});
-	});
-	$('.tooltip-title', $("#"+element_id)).each(function() {
-		$(this).tooltipsy({
-			content: $(this).attr('title'),
-			delay : 700,
-			alignTo: 'element'
-		});
-	});
-	
-	$("#"+element_id).show();
 }
 
 function change_view(view_id){
@@ -638,6 +582,9 @@ function fleet_management_drag(event){
 }
 
 function fleet_management_drop(event){
+	if (!allow_actions()){
+		return;
+	}
 	//console.log( event.dataTransfer.getData("from_fleet"));
 	// now move the ship from one fleet to another somehow? :P
 	var from_fleet = fleet_cache[event.dataTransfer.getData("from_fleet")];
@@ -706,7 +653,9 @@ function end_fleet_order_mode(id){
 
 function add_fleet_order(start, end){
 	// add path of hexes to order list
-	
+	if (!allow_actions()){
+		return;
+	}
 	var path = get_path_between_hexes(start, end, fleet_cache[fleet_selected.id].movement_capacity);
 	if (path){
 		for (var i = 0; i < path.length ; i++){
@@ -732,6 +681,9 @@ function add_fleet_colonise_order_dialog(){
 }
 
 function add_fleet_colonise_order(pid){
+	if (!allow_actions()){
+		return;
+	}
 	if (fleet_orders[fleet_selected.id] && fleet_orders[fleet_selected.id].length > 0){
 		var previous_order = fleet_orders[fleet_selected.id][fleet_orders[fleet_selected.id].length-1];
 	}else {
@@ -754,6 +706,9 @@ function add_fleet_construct_order_dialog(){
 }
 
 function add_fleet_construct_order(uid){
+	if (!allow_actions()){
+		return;
+	}
 	if (fleet_orders[fleet_selected.id] && fleet_orders[fleet_selected.id].length > 0){
 		var previous_order = fleet_orders[fleet_selected.id][fleet_orders[fleet_selected.id].length-1];
 	}else {
@@ -768,10 +723,16 @@ function add_fleet_construct_order(uid){
 
 
 function cancel_fleet_orders(){
+	if (!allow_actions()){
+		return;
+	}
 	fleet_orders[fleet_selected.id] = new Array();
 }
 
 function select_tech(id){
+	if (!allow_actions()){
+		return;
+	}
 	if (!player.available_tech[id]){
 		return false;
 	}
@@ -783,6 +744,9 @@ function select_tech(id){
 }
 
 function buy_queue_item(id){
+	if (!allow_actions()){
+		return;
+	}
 	player.credits_pool = player.credits_pool - 10;
 	// update player resources
 	// flag this queue item for speed up
@@ -797,6 +761,9 @@ function buy_queue_item(id){
 }
 
 function build_ship(ship_class_id){
+	if (!allow_actions()){
+		return;
+	}
 	var system = hex_map['x'+hex_selected.x+'z'+hex_selected.z].system;
 	
 	var ship_class = ship_class_cache[ship_class_id];
@@ -834,6 +801,9 @@ function build_ship(ship_class_id){
 }
 
 function build_structure(structure_class_id){
+	if (!allow_actions()){
+		return;
+	}
 	var system = hex_map['x'+hex_selected.x+'z'+hex_selected.z].system;	
 	var structure_class = structure_class_cache[structure_class_id];
 	
@@ -944,7 +914,7 @@ function click_to_hex(x, y, param, event){
 }
 
 function reset_game(){
-	$.get("main.php"+location.search,{"action":"reset"},handle_end_turn);
+	$.post("main.php"+location.search,{"action":"reset"},handle_end_turn);
 }
 
 function fetch_game_data(first){
@@ -1041,7 +1011,7 @@ function game_update(data){
 		$("#end_turn_button").attr("disabled", false);
 	}else {
 		status_check();
-		$("#end_turn_button").html('<img src="images/ajax-loader.png"> End Turn ');
+		$("#end_turn_button").html('+ End Turn ');
 		$("#end_turn_button").attr("disabled", true);
 	}
 	$('#main_loading').hide();
@@ -1055,12 +1025,25 @@ function handle_status_check(data){
 	if (data.debug){
 		void_debug = data.debug;
 	}
+	var waiting_for_players = [];
 	if (data && data.player){
+		if (data.players){
+			
+			$.each(data.players, function(key, value){
+				if (value.done == false && value.id != player.id){
+					waiting_for_players.push(value);
+				}
+			});			
+		}
+		
 		if (data.player.done == false){
 			fetch_game_data();
 			return;
 		}
+		$("#end_turn_button").html('+ End Turn ');
+		$("#end_turn_button").attr("disabled", true);
 	}
+	void_view.set("waiting_for_players", waiting_for_players);
 	
 	setTimeout(status_check, 4000);
 }

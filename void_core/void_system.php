@@ -61,16 +61,18 @@ class VOID_SYSTEM_VIEW {
 				
 				$this->available_structures = [];
 				// generate a list of ids of the structures which can be built here
-				foreach($system->owner->available_structure_classes as $structure){
-					$available = true;
-					if ($system->build_queue->exists($structure->id, "structure")){
-						$available = false;
-					}
-					if ( !$system->owner->is_structure_available($structure->id) ){
-						$available = false;
-					} 
-					if ($available){
-						$this->available_structures[] = $structure->id;
+				if (isset($system->owner->available_structure_classes)){
+					foreach($system->owner->available_structure_classes as $structure){
+						$available = true;
+						if ($system->build_queue->exists($structure->id, "structure")){
+							$available = false;
+						}
+						if ( !$system->owner->is_structure_available($structure->id) ){
+							$available = false;
+						} 
+						if ($available){
+							$this->available_structures[] = $structure->id;
+						}
 					}
 				}
 			}
@@ -440,12 +442,16 @@ class VOID_SYSTEM {
 	}
 	
 	
-	public function dump($player_id){
+	public function dump($player_id){		
 		$view = new VOID_SYSTEM_VIEW($this, $player_id);
 		return $view;
 	}
 	
 	public function colonise($owner, $core, $pid=""){
+		if ($this->owner && $this->owner->id != $owner->id){
+			return false;
+		}
+		
 		if ($pid){
 			$planet = $this->get_planet($pid);
 			if (!$planet){

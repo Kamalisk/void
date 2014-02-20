@@ -30,25 +30,36 @@ class VOID_DEBUG {
 	static function dump(){
 		return self::$log;
 	}
+	
+	static function mem_check($obj){
+		$before = memory_get_usage();
+		clone($obj);
+		$after = memory_get_usage();
+		if ($after - $before > 1000){
+			self::write("memory change: ".($after - $before));
+		}
+	}
+	
 }
 
 class VOID_LOG {
 	static $game_id;
 	static $turn;
+	static $game_path;
 	
 	static function init($player_id){
-		file_put_contents("log/test.player".$player_id.".log", "");
+		file_put_contents(self::$game_path."player".$player_id.".log", "");
 	}
 	
 	static function write($player_id, $text){
 		if ($player_id){
-			file_put_contents("log/test.player".$player_id.".log", $text."\n", FILE_APPEND);
+			file_put_contents(self::$game_path."player".$player_id.".log", $text."\n", FILE_APPEND);
 		}
 	}
 	
 	static function get($player_id){
 		if ($player_id){
-			$contents = file_get_contents("log/test.player".$player_id.".log");
+			$contents = file_get_contents(self::$game_path."player".$player_id.".log");
 			return VOID_LOG::parse($contents);
 		}
 	}
@@ -162,9 +173,22 @@ class VOID {
 
 	public $tech_tree;	
 	
-	function __construct(){
+	public $game_id;
+	public $game_path;
+	
+	function __construct($id=1){
 		$this->map = new VOID_MAP();
-		VOID_LOG::$game_id = 1;		
+		VOID_LOG::$game_id = $id;	
+		$this->game_id = $id;
+		$this->game_path = "games/".$this->game_id."/";
+		if (!file_exists($this->game_path)){
+			mkdir($this->game_path);
+		}
+	}
+	
+	public function post_load(){
+		VOID_LOG::$game_id = $this->game_id;	
+		VOID_LOG::$game_path = $this->game_path;	
 	}
 	
 	public function setup($width, $height){
@@ -376,12 +400,19 @@ class VOID {
 		
 		$this->map = new VOID_MAP();
 		$this->players = [];
-		for($i = 1; $i < 12; $i++){
+		for($i = 1; $i < 3; $i++){
 			$this->players[$i] = new VOID_PLAYER($i);
 			$this->players[$i]->name = "Player ".$i;
 			$this->players[$i]->set_tech($this->tech_tree);
 			$this->players[$i]->done = false;
 		}
+		
+		$this->players[$i] = new VOID_PLAYER($i);
+		$this->neutral_player = $this->players[$i];
+		$this->neutral_player->player = false;
+		$this->players[$i]->set_tech($this->tech_tree);
+		$this->players[$i]->done = true;
+		$this->neutral_player->name = "Bavarian Space Pirates";
 		
 		$this->map->generate($width, $height, $this);
 		$this->map->populate($this);
@@ -403,14 +434,14 @@ class VOID {
 
 	public function load(){
 		// load the game
-		if (file_exists("test.map.void")){
-			$this->map = unserialize(file_get_contents("test.map.void"));
+		if (file_exists($this->game_data_path."map.void")){
+			$this->map = unserialize(file_get_contents($this->game_data_path."map.void"));
 		}
-		if (file_exists("test.players.void")){
-			$this->players = unserialize(file_get_contents("test.players.void"));
+		if (file_exists($this->game_data_path."players.void")){
+			$this->players = unserialize(file_get_contents($this->game_data_path."players.void"));
 		}
-		if (file_exists("test.ship_classes.void")){
-			$this->ship_classes = unserialize(file_get_contents("test.ship_classes.void"));
+		if (file_exists($this->game_data_path."ship_classes.void")){
+			$this->ship_classes = unserialize(file_get_contents($this->game_data_path."ship_classes.void"));
 		}
 		if (file_exists("test.ship_classes.void")){
 			//$this->ship_classes = unserialize(file_get_contents("test.ship_classes.void"));
@@ -418,14 +449,14 @@ class VOID {
 	}
 	public function save(){
 		// store the game 
-		file_put_contents("test.map.void", serialize($this->map));
-		file_put_contents("test.players.void", serialize($this->players));
-		file_put_contents("test.ship_classes.void", serialize($this->ship_classes));
+		file_put_contents($this->game_data_path."map.void", serialize($this->map));
+		file_put_contents($this->game_data_path."players.void", serialize($this->players));
+		file_put_contents($this->game_data_path."ship_classes.void", serialize($this->ship_classes));
 	}
 	
 	public function dump_map($player_id, $first=false){
 		global $void_planet_classes;
-		global $void_sector_classes;
+		global $void_sector_classes;				
 		
 		header("Content-type: application/json");
 		$return = array();
@@ -446,6 +477,8 @@ class VOID {
 			$return['structure_classes'] = $this->structure_classes;
 			$return['tech_tree'] = $this->tech_tree->dump();			
 		}
+		$return['debug'] = VOID_DEBUG::dump();
+		
 		//$this->map->players = $this->players;
 		echo json_encode($return, JSON_NUMERIC_CHECK);
 	}
@@ -469,15 +502,17 @@ class VOID {
 	
 	public function reset_player_state(){
 		foreach($this->players as $player){
-			$player->done = false;
+			if ($player->player){
+				$player->done = false;
+			}
 			//$player->done = false;
 		}
 	}
 	public function are_players_finished(){
-		return true;
+		//return true;
 		// for now return true, so turn can be processed quickly for testing		
 		foreach($this->players as $player){
-			if (!$player->done){
+			if (!$player->done && $player->player){
 				return false;
 			}
 		}
@@ -527,6 +562,7 @@ class VOID {
 					foreach($player_fleets as $fleet){
 						$fleet->reset_movement_points();
 						$temp_fleet_cache[] = $fleet;	
+						$temp_fleets_with_orders [] = $fleet;
 					}
 				}
 			}
@@ -535,9 +571,59 @@ class VOID {
 				$sector->system->upkeep();
 				if($sector->system->docked_fleet){
 					$temp_fleet_cache[] = $sector->system->docked_fleet;
+					$temp_fleets_with_orders [] = $fleet;
 				}							
 			}
 		}
+		
+		
+		// ORDERS 
+		
+		while (count($temp_fleets_with_orders) > 0){
+			foreach($temp_fleets_with_orders as $fleet){
+				// check if any move orders would start a battle
+				
+				// or any move orders would overlap ships that shouldn't 
+			}
+			break;
+		}
+		
+		
+		// other orders
+		
+		// intercept
+		// will attack any enemy fleet that moves into or through an adjacent hex. attack damage distributed over all fleets if several targets
+		
+		// defend 
+		// apply an attack and defense modifier to adjacent fleets
+		
+		// attack only order
+		// attack the given sector and fleet. If the fleet moves, it gets attacked before moving. the fleet does not move.
+		// similar to intercept but more specific. 
+		
+		// move
+		// moves one space at a time towards the destination
+		// if moves to a space adjacent to an enemy, move ends. always gets one movement.
+		
+		// if two fleets try to move onto each other, neither moves and battle occurs.
+		
+		// if for some reasons 2 FRIENDLY fleets are forced to exist in the same space, one is assumed to be in transit, and is unable to act until the other 
+		// fleet has moved or is destroyed. It gets attacked freely. 
+		
+		// ****************  !!!!!!!!!!!!!!!**********************
+		// if territory expands around a fleet that should not be there, it will move to the nearest space it can (or maybe the owner has to move it)		
+		// if open borders ends, and fleets are where they should not be. DO NOTHING. War is declared if fleets are left there
+		
+		
+		// first compile list of combat moves
+		
+		// resolve combat
+		
+		// move ships that have no conflict
+		
+		// enemy + friendly conflict = battle zone
+		
+		// friendly + friendly conflict = one fleet is in "statis"
 		
 		// combat + fleet orders
 		
@@ -568,12 +654,12 @@ class VOID {
 								//$sector1->remove_fleet($fleet);
 								$fleet->move($order->x, $order->z, $this);
 								$combat_sectors[] = $sector2;
+								$fleet->complete_order();
 							}else {
 								$fleet->movement_points = 0;
 								if ($sector2->movement_cost > $fleet->movement_capacity){
+									$fleet->complete_order();
 									$fleet->reset_orders();									
-								}else {
-									$fleet->put_order($order);
 								}
 							}
 						}
@@ -591,11 +677,13 @@ class VOID {
 							}							
 							//$sector->system->owner = $fleet->owner;
 						}
+						$fleet->complete_order();
 					}else if ($order->type == "transfer"){						
 						$from_fleet = $fleet;
 						$to_fleet = $this->fleets[$order->fleet_id];
 						$from_fleet->transfer_ship($order->ship_id, $to_fleet);
-						$continue = true;					
+						$fleet->complete_order();
+						$continue = true;	
 					}else if ($order->type == "construct"){
 						$sector = $this->map->get_sector($fleet->x, $fleet->z);						
 						if ($fleet->get_special("construct") && $order->upgrade_id){							
@@ -609,9 +697,9 @@ class VOID {
 								}
 							}											
 						}
+						$fleet->complete_order();
 					}else {
-						$fleet->movement_points = 0;
-						$fleet->put_order($order);
+						$fleet->movement_points = 0;						
 					}
 				}
 			}
@@ -741,7 +829,7 @@ class VOID {
 				}				
 			} else if ($input['action'] == "reset"){
 					$this->map = new VOID_MAP();
-					$this->setup(60,40);
+					$this->setup(30,20);
 					//$this->save();
 			}
 		}
