@@ -19,6 +19,7 @@ class VOID_FLEET {
 	public $docked;	
 	
 	public $done;
+	public $damage;
 	
 	function __construct(){
 		$this->id = void_unique_id();
@@ -98,11 +99,17 @@ class VOID_FLEET {
 		$this->remove_ship($ship_to_move);
 	}
 	
-	public function move($x, $z, $core){
-		$core->map->get_sector($this->x, $this->z)->remove_fleet($this);
-		$this->x = $x;
-		$this->z = $z;
-		$core->map->get_sector($x, $z)->add_fleet($this);
+	public function move($x, $z, $core){				
+		$old_x = $this->x;
+		$old_z = $this->z;
+		if ($core->map->get_sector($x, $z)->add_fleet($this)){			
+			$core->map->get_sector($old_x, $old_z)->remove_fleet($this);
+			$this->x = $x;
+			$this->z = $z;
+			return true;
+		}else {
+			return false;
+		}
 	}
 	
 	public function has_orders(){
@@ -113,8 +120,10 @@ class VOID_FLEET {
 	}
 	
 	public function get_order($tick=0){
-		if ($this->orders){
+		if ($this->orders && count($this->orders) > 0){
 			return reset($this->orders);
+		}else {
+			return false;
 		}
 	}
 	public function complete_order(){
@@ -138,7 +147,7 @@ class VOID_FLEET {
 			if (!$ship){
 				unset($this->ships[$key]);
 			}
-			if ($ship->shields <= 0){
+			if ($ship->hull <= 0){
 				unset($this->ships[$key]);
 			}
 		}
@@ -201,8 +210,31 @@ class VOID_FLEET {
 	}
 	
 	public function update($core){
+		$this->update_damage();
 		foreach($this->ships as $ship){
-			$ship->update($core);
+			$ship->update($core);			
+		}
+	}
+	
+	
+	public function fire($enemy_fleet){		
+		// calculate damage output of fleet			
+		$enemy_fleet->hit($this->damage);
+		VOID_LOG::write($this->owner, "Your fleet has damaged another fleet");
+	}
+	
+	public function hit($damage){
+		// do damage to the ships in the fleet
+		$damage = ceil($damage / count($this->ships));
+		foreach($this->ships as $ship){
+			$ship->hit($damage);
+		}
+	}
+	
+	public function update_damage(){
+		$this->damage = 0;
+		foreach($this->ships as $ship){
+			$this->damage = $this->damage + $ship->damage;			
 		}
 	}
 	
@@ -226,6 +258,8 @@ class VOID_FLEET_VIEW extends VOID_VIEW {
 	public $movement_points;
 	public $movement_capacity;
 	
+	public $damage;
+	
 	function __construct($fleet, $player_id){
 		
 		$this->ships = [];
@@ -242,6 +276,7 @@ class VOID_FLEET_VIEW extends VOID_VIEW {
 		$this->id = $fleet->id;
 		$this->capacity = $fleet->capacity;
 		$this->used_capacity = count($fleet->ships);
+		$this->damage = $fleet->damage;
 		//$this->show = true;
 		if ($this->owner == $player_id){
 			$this->orders = $fleet->orders;
@@ -267,12 +302,15 @@ class VOID_SHIP {
 	public $hull;
 	public $shields;
 	
+	public $damage;
+	
 	function __construct($class, $player_id){
 		$this->class = $class;
 		$this->owner = $player_id;
 		$this->id = void_unique_id();
 		$this->hull = $class->hull;
 		$this->shields = $class->shields;
+		$this->damage = $class->damage;
 	}
 	
 	function dump($player_id){
@@ -289,14 +327,18 @@ class VOID_SHIP {
 		}
 	}
 	
+	public function hit($damage){
+		$this->damage($damage);
+	}
+	
 	public function damage($amount){
 		if ($this->shields > 0){
-			$this->shields = $this->shields - $amount;
-		}
-		if ($this->shields <= 0){
-			$this->shields = 0;
-			$this->hull = $this->hull - $amount;
-		}
+			$amount = $amount - $this->shields;
+			if ($amount <= 0){
+				return;
+			}
+		}				
+		$this->hull = $this->hull - $amount;
 	}
 	
 	public function get_special($special=""){
@@ -305,6 +347,11 @@ class VOID_SHIP {
 	
 	public function update($core){
 		$core->players[$this->owner]->update_resource("credits", -2, "ship");
+		if ($this->hull){
+			$this->damage = ceil($this->class->damage * ($this->hull / $this->class->hull));
+		}else {
+			$this->damage = 0;
+		}
 	}
 	
 }
@@ -315,6 +362,7 @@ class VOID_SHIP_VIEW {
 	
 	public $hull;
 	public $shields;
+	public $damage;
 	
 	public $id;
 	
@@ -322,10 +370,11 @@ class VOID_SHIP_VIEW {
 		$this->class_id = $ship->class->id;
 		$this->owner = $ship->owner;
 		$this->id = $ship->id;
-		if ($player_id == $this->owner){
+		//if ($player_id == $this->owner){
 			$this->hull = $ship->hull;
 			$this->shields = $ship->shields;
-		}
+		//}
+		$this->damage = $ship->damage;
 	}
 	
 	
@@ -363,6 +412,7 @@ class VOID_SHIP_CLASS {
 		$this->movement_capacity = 2;
 		$this->hull = 100;
 		$this->shields = 10;
+		$this->damage = 10;
 	}
 	
 	function add_special($special){

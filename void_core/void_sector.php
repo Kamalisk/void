@@ -240,15 +240,63 @@ class VOID_SECTOR {
 	}
 	
 	
-	public function get_fleet($id, $player_id){
-		if (isset($this->fleets[$player_id])){
-			foreach($this->fleets[$player_id] as $fleet){
-				if ($fleet->id == $id){
-					return $fleet;
-				}
+	public function get_direction($target_sector, $core){
+		global $void_hex_adjacent;						
+		foreach($void_hex_adjacent as $key => $range){
+			$x = $this->x + $range[0];
+			$z = $this->z + $range[1];
+			$sector = $core->map->get_sector($x,$z);
+			if ($sector && $sector->x == $target_sector->x && $sector->z == $target_sector->z){
+				return $key;
 			}
 		}
 		return false;
+	}
+	
+	public function get_adjacent_sectors($core){
+		global $void_ranges;				
+		$ajacent_sectors = [];
+		foreach($void_ranges[1] as $range){
+			$x = $this->x + $range['x'];
+			$z = $this->z + $range['z'];
+			$sector = $core->map->get_sector($x,$z);
+			if ($sector){
+				$adjacent_sectors[] = $sector;
+			}
+		}
+		return $adjacent_sectors;
+	}
+	
+	public function is_enemy_adjacent($player_id, $core){
+		$adj = $this->get_adjacent_sectors($core);
+		foreach($adj as $sector){
+			$enemy_fleets = $sector->get_enemy_fleets($player_id);
+			if ($enemy_fleets){
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	
+	public function get_fleet($id="", $player_id=""){
+		if ($id && $player_id){
+			if (isset($this->fleets[$player_id])){
+				foreach($this->fleets[$player_id] as $fleet){
+					if ($fleet->id == $id){
+						return $fleet;
+					}
+				}
+			}
+			return false;
+		}else {
+			if (count($this->fleets) > 0){
+				$temp_player = reset($this->fleets);
+				return reset($temp_player);
+			}else {
+				return false;
+			}
+		}
 	}
 	
 	public function get_fleets($player_id){
@@ -266,6 +314,27 @@ class VOID_SECTOR {
 		return $return;
 	}
 	
+	
+	
+	
+	public function get_enemy_fleets($player_id){
+		$fleets = array();
+		foreach ($this->fleets as $fleet_owner_id => $player_fleets){
+			if ($fleet_owner_id != $player_id){
+				foreach ($player_fleets as $fleet_id => $fleet){
+					if (!$fleet->in_transit){
+						$fleets[] = $fleet;
+					}
+				}
+			}
+		}
+		if (count($fleets) <= 0){
+			return false;
+		}
+		return $fleets;
+	}
+	
+	
 	public function get_combat_fleets(){
 		$fleets = array();
 		foreach ($this->fleets as $player_id => $player_fleets){
@@ -282,12 +351,17 @@ class VOID_SECTOR {
 	}
 	
 	public function add_fleet($fleet){
+		if (count($this->fleets) > 0){
+			return false;
+		}
 		$fleet->x = $this->x;
 		$fleet->z = $this->z;
+		
 		if (isset($this->fleets[$fleet->owner]) && count($this->fleets[$fleet->owner]) > 0){
 			$fleet->in_transit = true;
 		}
 		$this->fleets[$fleet->owner][$fleet->id] = $fleet;
+		return true;
 	}
 	public function remove_fleet($fleet){
 		

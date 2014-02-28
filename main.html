@@ -124,8 +124,19 @@
 				</div>
 			{{/fleet_selected.sub}}
 			
+			{{#combat_comparison}}
+				<div id="combat_comparison">
+				{{>combat_comparison_template}}
+				</div>
+			{{/combat_comparison}}
+			
 			{{/fleet_selected}}						
 			
+			{{#enemy_fleet_selected}}
+			<div id="galactic_map_panel_enemy_fleet">
+				{{>galactic_map_panel_enemy_fleet_template}}
+			</div>
+			{{/enemy_fleet_selected}}			
 			
 			
 			{{#player.logs}}
@@ -374,7 +385,7 @@
 	
 	
 	<script id="galactic_map_panel_fleet_template" type="text/ractive">		
-		<h3 class="map_panel_header">{{id}} ({{x}}, {{z}})</h3>
+		<h3 class="map_panel_header">Your Fleet ({{x}}, {{z}})</h3>
 		<h4>Actions</h4>
 		<p>
 		<button type="button" onclick="start_fleet_order_mode('{{id}}')">Move Fleet</button>
@@ -387,8 +398,25 @@
 		{{#ships.length > 0}}			
 			<ul>
 			{{#ships}}
+			<li decorator="tooltip" data-decorator="ship-class-tooltip-{{ship_class_cache[class_id].id}}">
+			{{ship_class_cache[class_id].name}} (Shields: {{shields}} Hull: {{hull}} Damage: {{damage}} )</li>	
+			</li>
+			{{/ships}}
+			</ul>
+		{{/ships.length > 0}}
+		{{^ships}}
+			None
+		{{/ships}}
+	</script>
+	
+	<script id="galactic_map_panel_enemy_fleet_template" type="text/ractive">		
+		<h3 class="map_panel_header">Enemy Fleet ({{x}}, {{z}})</h3>
+		<h4>Ships</h4>
+		{{#ships.length > 0}}			
+			<ul>
+			{{#ships}}
 			<li decorator="tooltip" data-decorator="ship-class-tooltip-{{class.id}}">
-			{{class.name}} (Shields: {{shields}} Hull: {{hull}})</li>				
+			{{class.name}} (Shields: {{shields}} Hull: {{hull}} Damage: {{damage}} )</li>	
 			</li>
 			{{/ships}}
 			</ul>
@@ -564,7 +592,10 @@
 		</div>
 	</script>
 	
-
+	<script id="combat_comparison_template" type="text/ractive">
+		<p style="color : red;">Damage done to you: {{incoming}}</p> 
+		<p style="color : green;">Damage done to them: {{outgoing}}</p> 
+	</script>
 	
 	<script id="planet_template" type="text/ractive">
 		<img src="{{#terraformed}}{{image_populated}}{{/terraformed}}{{^terraformed}}{{image}}{{/terraformed}}" alt="{{name}}" title="{{name}}" oncontextmenu="context_menu(event, {})">
@@ -579,14 +610,14 @@
 	
 	<script id="ship_class_template" type="text/ractive">			
 			<h4>{{name}}</h4>
-			<ul class="ship_class">				
-				<li>Weapons: {{weapon_count}}x{{weapon_damage}} ({{weapon_type}})</li>				
-				<li>Special: {{special}}</li>
-				<li>Movement Capacity: {{movement_capacity}}</li>
-				<li>Hull: {{hull}}</li>
-				<li>Shields: {{shields}}</li>
-				<li>Production cost: {{work_required}}</li>
-			</ul>
+			<table class="ship_class">			
+				<tr><th>Damage</th> <td>{{damage}}</td></tr>				
+				<tr><th>Special</th> <td>{{#special:key}}{{.}}{{/special}}</td></tr>
+				<tr><th>Movement</th> <td>{{movement_capacity}}</td></tr>
+				<tr><th>Hull</th> <td>{{hull}}</td></tr>
+				<tr><th>Shields</th> <td>{{shields}}</td></tr>
+				<tr><th>Production</th> <td>{{work_required}}</td></tr>
+			</table>
 	</script>
 	
 	<script id="structure_class_template" type="text/ractive">			

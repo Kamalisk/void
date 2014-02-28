@@ -633,7 +633,7 @@ function start_fleet_order_mode(id){
 	map_context_menu_type = "default";
 	map_right_click = "fleet_move";
 
-	if (fleet_orders[id]){
+	if (fleet_orders[id] && fleet_orders[id].length > 0){
 		fleet_order_start_hex = fleet_orders[id][fleet_orders[id].length-1];
 	}else {
 		fleet_order_start_hex = get_hex(fleet.x,fleet.z);
@@ -726,8 +726,22 @@ function cancel_fleet_orders(){
 	if (!allow_actions()){
 		return;
 	}
-	fleet_orders[fleet_selected.id] = new Array();
+	fleet_orders[fleet_selected.id] = [];
+	fleet_selected.orders = [];
+	redraw_overlay();
 }
+
+function show_combat_comparison(fleet1, fleet2){
+	// calculate comparison?
+	var combat_comparison = {};
+	combat_comparison.outgoing = fleet1.damage;
+	combat_comparison.incoming = fleet2.damage;
+	void_view.set("combat_comparison", combat_comparison)
+}
+function hide_combat_comparison(){
+	void_view.set("combat_comparison", "")
+}
+
 
 function select_tech(id){
 	if (!allow_actions()){
@@ -886,9 +900,21 @@ function click_to_hex(x, y, param, event){
 					fleet_selected = this;
 				});		
 			}
+			enemy_fleet_selected = null;
+			if (hex_selected.enemy_fleets){
+				$.each(hex_selected.enemy_fleets, function(){
+					if (this.ships && this.ships){
+						$.each(this.ships, function (){
+							this.class = ship_class_cache[this.class_id];					
+						});
+					}
+					enemy_fleet_selected = this;
+				});		
+			}
 			redraw_overlay();
 			void_view.set("hex_selected", hex_selected);
 			void_view.set("fleet_selected", fleet_selected);
+			void_view.set("enemy_fleet_selected", enemy_fleet_selected);
 			if(fleet_selected){
 				void_view.set("fleet_selected.sub", false);
 			}

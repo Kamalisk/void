@@ -214,8 +214,7 @@ class VOID {
 		$ship_class->name = "Colony";
 		$ship_class->add_special("colony");
 		$ship_class->work_required = 50;
-		$ship_class->weapon_count = 0;
-		$ship_class->weapon_damage = 0;
+		$ship_class->damage = 0;
 		$tech->add_ship_class($ship_class);
 		$this->ship_classes[$ship_class->id] = $ship_class;
 		
@@ -223,8 +222,7 @@ class VOID {
 		$ship_class->id = 3;
 		$ship_class->name = "Attack";
 		$ship_class->work_required = 30;
-		$ship_class->weapon_count = 3;
-		$ship_class->weapon_damage = 15;
+		$ship_class->damage = 20;
 		$tech = $this->tech_tree->get_tech(2);
 		$tech->add_ship_class($ship_class);
 		$this->ship_classes[$ship_class->id] = $ship_class;
@@ -233,8 +231,7 @@ class VOID {
 		$ship_class->id = 4;
 		$ship_class->name = "Speedy";
 		$ship_class->work_required = 30;
-		$ship_class->weapon_count = 1;
-		$ship_class->weapon_damage = 15;
+		$ship_class->damage = 10;
 		$ship_class->movement_capacity = 4;
 		$tech = $this->tech_tree->get_tech(6);
 		$tech->add_ship_class($ship_class);
@@ -245,8 +242,7 @@ class VOID {
 		$ship_class->name = "Speedy Colony";
 		$ship_class->work_required = 40;
 		$ship_class->add_special("colony");
-		$ship_class->weapon_count = 0;
-		$ship_class->weapon_damage = 0;
+		$ship_class->damage = 0;
 		$ship_class->movement_capacity = 4;
 		$tech = $this->tech_tree->get_tech(3);
 		$tech->add_ship_class($ship_class);
@@ -257,8 +253,7 @@ class VOID {
 		$ship_class->name = "Constructor";
 		$ship_class->work_required = 40;
 		$ship_class->add_special("construct");
-		$ship_class->weapon_count = 0;
-		$ship_class->weapon_damage = 0;
+		$ship_class->damage = 0;
 		$ship_class->movement_capacity = 6;
 		$tech = $this->tech_tree->get_tech(1);
 		$tech->add_ship_class($ship_class);
@@ -509,7 +504,7 @@ class VOID {
 		}
 	}
 	public function are_players_finished(){
-		//return true;
+		return true;
 		// for now return true, so turn can be processed quickly for testing		
 		foreach($this->players as $player){
 			if (!$player->done && $player->player){
@@ -553,7 +548,7 @@ class VOID {
 		$temp_systems = array();
 		
 		$combat_sectors = [];
-		
+		$temp_fleets_with_orders = [];
 		// run through every fleet in the game and find the ones with orders
 		foreach($this->map->sectors as $key => $sector){
 			if ($sector->fleets){
@@ -562,7 +557,9 @@ class VOID {
 					foreach($player_fleets as $fleet){
 						$fleet->reset_movement_points();
 						$temp_fleet_cache[] = $fleet;	
-						$temp_fleets_with_orders [] = $fleet;
+						if ($fleet->get_order()){
+							$temp_fleets_with_orders [] = $fleet;
+						}
 					}
 				}
 			}
@@ -571,7 +568,9 @@ class VOID {
 				$sector->system->upkeep();
 				if($sector->system->docked_fleet){
 					$temp_fleet_cache[] = $sector->system->docked_fleet;
-					$temp_fleets_with_orders [] = $fleet;
+					if ($sector->system->docked_fleet->get_order()){
+						$temp_fleets_with_orders [] = $sector->system->docked_fleet;
+					}
 				}							
 			}
 		}
@@ -580,12 +579,165 @@ class VOID {
 		// ORDERS 
 		
 		while (count($temp_fleets_with_orders) > 0){
+			
+			// check and resolve any moves which cause battles 
+			$shooty = [];
+			$hitty = [];
+			$collisions = [];
+			$fleets_to_check = [];
 			foreach($temp_fleets_with_orders as $fleet){
-				// check if any move orders would start a battle
+				// for now lets go with one fleet per sector and see what happens
 				
-				// or any move orders would overlap ships that shouldn't 
+				// check if any move orders would start a battle or collide
+				$order = $fleet->get_order();
+				if ($order && $order->type == "move" && $fleet->movement_points > 0){
+					$sector1 = $this->map->get_sector($fleet->x, $fleet->z);
+					$sector2 = $this->map->get_sector($order->x, $order->z);
+					if ($sector1 && $sector2){												
+						// check if an enemy is there to attack
+						$enemy_fleet = $sector2->get_fleet();
+						if ($enemy_fleet){
+							$shooty[] = ["shooter"=>$fleet, "target"=>$enemy_fleet];
+							if (!isset($hitty[$enemy_fleet->id])){
+								$hitty[$enemy_fleet->id] = [];
+							}
+							$hitty[$enemy_fleet->id][] = $fleet;
+							$fleets_to_check[] = $fleet;
+							$fleets_to_check[] = $enemy_fleet;
+							$fleet->reset_orders();
+						}
+						$collisions[$sector2->id][] = $fleet;						
+					}
+				}				
+			}												
+			
+			// do damage to whatever you target
+			foreach($shooty as $shoot){
+				$shoot['shooter']->fire($shoot['target']);				
+				// if ship was told to shoot. ignore retaliation.
+				unset($hitty[$shoot['shooter']->id]);
+				$sector1 = $this->map->get_sector($shoot['shooter']->x, $shoot['shooter']->z);
+				$sector2 = $this->map->get_sector($shoot['target']->x, $shoot['target']->z);
+				$this->players[$shoot['shooter']->owner]->combat_zones[$sector1->id] = $sector1->get_direction($sector2, $this);	
+				$this->players[$shoot['target']->owner]->combat_zones[$sector2->id] = $sector2->get_direction($sector1, $this);
 			}
-			break;
+			
+			// retaliate against ships which attacked you
+			// currently use full strength against all
+			foreach($hitty as $fleet_id => $fleet){
+				foreach($fleet as $target){
+					$this->fleets[$fleet_id]->fire($target);
+				}
+			}
+			
+			foreach($fleets_to_check as $fleet){
+				if ($fleet->clean_up()){
+					$this->map->get_sector($fleet->x, $fleet->z)->clean_up();
+					$fleet->reset_orders();
+				}
+			}
+									
+			foreach($collisions as $sector_id => $fleets){
+				if (count($fleets) > 1){
+					foreach($fleets as $fleet){
+						VOID_LOG::write($fleet->owner, "Fleet collided with another fleet");
+						$fleet->reset_orders();	
+					}
+				}				
+			}
+			
+			foreach($temp_fleets_with_orders as $fleet){
+				// do the actual fleet moves
+				$order = $fleet->get_order();
+				if ($order && $order->type == "move" && $fleet->movement_points > 0){					
+					$sector1 = $this->map->get_sector($fleet->x, $fleet->z);
+					$sector2 = $this->map->get_sector($order->x, $order->z);
+					if ($sector1 && $sector2){
+						if ($fleet->movement_points >= $sector2->movement_cost){								
+							$fleet->movement_points = $fleet->movement_points - $sector2->movement_cost;
+							if ($fleet->move($order->x, $order->z, $this)){
+								$fleet->complete_order();
+							}else {
+								$fleet->reset_orders();
+								$fleet->movement_points = 0;	
+							}
+						}else {
+							$fleet->movement_points = 0;							
+							if ($sector2->movement_cost > $fleet->movement_capacity){								
+								$fleet->reset_orders();
+							}
+						}
+					}
+					VOID_LOG::write($fleet->owner, "Fleet moved");
+				}else if ($order && $order->type == "colonise"){
+					$sector = $this->map->get_sector($fleet->x, $fleet->z);
+					if ($sector->system && $fleet->get_special("colony")){							
+						$sector->system->colonise($this->players[$fleet->owner], $this, $order->planet_id);							
+						$fleet->movement_points = 0;
+						$sector->system->resolve();
+						$sector->system->update();							
+						if ($fleet->remove_special("colony")){
+							// delete the fleet!								
+							$sector->clean_up();
+						}							
+						//$sector->system->owner = $fleet->owner;
+					}
+					$fleet->complete_order();
+				}else if ($order && $order->type == "transfer"){						
+					$from_fleet = $fleet;
+					$to_fleet = $this->fleets[$order->fleet_id];
+					$from_fleet->transfer_ship($order->ship_id, $to_fleet);
+					$fleet->complete_order();
+					$from_fleet->movement_points = 0;
+					$to_fleet->movement_points = 0;
+				}else if ($order && $order->type == "construct"){
+					$sector = $this->map->get_sector($fleet->x, $fleet->z);						
+					if ($fleet->get_special("construct") && $order->upgrade_id){							
+						$upgrade = $this->upgrade_classes[$order->upgrade_id];
+						if ($upgrade->requirements_met($sector)){								
+							$sector->add_upgrade($upgrade);							
+							$fleet->movement_points = 0;														
+							if ($fleet->remove_special("construct")){
+								// delete the fleet!								
+								$sector->clean_up();
+							}
+						}											
+					}
+					$fleet->complete_order();
+				}else {
+					$fleet->movement_points = 0;
+					//$fleet->complete_order();
+				}	
+			}
+			
+			// if fleet moved next to enemy fleet, prevent all further movement
+			foreach($temp_fleets_with_orders as $fleet){
+				$sector1 = $this->map->get_sector($fleet->x, $fleet->z);
+				if ($sector1->is_enemy_adjacent($fleet->owner, $this)){
+					$fleet->movement_points = 0;
+					VOID_LOG::write($fleet->owner, "Fleet stopped due to enemy contact");
+				}
+			}
+			
+			// reload the temp fleet variable with fleets if they have more orders
+			$new_fleets_with_orders = [];
+			foreach($temp_fleets_with_orders as $fleet){
+				$sector1 = $this->map->get_sector($fleet->x, $fleet->z);
+				if ($fleet->movement_points == 0 || !$fleet->get_order()){
+					
+				}else {
+					$new_fleets_with_orders[] = $fleet;
+				}
+				
+			}
+			
+			$temp_fleets_with_orders = $new_fleets_with_orders;
+			
+			// if 2 friendly ships have conflict, stack them
+			
+			// any fleets which haven't attacked yet, will do damage to fleet in same sector
+			
+			
 		}
 		
 		
@@ -637,7 +789,7 @@ class VOID {
 		
 		// loop until all fleets have used up all their movement capacity
 		$continue = true;
-		while ($continue){
+		while ($continue && false){
 			$continue = false;
 			foreach($temp_fleet_cache as $fleet){
 				$order = $fleet->get_order();

@@ -9,7 +9,7 @@ class VOID_PLAYER_VIEW {
 	public $sector_count;
 	public $tech_count;
 	
-	public $met;
+	public $met;		
 	
 	function __construct($player, $player_id){
 		$this->name = $player->name;
@@ -63,6 +63,8 @@ class VOID_PLAYER {
 	
 	public $player;
 	
+	public $combat_zones;
+	
 	function __construct($id){
 		$this->id = $id;
 		$this->research_pool = 0;
@@ -74,6 +76,7 @@ class VOID_PLAYER {
 		$this->tech_count = 0;
 		$this->sources = [];
 		$this->player = true;
+		$this->combat_zones = [];
 		VOID_LOG::init($id);
 	}
 	
@@ -111,6 +114,7 @@ class VOID_PLAYER {
 		$this->credits_per_turn = 0;
 		$this->research_per_turn = 0;
 		$this->morale = 0;
+		$this->combat_zones = [];
 	}
 	
 	public function set_color($color){

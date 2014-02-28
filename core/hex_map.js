@@ -427,7 +427,7 @@ function redraw_overlay(){
 			});
 	
 	}	
-	
+	hide_combat_comparison();
 	if (fleet_selected && fleet_order_mode && fleet_order_start_hex && hex_highlighted && get_hex(hex_highlighted.x,hex_highlighted.z) ){
 		var path = get_path_between_hexes(fleet_order_start_hex, hex_highlighted, fleet_cache[fleet_selected.id].movement_capacity);
 		//console.log(hex_highlighted);
@@ -444,11 +444,21 @@ function redraw_overlay(){
 						fleet_order_turn_counter++;								
 					}						
 					last_hex = coords;
-					if (fleet_order_turn_counter <= 0){
+					if (path[i].attack){
+						draw_hex(canvas, coords.x,  coords.y, hex_size, "red", "rgba(255, 150, 40, 0.5)");
+					}else if (fleet_order_turn_counter <= 0){
 						draw_hex(canvas, coords.x,  coords.y, hex_size, "orange", "rgba(255, 150, 40, 0.5)");
 					}else {
 						draw_hex(canvas, coords.x,  coords.y, hex_size, "yellow", "rgba(255, 255, 40, 0.5)");
 					}
+					
+					var hex = get_hex(path[i].x, path[i].z);
+					if (i == path.length-1 && hex.enemy_fleets && hex.enemy_fleets.length > 0){
+						draw_hex(canvas, coords.x,  coords.y, hex_size, "red", "rgba(255, 150, 40, 0.5)");
+						var fleet = fleet_cache[fleet_selected.id];
+						show_combat_comparison(fleet_cache[fleet_selected.id], hex.enemy_fleets[0]);
+					}
+					
 					$(canvas).drawText({
 					  fillStyle: "black",
 					  strokeStyle: "black",
@@ -457,7 +467,7 @@ function redraw_overlay(){
 					  fontSize: "14pt",
 					  fontFamily: "Verdana, sans-serif",
 					  text: fleet_order_turn_counter+1
-					});			
+					});
 				}
 			}
 		}
@@ -546,6 +556,13 @@ function preload_images(data, callback){
 		var planet_class = planet_class_cache[key];
 		if(planet_class.image){
 			sources.push({'name':'planet_class_'+planet_class.id, 'image':planet_class.image});	
+		}
+	}	
+	
+	for(key in players){		
+		var player = players[key];
+		if(player.color.fleet){
+			sources.push({'name':'player_fleet_'+player.id, 'image':player.color.fleet});	
 		}
 	}	
 		
@@ -669,7 +686,7 @@ function draw_map(map_id, first, custom_offset){
 				});
 			}
 			$(canvas_objects).drawImage({
-			  source: image_cache['fleet_f'],
+			  source: image_cache["player_fleet_"+player.id],
 			  x: hex.pixel_x-35, y: hex.pixel_y
 			});
 			
@@ -678,9 +695,11 @@ function draw_map(map_id, first, custom_offset){
 			}
 		}
 		if (hex.enemy_fleets.length > 0){
-			$(canvas_objects).drawImage({
-			  source: image_cache['fleet_e'],
-			  x: hex.pixel_x+35, y: hex.pixel_y
+			$.each(hex.enemy_fleets, function (key, value){
+				$(canvas_objects).drawImage({
+				  source: image_cache['player_fleet_'+value.owner],
+				  x: hex.pixel_x+35, y: hex.pixel_y
+				});
 			});
 		}
 		
@@ -713,6 +732,16 @@ function draw_map(map_id, first, custom_offset){
 				fleet_cache[hex.space_dock.fleet.id]  = hex.space_dock.fleet;				
 			}
 		}
+	}
+	
+	if (player.combat_zones){
+		$.each(player.combat_zones, function(key, value){
+			var hex = hex_map[key];
+			var coords = hex_to_pixel(hex, offset);
+			hex.pixel_x = coords.x;
+			hex.pixel_y = coords.y;
+			draw_hex_border(canvas_objects, hex.pixel_x, hex.pixel_y, value, "orange", 5);			
+		});
 	}
 	
 	ctx.restore();
@@ -793,6 +822,8 @@ function draw_map_tile(canvas, map_tile, small){
 
 function draw_hex_borders(canvas, x, y, map_tile, stroke_color, func){
 	
+	var temp_hex_size = hex_size;
+	
 	if (!func){
 		func = function(tile1, tile2){
 			if (tile1.owner != tile2.owner){
@@ -804,65 +835,80 @@ function draw_hex_borders(canvas, x, y, map_tile, stroke_color, func){
 	
 	var adjacent_tile = get_adjacent_hex(map_tile, 0);	
 	if (!adjacent_tile || func(map_tile, adjacent_tile)){
-		// north west
-		$(canvas).drawVector({
-		  strokeStyle: stroke_color,
-		  strokeWidth: 3,
-		  "x": x, "y": y-hex_size,
-		  a1: 240, l1: hex_size
-		});		
+		draw_hex_border(canvas, x, y, 0, stroke_color, 3);
 	}
 	
 	adjacent_tile = get_adjacent_hex(map_tile, 1);
 	if (!adjacent_tile || func(map_tile, adjacent_tile)){
-		// north east border 
-		$(canvas).drawVector({
-		  strokeStyle: stroke_color,
-		  strokeWidth: 3,
-		  "x": x, "y": y-hex_size,
-		  a1: 120, l1: hex_size
-		});
+		draw_hex_border(canvas, x, y, 1, stroke_color, 3);
 	}
 	
 	adjacent_tile = get_adjacent_hex(map_tile, 2);
 	if (!adjacent_tile || func(map_tile, adjacent_tile)){
-		// east border??
-		$(canvas).drawVector({
-		  strokeStyle: stroke_color,
-		  strokeWidth: 3,
-		  "x": x+(hex_width*0.5), "y": y+(hex_height*0.25),
-		  a1: 0, l1: hex_size
-		});
+		draw_hex_border(canvas, x, y, 2, stroke_color, 3);
 	}
 
 	adjacent_tile = get_adjacent_hex(map_tile, 3);
 	if (!adjacent_tile || func(map_tile, adjacent_tile)){
-		// south east border??
-		$(canvas).drawVector({
-		  strokeStyle: stroke_color,
-		  strokeWidth: 3,
-		  "x": x+(hex_width*0.5), "y": y+(hex_height*0.25),
-		  a1: 240, l1: hex_size
-		});
+		draw_hex_border(canvas, x, y, 3, stroke_color, 3);		
 	}
 	
 	adjacent_tile = get_adjacent_hex(map_tile, 4);
 	if (!adjacent_tile || func(map_tile, adjacent_tile)){
-		// south west border??
-		$(canvas).drawVector({
-		  strokeStyle: stroke_color,
-		  strokeWidth: 3,
-		  "x": x-(hex_width*0.5), "y": y+(hex_height*0.25),
-		  a1: 120, l1: hex_size
-		});
+		draw_hex_border(canvas, x, y, 4, stroke_color, 3);		
 	}
 	
 	adjacent_tile = get_adjacent_hex(map_tile, 5);
 	if (!adjacent_tile || func(map_tile, adjacent_tile)){
-		// west border??
+		draw_hex_border(canvas, x, y, 5, stroke_color, 3);
+	}
+}
+
+function draw_hex_border(canvas, x, y, direction, stroke_color, stroke_width){
+	if (direction == 0){
+		// north west
 		$(canvas).drawVector({
 		  strokeStyle: stroke_color,
-		  strokeWidth: 3,
+		  strokeWidth: stroke_width,
+		  "x": x, "y": y-hex_size,
+		  a1: 240, l1: hex_size
+		});		
+	}else if (direction == 1){
+		// north east border 
+		$(canvas).drawVector({
+		  strokeStyle: stroke_color,
+		  strokeWidth: stroke_width,
+		  "x": x, "y": y-hex_size,
+		  a1: 120, l1: hex_size
+		});
+	}else if (direction == 2){
+		// east border??
+		$(canvas).drawVector({
+		  strokeStyle: stroke_color,
+		  strokeWidth: stroke_width,
+		  "x": x+(hex_width*0.5), "y": y+(hex_height*0.25),
+		  a1: 0, l1: hex_size
+		});
+	}else if (direction == 3){
+		// south east border??
+		$(canvas).drawVector({
+		  strokeStyle: stroke_color,
+		  strokeWidth: stroke_width,
+		  "x": x+(hex_width*0.5), "y": y+(hex_height*0.25),
+		  a1: 240, l1: hex_size
+		});
+	}else if (direction == 4){
+		// south west border??
+		$(canvas).drawVector({
+		  strokeStyle: stroke_color,
+		  strokeWidth: stroke_width,
+		  "x": x-(hex_width*0.5), "y": y+(hex_height*0.25),
+		  a1: 120, l1: hex_size
+		});
+	}else if (direction == 5){
+		$(canvas).drawVector({
+		  strokeStyle: stroke_color,
+		  strokeWidth: stroke_width,
 		  "x": x-(hex_width*0.5), "y": y+(hex_height*0.25),
 		  a1: 0, l1: hex_size
 		});

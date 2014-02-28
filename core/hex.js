@@ -81,9 +81,15 @@ function get_path_between_hexes(hexA, hexB, cost_threshold){
 	// init the open and closed arrays for storing traversed hexes
 	var open_list = new Object;
 	var closed_list = new Object;
-	
+	var has_fleets = false;
+	if (hexB.your_fleets && hexB.your_fleets.length > 0){
+		//has_fleets = true;
+	}
+	if (hexB.enemy_fleets && hexB.enemy_fleets.length > 0){
+		has_fleets = true;
+	}
 	var hex1 = {'x': hexA.x, 'z': hexA.z, 'movement_cost': hexA.movement_cost};
-	var hex2 = {'x': hexB.x, 'z': hexB.z, 'movement_cost': hexB.movement_cost};
+	var hex2 = {'x': hexB.x, 'z': hexB.z, 'movement_cost': hexB.movement_cost, 'fleets': false, 'attack': has_fleets};
 	
 	hex1.f = 0;
 	hex1.g = 0;
@@ -91,7 +97,7 @@ function get_path_between_hexes(hexA, hexB, cost_threshold){
 	// add start space to open list
 	open_list['x'+hex1.x+'z'+hex1.z] = hex1;
 	console.log(cost_threshold);
-	if (hex2.movement_cost > cost_threshold){	
+	if (hex2.movement_cost > cost_threshold || hex2.fleets){			
 		return false;
 	}
 	for(var limit = 0; limit < 1000; limit++){
@@ -130,7 +136,14 @@ function get_path_between_hexes(hexA, hexB, cost_threshold){
 		
 		for (var i = 0; i < 6; i++){
 			var adjacent_hex_temp = get_adjacent_hex(lowest_f_hex, i);
-			var adjacent_hex = {'x': adjacent_hex_temp.x, 'z': adjacent_hex_temp.z, 'movement_cost': adjacent_hex_temp.movement_cost};
+			has_fleets = false;
+			if (adjacent_hex_temp.your_fleets && adjacent_hex_temp.your_fleets.length > 0){
+				//has_fleets = true;
+			}
+			if (adjacent_hex_temp.enemy_fleets && adjacent_hex_temp.enemy_fleets.length > 0){
+				has_fleets = true;
+			}
+			var adjacent_hex = {'x': adjacent_hex_temp.x, 'z': adjacent_hex_temp.z, 'movement_cost': adjacent_hex_temp.movement_cost, 'fleet': has_fleets};
 			if (!adjacent_hex){
 				continue;
 			}
@@ -139,7 +152,7 @@ function get_path_between_hexes(hexA, hexB, cost_threshold){
 			if (adjacent_hex){
 				g_cost = g_cost + adjacent_hex.movement_cost * 10 ;
 			}
-			if (adjacent_hex.movement_cost > cost_threshold){
+			if (adjacent_hex.movement_cost > cost_threshold || (adjacent_hex.fleet && !(adjacent_hex.x == hex2.x && adjacent_hex.z == hex2.z) )){
 				continue;
 			}
 			if (adjacent_hex_temp.unknown == 1){

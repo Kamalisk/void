@@ -416,6 +416,34 @@ div#player_status {
 	
 	z-index : @back_layer;	
 }
+#galactic_map_panel_enemy_fleet {
+	position : absolute;
+	left : 0;
+	bottom : 0;
+	min-height : 150px;
+	width : 300px;
+	border-top : solid grey 2px;
+	border-right : solid grey 2px;
+	border-radius : 0 5px 0 0;
+	background-color : @primary_background_color;
+	padding : 0.2em;
+	
+	z-index : @back_layer;	
+}
+
+#combat_comparison {
+	z-index : @back_layer;
+	position : absolute;
+	bottom : 0;
+	width : 150px;
+	left : 307px;
+	border-top : solid grey 2px;
+	border-right : solid grey 2px;
+	border-radius : 0 5px 0 0;
+	background-color : @primary_background_color;
+	padding : 0.2em;
+	min-height : 100px;
+}
 
 #galactic_map_panel_fleet_sub {
 	z-index : @back_layer;
@@ -787,4 +815,16 @@ div.window_control .close_window {
 
 .fleet_management_ship_allowed {
 	border-color : #23c423;
+}
+
+/* ship class tooltips */
+
+.ship_class {
+	h4 {
+		font-size : 1.3em;
+	}
+	width : 120px;
+	th {
+		text-align : right;
+	}
 }

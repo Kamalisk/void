@@ -77,19 +77,19 @@ class VOID_MAP {
 	public function populate($core){
 		
 		$colors = [
-			["background" => "rgba(0,155,0,0.2)", "border"=>"rgba(0,155,0,1)"],
-			["background" => "rgba(155,0,0,0.2)", "border" => "rgba(155,0,0,1)"],
-			["background" => "rgba(0,71,251,0.2)", "border" => "rgba(0,71,251,1)"],
-			["background" => "rgba(255,174,0,0.2)", "border" => "rgba(255,174,0,1)"],
-			["background" => "rgba(162,0,186,0.2)", "border" => "rgba(162,0,186,1)"],
-			["background" => "rgba(7,245,231,0.2)", "border" => "rgba(7,245,231,1)"],
-			["background" => "rgba(255,246,0,0.2)", "border" => "rgba(255,246,0,1)"],
-			["background" => "rgba(250,147,254,0.2)", "border" => "rgba(250,147,254,1)"],
-			["background" => "rgba(161,255,151,0.2)", "border" => "rgba(161,255,151,1)"],
-			["background" => "rgba(244,169,169,0.2)", "border" => "rgba(244,169,169,1)"],
-			["background" => "rgba(72,44,0,0.2)", "border" => "rgba(118,78,31,1)"],
-			["background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)"],
-			["background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)"],
+			["background" => "rgba(0,155,0,0.2)", "border"=>"rgba(0,155,0,1)", "fleet"=> "images/fleets/fleet_f.png"],
+			["background" => "rgba(155,0,0,0.2)", "border" => "rgba(155,0,0,1)", "fleet"=> "images/fleets/fleet_e.png"],
+			["background" => "rgba(0,71,251,0.2)", "border" => "rgba(0,71,251,1)", "fleet"=> "images/fleets/fleet_blue.png"],
+			["background" => "rgba(255,174,0,0.2)", "border" => "rgba(255,174,0,1)", "fleet"=> "images/fleets/fleet_f.png"],
+			["background" => "rgba(162,0,186,0.2)", "border" => "rgba(162,0,186,1)", "fleet"=> "images/fleets/fleet_f.png"],
+			["background" => "rgba(7,245,231,0.2)", "border" => "rgba(7,245,231,1)", "fleet"=> "images/fleets/fleet_f.png"],
+			["background" => "rgba(255,246,0,0.2)", "border" => "rgba(255,246,0,1)", "fleet"=> "images/fleets/fleet_f.png"],
+			["background" => "rgba(250,147,254,0.2)", "border" => "rgba(250,147,254,1)", "fleet"=> "images/fleets/fleet_f.png"],
+			["background" => "rgba(161,255,151,0.2)", "border" => "rgba(161,255,151,1)", "fleet"=> "images/fleets/fleet_f.png"],
+			["background" => "rgba(244,169,169,0.2)", "border" => "rgba(244,169,169,1)", "fleet"=> "images/fleets/fleet_f.png"],
+			["background" => "rgba(72,44,0,0.2)", "border" => "rgba(118,78,31,1)", "fleet"=> "images/fleets/fleet_f.png"],
+			["background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)", "fleet"=> "images/fleets/fleet_f.png"],
+			["background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)", "fleet"=> "images/fleets/fleet_f.png"],
 		];
 		
 		foreach($core->players as $player){
@@ -303,7 +303,7 @@ class VOID_MAP {
 	*/
 	
 	public function get_sector($x, $z){
-		if ($this->sectors['x'.$x.'z'.$z]){
+		if (isset($this->sectors['x'.$x.'z'.$z])){
 			return $this->sectors['x'.$x.'z'.$z];
 		}
 		return false;
