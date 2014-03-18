@@ -1,5 +1,21 @@
 <?php
 
+
+class VOID_OPINION {
+	public $id;
+	public $text;
+	public $alignment;
+	
+	function __construct($text, $alignment){
+		$this->id = void_unique_id();
+		$this->text = $text;
+		$this->alignment = $alignment;
+	}
+	
+	
+}
+
+
 class VOID_PLAYER_VIEW {
 	public $name;
 	public $id;
@@ -10,6 +26,8 @@ class VOID_PLAYER_VIEW {
 	public $tech_count;
 	
 	public $met;		
+	
+	public $war;
 	
 	function __construct($player, $player_id){
 		$this->name = $player->name;
@@ -24,6 +42,11 @@ class VOID_PLAYER_VIEW {
 			$this->met = true;
 		}else {
 			$this->met = false;
+		}
+		if ($player->is_at_war($player_id)){
+			$this->war = true;
+		}else {
+			$this->war = false;
 		}
 	}
 }
@@ -50,6 +73,8 @@ class VOID_PLAYER {
 	public $available_structure_classes;
 	public $available_upgrade_classes;
 	
+	public $powers;
+	
 	public $built_structures;
 	
 	public $done;
@@ -65,6 +90,10 @@ class VOID_PLAYER {
 	
 	public $combat_zones;
 	
+	public $relationships;
+	
+	public $orders;
+	
 	function __construct($id){
 		$this->id = $id;
 		$this->research_pool = 0;
@@ -77,6 +106,8 @@ class VOID_PLAYER {
 		$this->sources = [];
 		$this->player = true;
 		$this->combat_zones = [];
+		$this->powers = [];
+		$this->relationships = [];
 		VOID_LOG::init($id);
 	}
 	
@@ -114,7 +145,7 @@ class VOID_PLAYER {
 		$this->credits_per_turn = 0;
 		$this->research_per_turn = 0;
 		$this->morale = 0;
-		$this->combat_zones = [];
+		$this->combat_zones = [];		
 	}
 	
 	public function set_color($color){
@@ -128,6 +159,7 @@ class VOID_PLAYER {
 			$this->add_new_ship_classes($tech);
 			$this->add_new_structure_classes($tech);
 			$this->add_new_upgrade_classes($tech);
+			$this->add_new_power($tech);
 		}
 		$this->update_available_tech($tech_tree);
 	}
@@ -142,6 +174,7 @@ class VOID_PLAYER {
 				$this->add_new_ship_classes($this->current_tech->class);
 				$this->add_new_structure_classes($this->current_tech->class);
 				$this->add_new_upgrade_classes($this->current_tech->class);
+				$this->add_new_power($this->current_tech->class);
 				unset($this->available_tech[$this->current_tech->class->id]);
 				$this->current_tech = false;
 				$this->update_available_tech($tech_tree);
@@ -164,6 +197,26 @@ class VOID_PLAYER {
 	public function add_new_upgrade_classes($tech){
 		foreach($tech->upgrade_classes as &$class){
 			$this->available_upgrade_classes[$class->id] = $class;
+		}
+	}
+	
+	public function add_new_power($tech){
+		foreach($tech->power_classes as &$power){
+			$this->powers[$power->type] = $power;
+		}
+	}
+	public function has_power($type){
+		if (isset($this->powers[$type])){
+			return $this->powers[$type];
+		}else {
+			return false;
+		}
+	}
+	public function get_power_value($type){
+		if (isset($this->powers[$type])){
+			return $this->powers[$type]->value;
+		}else {
+			return 0;
 		}
 	}
 	
@@ -223,6 +276,58 @@ class VOID_PLAYER {
 		}
 		return false;
 	}
+	
+	
+	public function declare_war($player){
+		if (!$this->is_at_war($player->id)){
+			$this->relationships[$player->id]['state'] = "war";
+			$player->relationships[$this->id]['state'] = "war";
+			VOID_LOG::write($this->id, "You have declared war on ".$player->name);
+			VOID_LOG::write($player->id, "".$player->name." has declared war on you");
+		}
+	}
+	
+	public function declare_peace($player){
+		$this->relationships[$player->id]['state'] = "peace";		
+	}
+	
+	public function declare_opinion($player, $opinion){
+		$this->relationships[$player->id]['opinions'][] = $opinion;
+	}
+	public function get_opinions(){
+		if (isset($this->relationships[$player->id]['opinions'])){
+			return $this->relationships[$player->id]['opinions'];
+		}
+		return false;
+	}
+	
+	public function update_relationships($core){
+		
+	}
+	
+	public function is_at_war($player_id){
+		if (isset($this->relationships[$player_id]['state']) && $this->relationships[$player_id]['state'] == "war"){
+			return true;
+		}
+		return false;
+	}
+	
+	public function add_order($type, $params){
+		$this->orders[$type][] = $params;
+	}
+	
+	public function get_orders_by_type($type){
+		if (isset($this->orders[$type])){
+			return $this->orders[$type];
+		}else {
+			return [];
+		}
+	}
+	
+	public function clear_orders(){
+		$this->orders = [];
+	}
+	
 	
 }
 

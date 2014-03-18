@@ -293,7 +293,8 @@
 				<li class="diplomacy_player_item" onclick="show_diplomacy_detail({{id}})" style="background-color : {{color.background}}; border-color : {{color.border}}">
 				<h3>{{name}}</h3>
 				{{#met}}
-				<p>{{sector_count}}</p>
+				<p>Status: {{#war}}War{{/war}}{{^war}}Peace{{/war}}</p>
+				<p>Sectors controlled:{{sector_count}}</p>
 				{{/met}}
 				</li>				
 				{{/players}}
@@ -309,10 +310,11 @@
 	
 	<script id="diplomacy_detail_template" type="text/ractive">
 		<div class="diplomacy_detail_view" style="border-color : {{color.border}}">
-			<h2>{{name}}</h2>
+			<h2>{{name}}</h2>			
+			{{^war}}<button onclick="declare_war({{id}})">Declare War</button>{{/war}}		
+			<p>Status: {{#war}}War{{/war}}{{^war}}Peace{{/war}}</p>
+			<p>Sectors controlled:{{sector_count}}</p>
 			<h3>Trade</h3>
-			<h3>Status</h3>
-			<p>{{sector_count}}</p>
 		</div>
 	</script>
 	
@@ -437,7 +439,10 @@
 				{{#type_id}}
 					<tr>
 					<th>Type</th>
-					<td>{{sector_class_cache[type_id].name}}</td>
+					<td decorator="tooltip" data-decorator="sector_type_tooltip">
+					{{sector_class_cache[type_id].name}}
+					<span class="tooltip" id="sector_type_tooltip">Movement cost: {{sector_class_cache[type_id].movement_cost}}</span>
+					</td>
 					</tr>
 				{{/type_id}}
 				
@@ -451,11 +456,11 @@
 				<tr> 
 					<th>Owner</th>
 					{{#friendly}}
-					<td class="friendly" style="color : {{owner_object.color.border}}">You</td>
+					<td class="friendly" style="color : {{player.color.border}}">You</td>
 					{{/friendly}}
 					{{^friendly}}
 						{{#enemy}}
-						<td class="enemy" style="color : {{owner_object.color.border}}">{{owner_object.name}}</td>
+						<td class="enemy" style="color : {{players[owner].color.border}}">{{players[owner].name}}</td>
 						{{/enemy}}
 						{{^enemy}}
 						<td>None</td>
@@ -473,7 +478,7 @@
 				{{#system.influence_level}}
 				<tr>
 					<th>Influence</th>
-					<td class="tooltip-template" data-tooltip-id="system-influence-tooltip">
+					<td>
 					Level {{system.influence_level}} ({{system.influence_growth_turns}} turns) 					
 					</td>
 				</tr>
@@ -504,7 +509,7 @@
 				{{#system.owner}}
 				<tr>
 					<th>Population</th>
-					<td>{{system.population}} </td>
+					<td>{{system.population}} ({{system.growth_turns}} turns) </td>
 				</tr>
 				<tr>
 					<th>Output</th>
@@ -905,13 +910,15 @@
 	
 	
 	<script id="player_resources_template" type="text/ractive">
-		<span decorator="tooltip" data-decorator="player-credits-tooltip">
-		<img src="images/icons/credits.png"> {{player.credits_pool}} ({{void.per_turn_value(player.credits_per_turn)}})    
+		<span decorator="tooltip" data-decorator="player-credits-tooltip">		
+		{{#player}}
+		<img src="images/icons/credits.png"> {{credits_pool}} ({{void.per_turn_value(credits_per_turn)}})    
+		{{/player}}
 		</span>
 
 		<span decorator="tooltip" data-decorator="player-morale-tooltip">
     <img src="images/icons/happy.png"> 
-		<span class="{{# player.morale > 0 }}positive{{/ end of filter }}{{# player.morale < 0 }}negative{{/ end of filter }}"> 
+		<span class="{{# player.morale > 0 }}positive{{/player.morale }}{{#player.morale < 0 }}negative{{/player.morale}}"> 
     {{player.morale}} 
    	</span>
    	</span>
@@ -930,10 +937,11 @@
 		</div>
 		
 		<div class="tooltip" id="player-credits-tooltip">
-			
+			<h4>{{void.per_turn_value(player.credits_per_turn)}} per turn</h4>
 			{{#player.sources.credits}}
 			<ul>				
-				<li>Fleet Upkeep: {{void.per_turn_value(ship)}}</li>
+				<li>Fleet Upkeep: {{void.per_turn_value(fleet)}}</li>
+				<li>Ship Upkeep: {{void.per_turn_value(ship)}}</li>
 				<li>Systems: {{void.per_turn_value(system)}}</li>
 			</ul>
 			{{/player.sources.credits}}			
@@ -944,7 +952,14 @@
    	</span>
    	
    	<div class="tooltip" id="player-research-tooltip">
-			{{void.per_turn_value(player.research_per_turn)}} ({{player.current_tech.progress}} / {{player.current_tech.class.cost}})
+			<h4>{{player.current_tech.class.name}}</h4>
+			<p>(completed {{player.current_tech.progress}} of {{player.current_tech.class.cost}})</p>
+			<h4>{{void.per_turn_value(player.research_per_turn)}} per turn.</h4>
+			{{#player.sources.research}}
+			<ul>				
+				<li>Systems: {{void.per_turn_value(system)}}</li>
+			</ul>
+			{{/player.sources.research}}			
 		</div>
    	
 	</script>

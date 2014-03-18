@@ -76,26 +76,29 @@ class VOID_MAP {
 	}
 	public function populate($core){
 		
-		$colors = [
-			["background" => "rgba(0,155,0,0.2)", "border"=>"rgba(0,155,0,1)", "fleet"=> "images/fleets/fleet_f.png"],
-			["background" => "rgba(155,0,0,0.2)", "border" => "rgba(155,0,0,1)", "fleet"=> "images/fleets/fleet_e.png"],
-			["background" => "rgba(0,71,251,0.2)", "border" => "rgba(0,71,251,1)", "fleet"=> "images/fleets/fleet_blue.png"],
-			["background" => "rgba(255,174,0,0.2)", "border" => "rgba(255,174,0,1)", "fleet"=> "images/fleets/fleet_f.png"],
-			["background" => "rgba(162,0,186,0.2)", "border" => "rgba(162,0,186,1)", "fleet"=> "images/fleets/fleet_f.png"],
-			["background" => "rgba(7,245,231,0.2)", "border" => "rgba(7,245,231,1)", "fleet"=> "images/fleets/fleet_f.png"],
-			["background" => "rgba(255,246,0,0.2)", "border" => "rgba(255,246,0,1)", "fleet"=> "images/fleets/fleet_f.png"],
-			["background" => "rgba(250,147,254,0.2)", "border" => "rgba(250,147,254,1)", "fleet"=> "images/fleets/fleet_f.png"],
-			["background" => "rgba(161,255,151,0.2)", "border" => "rgba(161,255,151,1)", "fleet"=> "images/fleets/fleet_f.png"],
-			["background" => "rgba(244,169,169,0.2)", "border" => "rgba(244,169,169,1)", "fleet"=> "images/fleets/fleet_f.png"],
-			["background" => "rgba(72,44,0,0.2)", "border" => "rgba(118,78,31,1)", "fleet"=> "images/fleets/fleet_f.png"],
-			["background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)", "fleet"=> "images/fleets/fleet_f.png"],
-			["background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)", "fleet"=> "images/fleets/fleet_f.png"],
-		];
+			$colors = [
+				["background" => "rgba(0,155,0,0.2)", "border"=>"rgba(0,155,0,1)", "fleet"=> "images/fleets/fleet_f.png"],
+				["background" => "rgba(155,0,0,0.2)", "border" => "rgba(155,0,0,1)", "fleet"=> "images/fleets/fleet_e.png"],
+				["background" => "rgba(0,71,251,0.2)", "border" => "rgba(0,71,251,1)", "fleet"=> "images/fleets/fleet_blue.png"],
+				["background" => "rgba(255,174,0,0.2)", "border" => "rgba(255,174,0,1)", "fleet"=> "images/fleets/fleet_f.png"],
+				["background" => "rgba(162,0,186,0.2)", "border" => "rgba(162,0,186,1)", "fleet"=> "images/fleets/fleet_f.png"],
+				["background" => "rgba(7,245,231,0.2)", "border" => "rgba(7,245,231,1)", "fleet"=> "images/fleets/fleet_f.png"],
+				["background" => "rgba(255,246,0,0.2)", "border" => "rgba(255,246,0,1)", "fleet"=> "images/fleets/fleet_f.png"],
+				["background" => "rgba(250,147,254,0.2)", "border" => "rgba(250,147,254,1)", "fleet"=> "images/fleets/fleet_f.png"],
+				["background" => "rgba(161,255,151,0.2)", "border" => "rgba(161,255,151,1)", "fleet"=> "images/fleets/fleet_f.png"],
+				["background" => "rgba(244,169,169,0.2)", "border" => "rgba(244,169,169,1)", "fleet"=> "images/fleets/fleet_f.png"],
+				["background" => "rgba(72,44,0,0.2)", "border" => "rgba(118,78,31,1)", "fleet"=> "images/fleets/fleet_f.png"],
+				["background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)", "fleet"=> "images/fleets/fleet_f.png"],
+				["background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)", "fleet"=> "images/fleets/fleet_f.png"],
+			];
 		
 		foreach($core->players as $player){
 			if (!$player->player){
 				continue;
 			}
+			
+			$core->neutral_player->declare_war($player);
+			
 			$color = array_shift($colors);
 			$player->set_color($color);
 			//$this->views[$player->id] = new VOID_VIEW();
@@ -139,7 +142,7 @@ class VOID_MAP {
 
 		}
 		
-		$player = $core->neutral_player;
+		$player = $core->neutral_player;		
 		$color = array_shift($colors);
 		$player->set_color($color);		
 		for ($i = 0; $i < count($core->players)*3; $i++){
@@ -234,8 +237,14 @@ class VOID_MAP {
 			if ($fleets){
 				foreach($fleets as &$player_fleets){
 					foreach($player_fleets as &$fleet){
+						$fleet_owner = $core->players[$fleet->owner];
+						if ($fleet_owner->has_power("vision")){
+							$vision_bonus = $fleet_owner->get_power_value("vision");
+						}else {
+							$vision_bonus = 0;
+						}
 						$sector->add_state($fleet->owner, "unknown", 0);
-						for ($ring = 1; $ring <= $fleet->get_vision_range(); $ring++){
+						for ($ring = 1; $ring <= $fleet->get_vision_range() + $vision_bonus; $ring++){
 							
 							foreach($void_ranges[$ring] as $range){
 								$x = $sector->x + $range['x'];

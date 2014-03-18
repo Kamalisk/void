@@ -33,6 +33,8 @@ var fleet_orders = new Object();
 var fleet_order_mode = false;
 var fleet_order_start_hex = new Object();
 
+var player_orders = [];
+
 var fleet_selected;
 
 var system_orders = new Object();
@@ -657,7 +659,24 @@ function add_fleet_order(start, end){
 		return;
 	}
 	var path = get_path_between_hexes(start, end, fleet_cache[fleet_selected.id].movement_capacity);
+	var attack = false;
 	if (path){
+		for (var i = 0; i < path.length ; i++){
+			if (path[i]){
+				if (path[i].enemy_fleets){					
+					if (path[i].enemy_fleets && path[i].enemy_fleets[0]){
+						attack = path[i].enemy_fleets[0].owner;
+					}
+				}
+			}
+		}
+		if (attack && players[attack]){
+			if (!players[attack].war){
+				show_error("You must declare war before you can attack other empires.");
+				return false;
+			}
+		}
+
 		for (var i = 0; i < path.length ; i++){
 			if (path[i]){
 				if (!fleet_orders[fleet_selected.id]){
@@ -742,6 +761,10 @@ function hide_combat_comparison(){
 	void_view.set("combat_comparison", "")
 }
 
+
+function declare_war(player_id){
+	player_orders.push({"type":"war", "target":player_id});
+}
 
 function select_tech(id){
 	if (!allow_actions()){
@@ -999,6 +1022,10 @@ function handle_fetch_game_data(data){
 			upgrade_class_cache = data.upgrade_classes;
 			void_view.set("upgrade_class_cache",upgrade_class_cache);
 		}
+		if (data.power_classes){
+			power_class_cache = data.power_classes;
+			void_view.set("power_class_cache",power_class_cache);
+		}
 		if (data.tech_tree){
 			tech_tree = data.tech_tree;
 		}
@@ -1078,7 +1105,7 @@ function end_turn(){
 	// send all committed orders to the server
 	$("#end_turn_button").attr("disabled", true);
 	$("#end_turn_button").html('<img src="images/ajax-loader.png"> End Turn ');
-	$.post("main.php"+location.search,{'action':'end_turn', 'fleet_transfers':changes.fleet_transfers, 'fleet_orders':fleet_orders, 'system_orders':system_orders, 'current_tech':current_tech},handle_end_turn);
+	$.post("main.php"+location.search,{'action':'end_turn', 'fleet_transfers':changes.fleet_transfers, 'player_orders': player_orders, 'fleet_orders':fleet_orders, 'system_orders':system_orders, 'current_tech':current_tech},handle_end_turn);
 	system_orders = new Object();
 	changes.fleet_transfers = {};
 	current_tech = null;

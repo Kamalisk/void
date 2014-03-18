@@ -1,13 +1,19 @@
 <?
 
 
-class VOID_POWER {
+class VOID_POWER_CLASS {
 	public $name;
+	public $id;
 	public $modifiers;
+	public $description;
+	public $value;
+	public $type;
 	
-	function __construct(){
-		
+	function __construct($id, $name){
+		$this->id = $id;
+		$this->name = $name;
 	}
+	
 }
 
 

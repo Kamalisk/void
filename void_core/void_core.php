@@ -170,7 +170,8 @@ class VOID {
 	public $upgrade_classes = [];
 	public $fleets;
 	public $systems;
-
+	public $opinions;
+	
 	public $tech_tree;	
 	
 	public $game_id;
@@ -198,6 +199,15 @@ class VOID {
 		$this->ship_classes = [];		
 		$this->structure_classes = [];
 		$this->upgrade_classes = [];
+		$this->opinions = [];
+		
+		$opinion = VOID_OPINION("I don't like your military build up", "evil");
+		$this->opinions[$opinion->id] = $opinion;
+		$opinion = VOID_OPINION("I approve of your war", "good");
+		$this->opinions[$opinion->id] = $opinion;
+		$opinion = VOID_OPINION("I dislike your expansion new my borders", "evil");
+		$this->opinions[$opinion->id] = $opinion;
+		
 		
 		$tech = $this->tech_tree->get_tech(1);
 		
@@ -391,11 +401,18 @@ class VOID {
 		$this->upgrade_classes[$upgrade_class->id] = $upgrade_class;
 		
 		
+		$power_class = new VOID_POWER_CLASS(1, "Awesomeness");
+		$power_class->type = "vision";
+		$power_class->value = 1;
+		$tech = $this->tech_tree->get_tech(3);
+		$tech->add_power_class($power_class);
+		$this->power_classes[$power_class->id] = $power_class;
+		
 		$starting_tech = $this->tech_tree->get_starting_tech();
 		
 		$this->map = new VOID_MAP();
 		$this->players = [];
-		for($i = 1; $i < 3; $i++){
+		for($i = 1; $i < 8; $i++){
 			$this->players[$i] = new VOID_PLAYER($i);
 			$this->players[$i]->name = "Player ".$i;
 			$this->players[$i]->set_tech($this->tech_tree);
@@ -470,6 +487,7 @@ class VOID {
 			$return['ship_classes'] = $this->ship_classes;
 			$return['upgrade_classes'] = $this->upgrade_classes;
 			$return['structure_classes'] = $this->structure_classes;
+			$return['power_classes'] = $this->power_classes;
 			$return['tech_tree'] = $this->tech_tree->dump();			
 		}
 		$return['debug'] = VOID_DEBUG::dump();
@@ -863,6 +881,16 @@ class VOID {
 			$combat_sectors = [];
 		}
 		
+		// resolve player orders (such as declare war)
+		foreach($this->players as $player){			
+			foreach($player->get_orders_by_type("war") as $order){				
+				if (isset($order['player_id']) && isset($this->players[$order['player_id']]) ){
+					$player->declare_war($this->players[$order['player_id']]);
+				}
+			}
+			$player->clear_orders();
+		}
+		
 		foreach($temp_systems as $system){
 			$system->process_orders($this);
 		}
@@ -895,6 +923,16 @@ class VOID {
 			
 			
 			if ($input['action'] == "end_turn"){
+				
+				if (isset($_POST['player_orders'])){
+					$player_orders = $_POST['player_orders'];
+					foreach($player_orders as $key => $order){
+						if ($order['type'] == "war"){
+							$player->add_order("war", ["player_id"=>$order['target']]);
+						}
+					}
+					
+				}
 				
 				if (isset($_POST['fleet_orders'])){
 					$fleet_orders = $_POST['fleet_orders'];
