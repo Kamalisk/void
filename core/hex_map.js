@@ -544,6 +544,7 @@ function preload_images(data, callback){
 	sources.push({'name':'influence', 'image':'images/icons/influence.png'});
 	
 	sources.push({'name':'map_upgrade', 'image':'images/map_upgrade.png'});
+	sources.push({'name':'ruin', 'image':'images/icons/food.png'});
 	
 	// add image data from server for preloading
 	for(key in sector_class_cache){		
@@ -793,21 +794,38 @@ function draw_map_tile(canvas, map_tile, small){
 		}
 	}else {
 		if (!small){
-			if (map_tile.type == "asteroid"){
+			if (sector_class_cache[map_tile.class_id] && sector_class_cache[map_tile.class_id].image){
 				$(canvas).drawImage({
 				  source: sector_class_cache[map_tile.class_id].image,
 				  x: x, y: y
 				});
+			}
+			
+			if (map_tile.ruin){
+				$(canvas).drawImage({
+				  source: image_cache['ruin'].image,
+				  x: x, y: y+20
+				});
+			}
+			
+			/*
+			if (map_tile.type == "asteroid"){
+				
 			}else if (map_tile.type == "nebula"){
 				$(canvas).drawImage({
 				  source: sector_class_cache[map_tile.class_id].image,
 				  x: x, y: y
 				});
 			}
+			*/
+			var border_color = "rgba(34,34,34,0.5)";
+			if (map_tile.type == "void"){
+				border_color = "none";
+			}
 			if (map_tile.fog){
-				draw_hex(canvas, x,  y, hex_size, "rgba(150,150,150,0.0)", "rgba(180,180,180,0.3)");
+				draw_hex(canvas, x,  y, hex_size, "rgba(150,150,150,0.0)", "rgba(180,180,180,0.3)" );
 			}else {
-				draw_hex(canvas, x,  y, hex_size, "rgba(34,34,34,0.5)", "none");
+				draw_hex(canvas, x,  y, hex_size, border_color, "none");
 			}
 		}else {			
 			draw_hex(canvas, x,  y, hex_size, "none", "black");

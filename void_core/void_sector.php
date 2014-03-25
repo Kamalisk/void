@@ -80,6 +80,8 @@ class VOID_SECTOR_VIEW {
 	
 	public $upgrade_id;
 	
+	public $ruin;
+	
 	//public $space_dock;
 	
 	function __construct($sector, $player_id){
@@ -144,6 +146,10 @@ class VOID_SECTOR_VIEW {
 				}
 				
 			}
+			
+			if ($sector->ruin){
+				$this->ruin = $sector->ruin;
+			}
 		}else if (isset($sector->fog_state[$player_id])){
 			// return the state as fog of war saw it
 			$this->fog = 1;
@@ -190,6 +196,7 @@ class VOID_SECTOR {
 	
 	public $class;
 	public $upgrade;
+	public $ruin;
 	
 	function __construct($x, $z){
 		$this->x = $x;
@@ -201,10 +208,36 @@ class VOID_SECTOR {
 		$this->fog_state = [];
 		$this->set_type(1);
 		$this->upgrade = false;
+		$this->ruin = false;
 	}
 	
 	public function add_upgrade($upgrade){
 		$this->upgrade = $upgrade;		
+	}
+	
+	
+	public function add_ruin($type=""){
+		if ($type){
+			
+		}else {
+			// add a random ruin
+			$this->ruin = [
+				"name" => "Desolate Ancient Cruiser",
+				"effect" => "research"
+			];
+		}
+	}
+	
+	public function resolve_ruin($core, $object){
+		if ($this->ruin){
+			
+			if ($this->ruin['effect'] == "research"){
+				// grant the player a research boost 
+				$object->update_research($core->tech_tree);
+				VOID_LOG::write($object->id, "[explore] Analysing the derelict Ancient ship has revealed technological secrets");
+			}
+		}
+		$this->ruin = false;
 	}
 	
 	// adds a planet to the system
@@ -538,7 +571,7 @@ class VOID_COMBAT {
 		}
 		
 		foreach($players as $player){
-			VOID_LOG::write($player, "Combat occured in (".$sector->x.",".$sector->z.")");
+			VOID_LOG::write($player, "[combat] Combat occured in (".$sector->x.",".$sector->z.")");
 		}
 		
 		foreach($this->fleets as $fleet){
@@ -564,7 +597,7 @@ class VOID_COMBAT {
 		
 		foreach($this->fleets as $fleet){
 			if ($fleet->clean_up()){
-				VOID_LOG::write($fleet->owner, "A fleet was lost at (".$this->sector->x.",".$this->sector->z.")");
+				VOID_LOG::write($fleet->owner, "[combat] A fleet was lost at (".$this->sector->x.",".$this->sector->z.")");
 			}
 		}
 		

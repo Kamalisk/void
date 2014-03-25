@@ -197,6 +197,11 @@
 			{{> upgrade_class_template}}
 		</div>
 		{{/upgrade_class_cache}}
+		{{#power_class_cache:key}}
+		<div class="tooltip" id="power-class-tooltip-{{id}}">
+			{{> power_class_template}}
+		</div>
+		{{/power_class_cache}}
 		{{#sector_class_cache:key}}
 		<div class="tooltip" id="sector-class-tooltip-{{id}}">
 			{{> sector_class_template}}
@@ -326,6 +331,12 @@
 				{{# category == "ship"}}
 				<img src="images/icons/production.png" alt="ship" title="ship">
 				{{/category}}
+				{{# category == "diplomacy"}}
+				<img src="images/icons/influence.png" alt="Diplomacy" title="Diplomacy">
+				{{/category}}
+				{{# category == "research"}}
+				<img src="images/icons/research.png" alt="Research" title="Research">
+				{{/category}}
 				{{# category == "generic"}}
 				<img src="images/icons/happy.png" alt="Generic" title="Generic">
 				{{/category}}
@@ -371,7 +382,7 @@
 					<span decorator="tooltip" data-decorator="structure-class-tooltip-{{id}}"><img width="16" height="16" src="images/structure.png"> {{name}}</span>
 					{{/structure_classes}}
 					{{#power_classes}}
-					<span ><img width="16" height="16" src="images/power.png"> {{name}}</span>
+					<span decorator="tooltip" data-decorator="power-class-tooltip-{{id}}"><img width="16" height="16" src="images/power.png"> {{name}}</span>
 					{{/power_classes}}
 					{{#upgrade_classes}}
 					<span decorator="tooltip" data-decorator="upgrade-class-tooltip-{{id}}"><img width="16" height="16" src="images/power.png"> {{name}}</span>
@@ -684,6 +695,13 @@
 					{{/modifiers.influence}}
 					</ul>					
 				{{/modifiers}}
+			</ul>
+	</script>
+	
+	<script id="power_class_template" type="text/ractive">			
+			<h4>{{name}}</h4>
+			<ul class="power_class">				
+			<p>{{description}}</p>
 			</ul>
 	</script>
 	

@@ -52,7 +52,10 @@ class VOID_PLAYER_VIEW {
 }
 
 class VOID_PLAYER {
+	
+	public $empire_name;
 	public $name;
+	
 	public $id;
 	public $home;
 	public $resources;
@@ -164,12 +167,12 @@ class VOID_PLAYER {
 		$this->update_available_tech($tech_tree);
 	}
 	
-	public function update_research($work, $tech_tree){
+	public function update_research($tech_tree){
 		if ($this->current_tech){
 			
-			$this->current_tech->progress = $this->current_tech->progress - $work;
+			$this->current_tech->progress = $this->current_tech->progress - $this->research_per_turn;
 			if ($this->current_tech->progress <= 0){
-				VOID_LOG::write($this->id, "Research has completed on ".$this->current_tech->class->name);
+				VOID_LOG::write($this->id, "[research] Research has completed on ".$this->current_tech->class->name);
 				$this->tech[$this->current_tech->class->id] = $this->current_tech;
 				$this->add_new_ship_classes($this->current_tech->class);
 				$this->add_new_structure_classes($this->current_tech->class);
@@ -282,8 +285,8 @@ class VOID_PLAYER {
 		if (!$this->is_at_war($player->id)){
 			$this->relationships[$player->id]['state'] = "war";
 			$player->relationships[$this->id]['state'] = "war";
-			VOID_LOG::write($this->id, "You have declared war on ".$player->name);
-			VOID_LOG::write($player->id, "".$player->name." has declared war on you");
+			VOID_LOG::write($this->id, "[diplomacy] You have declared war on ".$player->name);
+			VOID_LOG::write($player->id, "[diplomacy] ".$player->name." has declared war on you");
 		}
 	}
 	

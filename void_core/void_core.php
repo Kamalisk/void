@@ -5,6 +5,7 @@ function exception_error_handler($errno, $errstr, $errfile, $errline ) {
 }
 set_error_handler("exception_error_handler");
 
+include_once("void_debug.php");
 include_once("void_data.php");
 include_once("void_player.php");
 include_once("void_tech.php");
@@ -15,32 +16,13 @@ include_once("void_map.php");
 include_once("void_queue.php");
 include_once("void_structure.php");
 include_once("void_planet.php");
+include_once("void_order.php");
 
 function void_unique_id(){
 	return uniqid("v".rand(100,999));
 }
 
-class VOID_DEBUG {
-	static $log;
-	
-	static function write($text){
-		self::$log = self::$log.print_r($text,1)."\n\n";
-	}
-	
-	static function dump(){
-		return self::$log;
-	}
-	
-	static function mem_check($obj){
-		$before = memory_get_usage();
-		clone($obj);
-		$after = memory_get_usage();
-		if ($after - $before > 1000){
-			self::write("memory change: ".($after - $before));
-		}
-	}
-	
-}
+
 
 class VOID_LOG {
 	static $game_id;
@@ -71,63 +53,6 @@ class VOID_LOG {
 	}
 }
 
-
-
-class VOID_ORDER_VIEW {
-	public $type;
-	public $delta_x;
-	public $delta_y;
-	
-}
-
-class VOID_ORDER {
-	public $type;
-	public $delta_x;
-	public $delta_z;
-	public $owner;
-	public $x;
-	public $z;
-	public $planet_id;
-	public $upgrade_id;
-	public $fleet_id;
-	public $ship_id;
-	
-	function __construct($type){
-		$this->type = $type;
-	}
-	
-	function add_params($params){
-		if (isset($params['x'])){
-			$this->x = $params['x'];
-		}
-		if (isset($params['z'])){
-			$this->z = $params['z'];
-		}
-		if (isset($params['planet_id'])){
-			$this->planet_id = $params['planet_id'];
-		}
-		if (isset($params['upgrade_id'])){
-			$this->upgrade_id = $params['upgrade_id'];
-		}
-		if (isset($params['fleet_id'])){
-			$this->fleet_id = $params['fleet_id'];
-		}
-		if (isset($params['ship_id'])){
-			$this->ship_id = $params['ship_id'];
-		}
-	}
-	
-	public function dump_view($player_id){
-		if ($this->owner == $player_id){
-			return new VOID_ORDER_VIEW($this, $player_id);
-		}else {
-			return false;
-		}
-	}
-	
-	
-	
-}
 
 
 class VOID_VIEW {
@@ -168,6 +93,8 @@ class VOID {
 	public $ship_classes = [];
 	public $structure_classes = [];
 	public $upgrade_classes = [];
+	public $power_classes = [];
+	
 	public $fleets;
 	public $systems;
 	public $opinions;
@@ -199,214 +126,11 @@ class VOID {
 		$this->ship_classes = [];		
 		$this->structure_classes = [];
 		$this->upgrade_classes = [];
+		$this->power_classes = [];
 		$this->opinions = [];
 		
-		$opinion = VOID_OPINION("I don't like your military build up", "evil");
-		$this->opinions[$opinion->id] = $opinion;
-		$opinion = VOID_OPINION("I approve of your war", "good");
-		$this->opinions[$opinion->id] = $opinion;
-		$opinion = VOID_OPINION("I dislike your expansion new my borders", "evil");
-		$this->opinions[$opinion->id] = $opinion;
-		
-		
-		$tech = $this->tech_tree->get_tech(1);
-		
-		// load ship classes from somewhere
-		$ship_class = new VOID_SHIP_CLASS();
-		$ship_class->id = 1;
-		$ship_class->name = "Scout";
-		$ship_class->movement_capacity = 3;
-		$tech->add_ship_class($ship_class);
-		$this->ship_classes[$ship_class->id] = $ship_class;
-		
-		$ship_class = new VOID_SHIP_CLASS();
-		$ship_class->id = 2;
-		$ship_class->name = "Colony";
-		$ship_class->add_special("colony");
-		$ship_class->work_required = 50;
-		$ship_class->damage = 0;
-		$tech->add_ship_class($ship_class);
-		$this->ship_classes[$ship_class->id] = $ship_class;
-		
-		$ship_class = new VOID_SHIP_CLASS();
-		$ship_class->id = 3;
-		$ship_class->name = "Attack";
-		$ship_class->work_required = 30;
-		$ship_class->damage = 20;
-		$tech = $this->tech_tree->get_tech(2);
-		$tech->add_ship_class($ship_class);
-		$this->ship_classes[$ship_class->id] = $ship_class;
-		
-		$ship_class = new VOID_SHIP_CLASS();
-		$ship_class->id = 4;
-		$ship_class->name = "Speedy";
-		$ship_class->work_required = 30;
-		$ship_class->damage = 10;
-		$ship_class->movement_capacity = 4;
-		$tech = $this->tech_tree->get_tech(6);
-		$tech->add_ship_class($ship_class);
-		$this->ship_classes[$ship_class->id] = $ship_class;
-		
-		$ship_class = new VOID_SHIP_CLASS();
-		$ship_class->id = 5;
-		$ship_class->name = "Speedy Colony";
-		$ship_class->work_required = 40;
-		$ship_class->add_special("colony");
-		$ship_class->damage = 0;
-		$ship_class->movement_capacity = 4;
-		$tech = $this->tech_tree->get_tech(3);
-		$tech->add_ship_class($ship_class);
-		$this->ship_classes[$ship_class->id] = $ship_class;
-		
-		$ship_class = new VOID_SHIP_CLASS();
-		$ship_class->id = 6;
-		$ship_class->name = "Constructor";
-		$ship_class->work_required = 40;
-		$ship_class->add_special("construct");
-		$ship_class->damage = 0;
-		$ship_class->movement_capacity = 6;
-		$tech = $this->tech_tree->get_tech(1);
-		$tech->add_ship_class($ship_class);
-		$this->ship_classes[$ship_class->id] = $ship_class;
-		
-		
-		$structure_class = new VOID_STRUCTURE_CLASS();
-		$structure_class->id = 1;
-		$structure_class->name = "Captial";
-		$structure_class->set_unique("empire");
-		$structure_class->set_modifier("food", 10);
-		$structure_class->set_modifier("morale", 10);
-		$structure_class->set_modifier("production", 10);
-		$structure_class->set_modifier("credits", 10);
-		$structure_class->set_modifier("influence", 10);
-		$structure_class->set_modifier("research", 10);
-		$tech = $this->tech_tree->get_tech(1);
-		$tech->add_structure_class($structure_class);
-		$this->structure_classes[$structure_class->id] = $structure_class;
-		
-		$structure_class = new VOID_STRUCTURE_CLASS();
-		$structure_class->id = 2;
-		$structure_class->name = "Farm";
-		$structure_class->work_required = 30;
-		$structure_class->set_modifier("food", 5);
-		$structure_class->set_modifier("credits", -1);
-		$tech = $this->tech_tree->get_tech(3);
-		$tech->add_structure_class($structure_class);
-		$this->structure_classes[$structure_class->id] = $structure_class;
-		
-		$structure_class = new VOID_STRUCTURE_CLASS();
-		$structure_class->id = 3;
-		$structure_class->name = "Bank";		
-		$structure_class->work_required = 30;
-		$structure_class->set_modifier("credits", 5);
-		$tech = $this->tech_tree->get_tech(4);
-		$tech->add_structure_class($structure_class);
-		$this->structure_classes[$structure_class->id] = $structure_class;
-		
-		$structure_class = new VOID_STRUCTURE_CLASS();
-		$structure_class->id = 4;
-		$structure_class->name = "Happy Place";
-		$structure_class->work_required = 30;
-		$structure_class->set_modifier("morale", 10);
-		$structure_class->set_modifier("credits", -1);
-		$tech = $this->tech_tree->get_tech(4);
-		$tech->add_structure_class($structure_class);
-		$this->structure_classes[$structure_class->id] = $structure_class;
-		
-		$structure_class = new VOID_STRUCTURE_CLASS();
-		$structure_class->id = 5;
-		$structure_class->name = "Factory";
-		$structure_class->work_required = 60;
-		$structure_class->set_modifier("production", 10);
-		$structure_class->set_modifier("credits", -1);
-		$tech = $this->tech_tree->get_tech(2);
-		$tech->add_structure_class($structure_class);
-		$this->structure_classes[$structure_class->id] = $structure_class;
-		
-		$structure_class = new VOID_STRUCTURE_CLASS();
-		$structure_class->id = 6;
-		$structure_class->name = "Research Lab";
-		$structure_class->work_required = 30;
-		$structure_class->set_modifier("research", 10);
-		$structure_class->set_modifier("credits", -1);
-		$tech = $this->tech_tree->get_tech(6);
-		$tech->add_structure_class($structure_class);
-		$this->structure_classes[$structure_class->id] = $structure_class;
-		
-		$structure_class = new VOID_STRUCTURE_CLASS();
-		$structure_class->id = 6;
-		$structure_class->name = "Galactic Radio Station";
-		$structure_class->work_required = 60;
-		$structure_class->set_modifier("influence", 10);
-		$structure_class->set_modifier("credits", -10);
-		$tech = $this->tech_tree->get_tech(5);
-		$tech->add_structure_class($structure_class);
-		$this->structure_classes[$structure_class->id] = $structure_class;
-		
-		$structure_class = new VOID_STRUCTURE_CLASS();
-		$structure_class->id = 7;
-		$structure_class->name = "80s Cartoon Museum";
-		$structure_class->set_unique("world");
-		$structure_class->work_required = 300;
-		$structure_class->set_modifier("influence", 20);		
-		$tech = $this->tech_tree->get_tech(5);
-		$tech->add_structure_class($structure_class);
-		$this->structure_classes[$structure_class->id] = $structure_class;
-		
-		
-		$upgrade_class = new VOID_UPGRADE_CLASS();
-		$upgrade_class->id = 1;
-		$upgrade_class->name = "Space Nebula Shop";
-		$upgrade_class->set_modifier("credits", 10);
-		$upgrade_class->work_required = 40;
-		$upgrade_class->add_requirement(3);
-		$upgrade_class->add_requirement(4);
-		$upgrade_class->add_requirement(5);
-		$tech = $this->tech_tree->get_tech(1);
-		$tech->add_upgrade_class($upgrade_class);
-		$this->upgrade_classes[$upgrade_class->id] = $upgrade_class;
-		
-		$upgrade_class = new VOID_UPGRADE_CLASS();
-		$upgrade_class->id = 2;
-		$upgrade_class->name = "Asteroid Amusement Park";
-		$upgrade_class->set_modifier("morale", 5);
-		$upgrade_class->work_required = 40;
-		$upgrade_class->add_requirement(2);
-		$tech = $this->tech_tree->get_tech(10);
-		$tech->add_upgrade_class($upgrade_class);
-		$this->upgrade_classes[$upgrade_class->id] = $upgrade_class;
-		
-		$upgrade_class = new VOID_UPGRADE_CLASS();
-		$upgrade_class->id = 3;
-		$upgrade_class->name = "Gaseous Anomaly Station";
-		$upgrade_class->set_modifier("research", 5);
-		$upgrade_class->work_required = 40;
-		$upgrade_class->add_requirement(3);
-		$upgrade_class->add_requirement(4);
-		$upgrade_class->add_requirement(5);
-		$tech = $this->tech_tree->get_tech(8);
-		$tech->add_upgrade_class($upgrade_class);
-		$this->upgrade_classes[$upgrade_class->id] = $upgrade_class;
-		
-		$upgrade_class = new VOID_UPGRADE_CLASS();
-		$upgrade_class->id = 4;
-		$upgrade_class->name = "Nebula Enrichment Facility";
-		$upgrade_class->set_modifier("influence", 20);
-		$upgrade_class->work_required = 40;
-		$upgrade_class->add_requirement(3);
-		$upgrade_class->add_requirement(4);
-		$upgrade_class->add_requirement(5);
-		$tech = $this->tech_tree->get_tech(3);
-		$tech->add_upgrade_class($upgrade_class);
-		$this->upgrade_classes[$upgrade_class->id] = $upgrade_class;
-		
-		
-		$power_class = new VOID_POWER_CLASS(1, "Awesomeness");
-		$power_class->type = "vision";
-		$power_class->value = 1;
-		$tech = $this->tech_tree->get_tech(3);
-		$tech->add_power_class($power_class);
-		$this->power_classes[$power_class->id] = $power_class;
+		// contains most of the raw data for classes
+		include("void_setup.php");
 		
 		$starting_tech = $this->tech_tree->get_starting_tech();
 		
@@ -552,7 +276,7 @@ class VOID {
 		
 		// resolve tech tree
 		foreach($this->players as $player){
-			$player->update_research($player->research_per_turn, $this->tech_tree);
+			$player->update_research($this->tech_tree);
 		}
 		
 		// reset players per turn to 0
@@ -658,7 +382,7 @@ class VOID {
 			foreach($collisions as $sector_id => $fleets){
 				if (count($fleets) > 1){
 					foreach($fleets as $fleet){
-						VOID_LOG::write($fleet->owner, "Fleet collided with another fleet");
+						VOID_LOG::write($fleet->owner, "[movement] Fleet collided with another fleet");
 						$fleet->reset_orders();	
 					}
 				}				
@@ -686,7 +410,7 @@ class VOID {
 							}
 						}
 					}
-					VOID_LOG::write($fleet->owner, "Fleet moved");
+					//VOID_LOG::write($fleet->owner, "Fleet moved");
 				}else if ($order && $order->type == "colonise"){
 					$sector = $this->map->get_sector($fleet->x, $fleet->z);
 					if ($sector->system && $fleet->get_special("colony")){							
@@ -733,7 +457,7 @@ class VOID {
 				$sector1 = $this->map->get_sector($fleet->x, $fleet->z);
 				if ($sector1->is_enemy_adjacent($fleet->owner, $this)){
 					$fleet->movement_points = 0;
-					VOID_LOG::write($fleet->owner, "Fleet stopped due to enemy contact");
+					VOID_LOG::write($fleet->owner, "[movement] Fleet stopped due to enemy contact");
 				}
 			}
 			

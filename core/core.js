@@ -274,6 +274,7 @@ function parse_logs(lines){
 		var matches = log_obj.text.match(/^\[(.+)\]/i, "");
 		if (matches && matches[1]){
 			log_obj.category = matches[1];
+			//log_obj.category = "generic";
 		}else {
 			log_obj.category = "generic";
 		}

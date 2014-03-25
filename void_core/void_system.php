@@ -142,13 +142,13 @@ class VOID_SYSTEM {
 		$this->x = $x;
 		$this->z = $z;
 		$this->id = "x".$x."z".$z;
-		$this->influence_level = 0;
+		$this->influence_level = 1;
 		$this->influence_per_turn = 0;
 		$this->influence_pool = 0;
 		$this->population = 0;
 		$this->food_pool = 0;
-		$this->food_growth_threshold = 5;
-		$this->influence_growth_threshold = 5;
+		$this->food_growth_threshold = 10;
+		$this->influence_growth_threshold = 10;
 		$this->production_per_turn = 0;
 		
 		$this->planet_index = [];
@@ -194,6 +194,11 @@ class VOID_SYSTEM {
 	
 	// apply modifers to system itself and to player 
 	public function upkeep(){
+		// for now disable planet growth for pirates
+		if ($this->owner->player == false){
+			return;
+		}
+		
 		$this->influence_pool += $this->influence_per_turn;
 		
 		// check if a colony ship is being built
@@ -211,12 +216,13 @@ class VOID_SYSTEM {
 		if ($this->influence_pool >= $this->influence_growth_threshold ){
 			$this->influence_pool = 0;
 			$this->influence_level++;
-			$this->influence_growth_threshold = ($this->influence_level+1) * 3;
+			$this->influence_growth_threshold = pow(6, $this->influence_level) * $this->influence_level;
+			VOID_LOG::write($this->owner->id, "System at (".$this->x.",".$this->z.") has expanded it's influence.");
 		}
 		if ($this->food_pool >= $this->food_growth_threshold ){
 			$this->population++;			
 			$this->food_pool = 0;
-			$this->food_growth_threshold = pow(2, $this->population);
+			$this->food_growth_threshold = pow(2, $this->population) * 10;
 			VOID_LOG::write($this->owner->id, "System at (".$this->x.",".$this->z.") has grown.");
 		}
 		$this->apply_morale();
@@ -243,6 +249,7 @@ class VOID_SYSTEM {
 		}else {
 			$this->influence_size = 1;
 		}
+		$this->influence_size = $this->influence_level;
 		
 	}
 	

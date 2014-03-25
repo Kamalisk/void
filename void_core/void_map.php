@@ -51,14 +51,23 @@ class VOID_MAP {
 					$current_sector->system->set_name($name);
 					
 					$core->systems[$current_sector->system->id] =& $current_sector->system;
-					while (count($current_sector->system->planets) < rand(3,6)){
+					while (count($current_sector->system->planets) < rand(3,5)){
 						$planet = new VOID_PLANET();
 						$planet->name = "Awesome";
-						$planet->class = $void_planet_classes[mt_rand(1,5)];
+						$planet->class = $void_planet_classes[mt_rand(1,6)];
 						$this->sectors['x'.$x.'z'.$z]->add_planet($planet);
 					}
+				}else if (rand(1,30) < 2){
+					$current_sector->set_type(6);
+					continue;
+				}else if (rand(1,20) < 2){
+					$current_sector->set_type(7);
+					continue;
 				}
 				$current_sector->set_type(1);
+				if (rand(1,30) < 8){
+					$current_sector->add_ruin();
+				}
 				if (rand(1,11) < 3){
 					$current_sector->set_type(2);
 				}else {
@@ -77,19 +86,47 @@ class VOID_MAP {
 	public function populate($core){
 		
 			$colors = [
-				["background" => "rgba(0,155,0,0.2)", "border"=>"rgba(0,155,0,1)", "fleet"=> "images/fleets/fleet_f.png"],
-				["background" => "rgba(155,0,0,0.2)", "border" => "rgba(155,0,0,1)", "fleet"=> "images/fleets/fleet_e.png"],
-				["background" => "rgba(0,71,251,0.2)", "border" => "rgba(0,71,251,1)", "fleet"=> "images/fleets/fleet_blue.png"],
-				["background" => "rgba(255,174,0,0.2)", "border" => "rgba(255,174,0,1)", "fleet"=> "images/fleets/fleet_f.png"],
-				["background" => "rgba(162,0,186,0.2)", "border" => "rgba(162,0,186,1)", "fleet"=> "images/fleets/fleet_f.png"],
-				["background" => "rgba(7,245,231,0.2)", "border" => "rgba(7,245,231,1)", "fleet"=> "images/fleets/fleet_f.png"],
-				["background" => "rgba(255,246,0,0.2)", "border" => "rgba(255,246,0,1)", "fleet"=> "images/fleets/fleet_f.png"],
-				["background" => "rgba(250,147,254,0.2)", "border" => "rgba(250,147,254,1)", "fleet"=> "images/fleets/fleet_f.png"],
-				["background" => "rgba(161,255,151,0.2)", "border" => "rgba(161,255,151,1)", "fleet"=> "images/fleets/fleet_f.png"],
-				["background" => "rgba(244,169,169,0.2)", "border" => "rgba(244,169,169,1)", "fleet"=> "images/fleets/fleet_f.png"],
-				["background" => "rgba(72,44,0,0.2)", "border" => "rgba(118,78,31,1)", "fleet"=> "images/fleets/fleet_f.png"],
-				["background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)", "fleet"=> "images/fleets/fleet_f.png"],
-				["background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)", "fleet"=> "images/fleets/fleet_f.png"],
+				[
+					"background" => "rgba(0,155,0,0.2)", 
+					"border"=>"rgba(0,155,0,1)", 
+					"fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(155,0,0,0.2)", "border" => "rgba(155,0,0,1)", "fleet"=> "images/fleets/fleet_e.png"
+				],
+				[
+					"background" => "rgba(0,71,251,0.2)", "border" => "rgba(0,71,251,1)", "fleet"=> "images/fleets/fleet_blue.png"
+				],
+				[
+					"background" => "rgba(255,174,0,0.2)", "border" => "rgba(255,174,0,1)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(162,0,186,0.2)", "border" => "rgba(162,0,186,1)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(7,245,231,0.2)", "border" => "rgba(7,245,231,1)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(255,246,0,0.2)", "border" => "rgba(255,246,0,1)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(250,147,254,0.2)", "border" => "rgba(250,147,254,1)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(161,255,151,0.2)", "border" => "rgba(161,255,151,1)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(244,169,169,0.2)", "border" => "rgba(244,169,169,1)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(72,44,0,0.2)", "border" => "rgba(118,78,31,1)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)", "fleet"=> "images/fleets/fleet_f.png"
+				],
 			];
 		
 		foreach($core->players as $player){
@@ -109,10 +146,17 @@ class VOID_MAP {
 					break;
 				}
 			}
+			
+			global $void_planet_classes;
+			$planet = new VOID_PLANET();
+			$planet->name = "Awesome";
+			$planet->class = $void_planet_classes[1];
+			$this->sectors[$key]->add_planet($planet);
+			
 			$this->sectors[$key]->home = $player->id;
 			$player->home = array('x'=> $this->sectors[$key]->x, 'z'=>$this->sectors[$key]->z);
 			
-			$this->sectors[$key]->system->colonise($player, $core);
+			$this->sectors[$key]->system->colonise($player, $core, $planet->id);
 			
 			//$this->sectors[$key]->system->influence_per_turn = mt_rand(5,10);
 			
@@ -199,19 +243,8 @@ class VOID_MAP {
 				$sector->add_state($sector->system->owner->id, "sensor_power", 1);
 				
 				$neighbours = $sector->get_neighbours();
-				if ($sector->system->influence_level >= 20){
-					$influence_size = 6;
-				}else if ($sector->system->influence_level >= 15){
-					$influence_size = 5;
-				}else if ($sector->system->influence_level >= 10){
-					$influence_size = 4;
-				}else if($sector->system->influence_level >= 7){
-					$influence_size = 3;
-				}else if($sector->system->influence_level >= 3){
-					$influence_size = 2;
-				}else {
-					$influence_size = 1;	
-				}
+				
+				$influence_size = $sector->system->influence_level;
 				
 				for ($ring = 1; $ring <= $influence_size; $ring++){					
 					foreach($void_ranges[$ring] as $range){
@@ -276,12 +309,12 @@ class VOID_MAP {
 			foreach($player_ids as $player_id){
 				if ($sector->owner){
 					if ($core->players[$player_id]->add_met_player($sector->owner->id)){
-						VOID_LOG::write($player_id, "You have met ".$sector->owner->name);
+						VOID_LOG::write($player_id, "[diplomacy] You have met ".$sector->owner->name);
 					}
 				}else if ($sector->get_fleet_owners()){
 					foreach($sector->get_fleet_owners() as $owner_id){
 						if ($core->players[$player_id]->add_met_player($owner_id)){
-							VOID_LOG::write($player_id, "You have met ".$core->players[$owner_id]->name);
+							VOID_LOG::write($player_id, "[diplomacy] You have met ".$core->players[$owner_id]->name);
 						}
 					} 
 				}

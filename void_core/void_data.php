@@ -107,14 +107,15 @@ $void_resources['credits'] = "credits";
 $void_planet_classes = array();
 
 $void_planet_classes[1] = [
-	"name" => "Class M",
+	"name" => "Class M (Terran)",
 	"id" => 1,
 	"output" => [
 		"food" => 2,
 		"production" => 2, 
-		"research" => 2,
-		"credits" => 2
+		"research" => 1,
+		"credits" => 1
 	],
+	"morale" => 0, 
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_m.png", 
 	"image_populated" => "images/planets/class_m.png", 
@@ -122,14 +123,15 @@ $void_planet_classes[1] = [
 ];
 
 $void_planet_classes[2] = [
-	"name" => "Class J",
+	"name" => "Class J (Jungle)",
 	"id" => 2, 
 	"output" => [
-		"food" => 3,
+		"food" => 2,
 		"production" => 1, 
 		"research" => 3,
-		"credits" => 3
+		"credits" => 0
 	],
+	"morale" => 0, 
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_j.png", 
 	"image_populated" => "images/planets/class_j.png", 
@@ -137,14 +139,15 @@ $void_planet_classes[2] = [
 ];
 
 $void_planet_classes[3] = [
-	"name" => "Class X",
+	"name" => "Class X (Arid)",
 	"id" => 3, 
 	"output" => [
 		"food" => 1,
 		"production" => 4, 
-		"research" => 3,
+		"research" => 1,
 		"credits" => 0
 	],
+	"morale" => -2, 
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_x.png", 
 	"image_populated" => "images/planets/class_x.png", 
@@ -152,7 +155,7 @@ $void_planet_classes[3] = [
 ];
 
 $void_planet_classes[4] = [
-	"name" => "Class P",
+	"name" => "Class P (Ocean)",
 	"id" => 4, 
 	"output" => [
 		"food" => 4,
@@ -160,6 +163,7 @@ $void_planet_classes[4] = [
 		"research" => 1,
 		"credits" => 0
 	],
+	"morale" => -1, 
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_p.png", 
 	"image_populated" => "images/planets/class_p.png", 
@@ -170,14 +174,31 @@ $void_planet_classes[5] = [
 	"name" => "Class C",
 	"id" => 5, 
 	"output" => [
-		"food" => 1,
+		"food" => 0,
 		"production" => 3, 
-		"research" => 1,
+		"research" => 0,
 		"credits" => 3
 	],
+	"morale" => -1, 
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_c.png", 
 	"image_populated" => "images/planets/class_c_populated.png", 
+	"max_population" => 6
+];
+
+$void_planet_classes[6] = [
+	"name" => "Class Y",
+	"id" => 6, 
+	"output" => [
+		"food" => 0,
+		"production" => 1, 
+		"research" => 5,
+		"credits" => 0
+	],
+	"morale" => -2, 
+	"develop_per_turn" => 0.2, 
+	"image" => "images/planets/class_y.png", 
+	"image_populated" => "images/planets/class_y.png", 
 	"max_population" => 6
 ];
 
@@ -199,12 +220,13 @@ $void_sector_classes[2] = [
 	"movement_cost" => 3
 ];
 
+
 $void_sector_classes[3] = [
 	"id" => 3,
 	"name" => "Emmission Nebula",
 	"image" => "images/nebula.png",
 	"type" => "nebula",
-	"movement_cost" => 4
+	"movement_cost" => 5
 ];
 
 $void_sector_classes[4] = [
@@ -212,7 +234,7 @@ $void_sector_classes[4] = [
 	"name" => "Proto Nebula",
 	"image" => "images/nebula_b.png",
 	"type" => "nebula",
-	"movement_cost" => 4
+	"movement_cost" => 5
 ];
 
 $void_sector_classes[5] = [
@@ -220,7 +242,31 @@ $void_sector_classes[5] = [
 	"name" => "Thermo Nebula",
 	"image" => "images/nebula_c.png",
 	"type" => "nebula", 
-	"movement_cost" => 4
+	"movement_cost" => 5
+];
+
+$void_sector_classes[6] = [
+	"id" => 6,
+	"name" => "Black Hole",
+	"image" => "images/blackhole.png",
+	"type" => "anomaly", 
+	"movement_cost" => 10
+];
+
+$void_sector_classes[7] = [
+	"id" => 7,
+	"name" => "Void",
+	"image" => "images/void.png",
+	"type" => "void", 
+	"movement_cost" => 20
+];
+
+$void_sector_classes[8] = [
+	"id" => 8,
+	"name" => "Debris Field",
+	"image" => "images/asteroid.png",
+	"type" => "asteroid",
+	"movement_cost" => 3
 ];
 
 
@@ -242,8 +288,9 @@ $void_system_names = [
 "Pandora", "Pern", "Skaro", "Takis", "Thundera", "Tiamat", "Tirol", "Titan",
 "Vekta", "Zahir", "Zeist", "Blostrupmoen", "Clements", "Leder", "Rist", 
 "Sondre", "Dyson", "Niobium", "Parker", "Hardison", "Chaos", "Drakon",
-"Baratheon", "Armitage", "Tyrell", "Lanister", "Stark", "Targaryn", 
-"Hyrule", "Brimstar", "Zebes"
+"Baratheon", "Armitage", "Tyrell", "Lannister", "Stark", "Targaryn", 
+"Hyrule", "Brimstar", "Zebes", "Tyreal", "Litago", "Etterstad", "Luna", 
+"Celestia"
 ];
 
 

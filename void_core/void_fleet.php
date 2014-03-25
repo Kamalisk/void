@@ -106,6 +106,7 @@ class VOID_FLEET {
 			$core->map->get_sector($old_x, $old_z)->remove_fleet($this);
 			$this->x = $x;
 			$this->z = $z;
+			$core->map->get_sector($old_x, $old_z)->resolve_ruin($core, $core->players[$this->owner] );
 			return true;
 		}else {
 			return false;
@@ -223,7 +224,7 @@ class VOID_FLEET {
 	public function fire($enemy_fleet){		
 		// calculate damage output of fleet			
 		$enemy_fleet->hit($this->damage);
-		VOID_LOG::write($this->owner, "Your fleet has damaged another fleet");
+		VOID_LOG::write($this->owner, "[combat] Your fleet has damaged another fleet");
 	}
 	
 	public function hit($damage){
@@ -412,7 +413,7 @@ class VOID_SHIP_CLASS {
 		$this->work_required = 10;
 		$this->vision_range = 1;
 		$this->rush_cost = 20;
-		$this->movement_capacity = 2;
+		$this->movement_capacity = 4;
 		$this->hull = 100;
 		$this->shields = 10;
 		$this->damage = 10;
