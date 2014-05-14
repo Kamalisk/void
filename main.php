@@ -7,6 +7,11 @@ include_once("void_core/void_core.php");
 
 $game_id = 1;
 
+//$_POST = $_GET;	
+if (isset($_GET['action']) && $_GET['action'] == "reset"){
+	$_POST = $_GET;	
+}
+
 if (isset($_POST['action'])){
 	// need to get a lock before continuing
 	$fp = fopen("games/".$game_id."/lock.void", "w");
@@ -15,36 +20,49 @@ if (isset($_POST['action'])){
 	}
 }
 
-// load the game object from storage
-$void = load($game_id);
-
-if (isset($_GET['action'])){
-	//$_POST = $_GET;
-}
-if (isset($_GET['player_id'])){
-	$player_id = $_GET['player_id'];
-}else {
-	$player_id = 1;
-}
-
-if (isset($_POST['action'])){
-	$void->handle_input($_POST, $player_id);
-	$void->dump_status($player_id);
-	save($void);
-}else if (isset($_GET['action']) && $_GET['action'] == "status"){
-	$void->dump_status($player_id);
-}else {
-	//$void->setup(20, 20);
-	if (isset($_GET['first'])){
-		$void->dump_map($player_id, true);
+try {
+	// load the game object from storage
+	$void = load($game_id);
+	
+	if (isset($_GET['player_id'])){
+		$player_id = $_GET['player_id'];
 	}else {
-		$void->dump_map($player_id, false);
+		if ($void->state != "lobby"){
+			//return false;
+		}
+		$player_id = 0;
 	}
-	save($void);
-}
-
-if (isset($_POST['action'])){
-	flock($fp, LOCK_UN);    // release the lock
+	
+	
+	
+	if (isset($_POST['action'])){
+		
+		$return = $void->handle_input($_POST, $player_id);
+		if ($return){
+			$player_id = $return;
+		}
+		$void->dump_status($player_id);
+		save($void);
+	}else if (isset($_GET['action']) && $_GET['action'] == "status"){	
+		$void->dump_status($player_id);
+	}else {
+		//$void->setup(20, 20);
+		if (isset($_GET['first'])){
+			$void->dump_map($player_id, true);
+		}else {
+			$void->dump_map($player_id, false);
+		}
+		save($void);
+	}
+	
+	if (isset($_POST['action'])){
+		flock($fp, LOCK_UN);    // release the lock
+	}
+}catch (Exception $e){
+	if (isset($_POST['action'])){
+		flock($fp, LOCK_UN);    // release the lock
+	}
+	throw $e;
 }
 
 function load($game_id){
@@ -56,7 +74,8 @@ function load($game_id){
 		}
 	}
 	$void = new VOID($game_id);
-	$void->setup(30, 10);
+	$void->init();
+	//$void->setup(30, 10);
 	return $void;
 }
 

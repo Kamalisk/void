@@ -41,6 +41,48 @@
 		<p><img src="images/ajax-loader-big.gif"> Loading...</p>
 		<p id="loading_status"></p>
 	</div>
+	{{#game_state == "lobby"}}
+		<div id="lobby">
+			{{#!player}}
+			<h2>Join Game</h2>
+			<p>Join the game from here!<p>
+			<button type="button" onclick="join_game()">JOIN THE GAME</button>
+			{{/player}}
+			
+			<p>Select a race and click ready. When all are ready the game will start</p>
+			
+			<h3>Races</h3>
+			<ul class="race_selector">
+			{{#races:i}}
+			<li class="" onclick="select_race('{{i}}');">
+			<h4>{{name}}</h4>
+			<p>{{#powers:i}} {{description}} {{/powers}}</p>
+			</li>
+			{{/races}}
+			</ul>
+			<h3>Empires</h3>
+			<ul class="race_selector">
+			{{#selected_race.empires:i}} <li class="{{#selected}}selected{{/selected}}" onclick="select_empire('{{i}}')"> {{name}} </li>{{/selected_race.empires}}
+			</ul>
+			<h3>Leaders</h3>
+			<ul class="race_selector">
+			{{#selected_race.leaders:i}} <li class="{{#selected}}selected{{/selected}}" onclick="select_leader('{{i}}')"> {{name}} </li> {{/selected_race.leaders}}
+			</ul>
+			
+			<h2>Current Players</h2>
+			<ul>
+				{{#players:i}}<li>{{name}}</li>{{/players}}
+			<ul>
+			{{#player}}
+			<h2>Start the Game</h2>
+			<button type="button" onclick="start_game()">START THE GAME</button>
+			{{/player}}
+			<h2>Reset Game</h2>
+			<button type="button" onclick="reset_game()">RESET THE GAME</button>
+		</div>
+	{{/game_state == "waiting"}}
+	
+	{{#hex_map}}
 	<div id="main_header">
 		<h1 title="Super Special Space Hex Adventure"><img src="images/voidwars_small.png"></h1>
 		<nav class="primary">
@@ -166,6 +208,7 @@
 		</div>			
 	
 	</div>
+	{{/hex_map}}
 	
 	{{#global_error}}
 	<div id="error_display">

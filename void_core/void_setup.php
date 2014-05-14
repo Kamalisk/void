@@ -218,66 +218,235 @@ $tech->add_power_class($power_class);
 $this->power_classes[$power_class->id] = $power_class;
 
 
-$power_class = new VOID_POWER_CLASS(2, "Sub-surface Purification");
+$power_class = new VOID_POWER_CLASS(3, "Sub-surface Purification");
 $power_class->type = "colonise_planet";
 $power_class->value = 6;
 $power_class->description = "Allows you to colonise class X planets.";
 $this->power_classes[$power_class->id] = $power_class;
 
-$power_class = new VOID_POWER_CLASS(2, "Sub-surface Purification");
+$power_class = new VOID_POWER_CLASS(4, "Sub-surface Purification");
 $power_class->type = "colonise_planet";
 $power_class->value = 6;
 $power_class->description = "Allows you to colonise class C planets.";
 $this->power_classes[$power_class->id] = $power_class;
 
-$power_class = new VOID_POWER_CLASS(2, "Sub-surface Purification");
+$power_class = new VOID_POWER_CLASS(5, "Sub-surface Purification");
 $power_class->type = "colonise_planet";
 $power_class->value = 6;
 $power_class->description = "Allows you to colonise class J planets.";
 $this->power_classes[$power_class->id] = $power_class;
 
-$power_class = new VOID_POWER_CLASS(2, "Sub-surface Purification");
+$power_class = new VOID_POWER_CLASS(6, "Sub-surface Purification");
 $power_class->type = "colonise_planet";
 $power_class->value = 6;
 $power_class->description = "Allows you to colonise class Y planets.";
 $this->power_classes[$power_class->id] = $power_class;
 
-$power_class = new VOID_POWER_CLASS(2, "Sub-surface Purification");
+$power_class = new VOID_POWER_CLASS(7, "Sub-surface Purification");
 $power_class->type = "colonise_planet";
 $power_class->value = 6;
 $power_class->description = "Allows you to colonise class Y planets.";
 $this->power_classes[$power_class->id] = $power_class;
 
-$power_class = new VOID_POWER_CLASS(2, "Sub-surface Purification");
+$power_class = new VOID_POWER_CLASS(8, "Sub-surface Purification");
 $power_class->type = "colonise_planet";
 $power_class->value = 6;
 $power_class->description = "Allows you to colonise class Y planets.";
 $this->power_classes[$power_class->id] = $power_class;
 
-$power_class = new VOID_POWER_CLASS(2, "Morale Boost");
+$power_class = new VOID_POWER_CLASS(9, "Morale Boost");
 $power_class->type = "morale";
 $power_class->value = 5;
 $power_class->description = "Gives bonus morale";
 $this->power_classes[$power_class->id] = $power_class;
 
+$power_class = new VOID_POWER_CLASS(10, "Researchious");
+$power_class->type = "research";
+$power_class->value = 0.1;
+$power_class->description = "Gives 10% more research";
+$this->power_classes[$power_class->id] = $power_class;
+
+$power_class = new VOID_POWER_CLASS(11, "Cybernetically Enhanced");
+$power_class->type = "production";
+$power_class->value = 0.1;
+$power_class->description = "Gives 10% more production";
+$this->power_classes[$power_class->id] = $power_class;
+
+$power_class = new VOID_POWER_CLASS(12, "Pyschic Ability");
+$power_class->type = "influence";
+$power_class->value = 0.1;
+$power_class->description = "Gives 10% more influence";
+$this->power_classes[$power_class->id] = $power_class;
+
+$power_class = new VOID_POWER_CLASS(13, "Junk Food");
+$power_class->type = "food";
+$power_class->value = 0.05;
+$power_class->description = "Gives 5% more food";
+$this->power_classes[$power_class->id] = $power_class;
+
+$power_class = new VOID_POWER_CLASS(14, "Entrepenurs");
+$power_class->type = "credits";
+$power_class->value = 0.05;
+$power_class->description = "Gives 5% more credits";
+$this->power_classes[$power_class->id] = $power_class;
+
+$power_class = new VOID_POWER_CLASS(15, "Self Consuming");
+$power_class->type = "food";
+$power_class->value = 0.1;
+$power_class->description = "Gives 10% more credits";
+$this->power_classes[$power_class->id] = $power_class;
 
 // empires / races
 // provides base line powers and special units
 
 // Bakani
+// 10% more research
+// Class M
+
+$bakani = new VOID_RACE("Bakani");
+$bakani->add_power($this->power_classes[10]);
+$this->races[$bakani->id] = $bakani;
 
 // Etrib
+// 10% more production
+// Class M
+$etrib = new VOID_RACE("Etrib");
+$etrib->add_power($this->power_classes[11]);
+$this->races[$etrib->id] = $etrib;
 
 // Terran
+// 5% more food
+// 5% more credits
+// Class M
+$terran = new VOID_RACE("Terran");
+$terran->add_power($this->power_classes[13]);
+$terran->add_power($this->power_classes[14]);
+$this->races[$terran->id] = $terran;
 
 // Penguina
+// 10% more influence
+// Class C
+$penguina = new VOID_RACE("Hruskan");
+$penguina->add_power($this->power_classes[12]);
+$this->races[$penguina->id] = $penguina;
+
+// Nephalem (amoeba people)
+// 10% more food
+// Class K
+$nephalem = new VOID_RACE("Nephalem");
+$nephalem->add_power($this->power_classes[15]);
+$this->races[$nephalem->id] = $nephalem;
+
+
+$pirates = new VOID_RACE("Pirates");
+$this->races[$pirates->id] = $pirates;
+
+
+// empires 
+// provides further specialisation and special powers
+
+$empire = new VOID_EMPIRE("Bakani Empire");
+$bakani->add_empire($empire);
+$this->empires[$empire->id] = $empire;
+
+$empire = new VOID_EMPIRE("Followers of Edam");
+$bakani->add_empire($empire);
+$this->empires[$empire->id] = $empire;
+
+$empire = new VOID_EMPIRE("The Etrib Conglomerate");
+$etrib->add_empire($empire);
+$this->empires[$empire->id] = $empire;
+
+$empire = new VOID_EMPIRE("Galactic Constructors");
+$etrib->add_empire($empire);
+$this->empires[$empire->id] = $empire;
+
+$empire = new VOID_EMPIRE("The Terran Republic");
+$terran->add_empire($empire);
+$this->empires[$empire->id] = $empire;
+
+$empire = new VOID_EMPIRE("The Aztec Empire");
+$terran->add_empire($empire);
+$this->empires[$empire->id] = $empire;
+
+$empire = new VOID_EMPIRE("Shadow Proclimation");
+$terran->add_empire($empire);
+$this->empires[$empire->id] = $empire;
+
+$empire = new VOID_EMPIRE("The Emirates of Hruska");
+$penguina->add_empire($empire);
+$this->empires[$empire->id] = $empire;
+
+$empire = new VOID_EMPIRE("The Kalten");
+$penguina->add_empire($empire);
+$this->empires[$empire->id] = $empire;
+
+$empire = new VOID_EMPIRE("The Sanctuary Coalition");
+$nephalem->add_empire($empire);
+$this->empires[$empire->id] = $empire;
+
+$empire = new VOID_EMPIRE("The Boradic Cube");
+$nephalem->add_empire($empire);
+$this->empires[$empire->id] = $empire;
+
+$empire = new VOID_EMPIRE("Bavarian Pirates");
+$pirates->add_empire($empire);
+$this->empires[$empire->id] = $empire;
 
 
 // leaders 
 
+// +1 vision. 
+// +1 movement point on all ships
+// +1 fleet size
+// 10% more production towards wonders
+// Destroying ships returns production to home system
+// golden ages last longer
+// Free Techs
+
+// Start with one tech?
+
 // provides one special power 
 
-// Each 
+// Bakani Leaders
+
+$leader = new VOID_LEADER("Lina III");
+$this->leaders[$leader->id] = $leader;
+$bakani->add_leader($leader);
+
+$leader = new VOID_LEADER("Najica Blitzer");
+$this->leaders[$leader->id] = $leader;
+$bakani->add_leader($leader);
+
+$leader = new VOID_LEADER("Steve");
+$this->leaders[$leader->id] = $leader;
+$terran->add_leader($leader);
+
+// Etrib Leaders
+$leader = new VOID_LEADER("Odin Falsehand");
+$this->leaders[$leader->id] = $leader;
+$etrib->add_leader($leader);
+// Thor Grim
+$leader = new VOID_LEADER("Thor Grim");
+$this->leaders[$leader->id] = $leader;
+$etrib->add_leader($leader);
+
+// Penguina
+$leader = new VOID_LEADER("Teef Yapph");
+$this->leaders[$leader->id] = $leader;
+$penguina->add_leader($leader);
+
+
+$leader = new VOID_LEADER("Ytar");
+$this->leaders[$leader->id] = $leader;
+$nephalem->add_leader($leader);
+
+// 
+// 10% more production when building wonders
+
+$leader = new VOID_LEADER("Bavarian Space Pirate Guy");
+$this->leaders[$leader->id] = $leader;
+$pirates->add_leader($leader);
 
 
 ?>

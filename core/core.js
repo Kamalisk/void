@@ -14,6 +14,10 @@ var upgrade_class_cache;
 var power_class_cache;
 var tech_tree;
 
+var race_classes;
+
+var game_state;
+
 var event_logs;
 
 var fleet_cache = {};
@@ -166,75 +170,70 @@ $(document).ready(function (){
 	  modifyArrays: false
 	});
 	
-	/*
-	Handlebars.registerHelper('compare', function (lvalue, operator, rvalue, options) {
-
-    var operators, result;
-    
-    if (arguments.length < 3) {
-        throw new Error("Handlerbars Helper 'compare' needs 2 parameters");
-    }
-    
-    if (options === undefined) {
-        options = rvalue;
-        rvalue = operator;
-        operator = "===";
-    }
-    
-    operators = {
-        '==': function (l, r) { return l == r; },
-        '===': function (l, r) { return l === r; },
-        '!=': function (l, r) { return l != r; },
-        '!==': function (l, r) { return l !== r; },
-        '<': function (l, r) { return l < r; },
-        '>': function (l, r) { return l > r; },
-        '<=': function (l, r) { return l <= r; },
-        '>=': function (l, r) { return l >= r; },
-        'typeof': function (l, r) { return typeof l == r; }
-    };
-    
-    if (!operators[operator]) {
-        throw new Error("Handlerbars Helper 'compare' doesn't know the operator " + operator);
-    }
-    
-    result = operators[operator](lvalue, rvalue);
-    
-    if (result) {
-        return options.fn(this);
-    } else {
-        return options.inverse(this);
-    }
-
-	});
-	
-	Handlebars.registerHelper('progress', function (value, max, type) {    
-    if (arguments.length < 2) {
-        throw new Error("Handlerbars Helper 'progress' needs 2 parameters");
-    }
-    var data = {"percent": Math.round(value / max * 100), "class":type};    
-    var string = fetch_template("progress_bar_template", data );
-    return new Handlebars.SafeString(string);	
-	});
-	
-	
-	Handlebars.registerPartial("planet", $("#planet_template").html());
-	Handlebars.registerPartial("ship_class", $("#ship_class_template").html());
-	Handlebars.registerPartial("structure_class", $("#structure_class_template").html());		
-	Handlebars.registerPartial("progress_bar", $("#progress_bar_template").html());		
-
-	
-	// fetch map data from the server
-	
-	// fetch all other game data they need and store it in a javascript object
-	
-	// this data is used so it hardly ever has to request data from the server other than between turns
-	
-	//$('#main_loading').hide();
-	*/
-	fetch_game_data(true);
+	// on first page load get game status
+	$.get("main.php"+location.search,{'action':'status'},function(data){
+		console.log(data);
+		if (data && data.state == "lobby"){
+			// game is in lobby mode
+			// start loop checking for lobby mode
+			check_lobby_status();
+		}else {
+			fetch_game_data(true);		
+		}
+	});	
+		
 });
 
-
+function check_lobby_status(){
+	$.get("main.php"+location.search,{'action':'status'},function(data){		
+		if (data && data.state == "lobby"){
+			$('#main_loading').hide();
+			if (data.player){
+				void_view.set("player", data.player);
+			}
+			if (data.players){
+				void_view.set("players", data.players);
+			}
+			if (data.state){
+				void_view.set("game_state", data.state);
+			}
+			if (data.races){
+				void_view.set("races", data.races);
+				race_classes = data.races;
+			}
+			setTimeout(check_lobby_status, 3000);
+		}
+		if (data && data.state == "game"){
+			// reload the page
+		}
+	});
+}
+var selected_race;
+var selected_empire;
+var selected_leader;
+function select_race(id){
+	selected_race = race_classes[id];
+	race_classes[id].selected = true;
+	void_view.set("selected_race", selected_race );
+	
+}
+function select_empire(id){
+	if (selected_empire){
+		selected_empire.selected = false;
+	}
+	selected_empire = selected_race.empires[id];
+	selected_empire.selected = true;
+	//void_view.set("selected_race.empires["+id+"].selected", true );
+	void_view.set("selected_race", selected_race );
+}
+function select_leader(id){
+	if (selected_leader){
+		selected_leader.selected = false;
+	}
+	selected_leader = selected_race.leaders[id];
+	selected_leader.selected = true;
+	void_view.set("selected_race", selected_race );
+}
 
 function allow_actions(){
 	if (player.done){
@@ -963,6 +962,20 @@ function click_to_hex(x, y, param, event){
 	}
 }
 
+function start_game(){
+	$.post("main.php",{"action":"start"},handle_start_game);
+}
+function handle_start_game(data){
+	window.location = "main.html?player_id=1";
+}
+
+function join_game(){
+	$.post("main.php",{"action":"join"},handle_join_game);
+}
+function handle_join_game(){
+	window.location = "main.html?player_id=1";
+}
+
 function reset_game(){
 	$.post("main.php"+location.search,{"action":"reset"},handle_end_turn);
 }
@@ -974,23 +987,29 @@ function fetch_game_data(first){
 	if (location.search){
 		url += location.search;
 	}else {
-		params.player_id = 1;
+		params.player_id = 0;
 	}
 	if (first){
 		params.first = true;
 	}
 	$.get(url,params,handle_fetch_game_data);
-
 }
 
 function handle_fetch_game_data(data){
 	if (data){
-
-		fleet_orders = new Object();
-		hex_map = data.map.sectors;
-		player = data.player;
 		
+		// load the player data and game state to see if we are in lobby mode
+		game_state = data.state;
+		player = data.player;
 		players = data.players;
+		
+		void_view.set("player", player);
+		void_view.set("players", players);
+		void_view.set("game_state", game_state);
+						
+		fleet_orders = new Object();
+		hex_map = data.map.sectors;				
+		void_view.set("hex_map", true);
 		if (data.debug){
 			//void_debug = data.debug;
 		}
@@ -1030,9 +1049,7 @@ function handle_fetch_game_data(data){
 		if (data.tech_tree){
 			tech_tree = data.tech_tree;
 		}
-		
-		void_view.set("player", player);
-		void_view.set("players", players);
+				
 		
 		void_view.update();				
 		

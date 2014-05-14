@@ -30,7 +30,7 @@ class VOID_MAP {
 	
 	private $views;
 	
-	public function setup($width, $height){
+	public function setup(){
 		
 	}
 	public function generate($width, $height, $core){
@@ -147,6 +147,11 @@ class VOID_MAP {
 				}
 			}
 			
+			$player->race = $core->races[array_rand($core->races)];
+			//print_r($player->race);
+			$player->leader = $player->race->leaders[array_rand($player->race->leaders)];
+			$player->empire = $player->race->empires[array_rand($player->race->empires)];
+			
 			global $void_planet_classes;
 			$planet = new VOID_PLANET();
 			$planet->name = "Awesome";
@@ -184,6 +189,10 @@ class VOID_MAP {
 			$this->sectors[$key]->system->resolve();						
 			$this->sectors[$key]->system->update();			
 
+		}
+		
+		foreach($core->players as $player){
+			$player->apply_resource_modifiers();
 		}
 		
 		$player = $core->neutral_player;		

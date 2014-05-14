@@ -84,16 +84,40 @@ class VOID_RESOURCES {
 	
 }
 
+class VOID_LOBBY {
+	public $players;
+	public $settings;
+	
+	public $races = [];
+	public $leaders = [];
+	public $empires = [];
+	
+	public function add_player($name){
+		$id = count($this->players)+1;
+		$player = new VOID_PLAYER($id);
+		$player->name = "Player ".$id;
+		// for now set a random race and such?		
+		$this->players[$player->id] = $player;
+		return $player;
+	}
 
+}
 
 class VOID {
+	public $lobby;
+	
 	public $players = [];
+	
+	public $state = "lobby";
 	public $map;
 	
 	public $ship_classes = [];
 	public $structure_classes = [];
 	public $upgrade_classes = [];
 	public $power_classes = [];
+	public $races = [];
+	public $leaders = [];
+	public $empires = [];
 	
 	public $fleets;
 	public $systems;
@@ -105,6 +129,7 @@ class VOID {
 	public $game_path;
 	
 	function __construct($id=1){
+		$this->lobby = new VOID_LOBBY();
 		$this->map = new VOID_MAP();
 		VOID_LOG::$game_id = $id;	
 		$this->game_id = $id;
@@ -112,11 +137,37 @@ class VOID {
 		if (!file_exists($this->game_path)){
 			mkdir($this->game_path);
 		}
+		
 	}
 	
 	public function post_load(){
 		VOID_LOG::$game_id = $this->game_id;	
 		VOID_LOG::$game_path = $this->game_path;	
+	}
+	
+	public function join_game($name){		
+		return $this->lobby->add_player($name);
+	}
+	
+	public function start_game(){
+		$this->state = "game";		
+		foreach($this->lobby->players as $player){
+			$this->add_player($player->name);			
+		}
+		$this->start(30, 30);
+	}
+	
+	public function init(){
+		
+		$this->players = [];
+		$this->state = "lobby";
+		
+		// temporarily create the players here
+		/*
+		for($i = 1; $i < 8; $i++){
+			$this->add_player("");			
+		}
+		*/
 	}
 	
 	public function setup($width, $height){
@@ -128,21 +179,28 @@ class VOID {
 		$this->upgrade_classes = [];
 		$this->power_classes = [];
 		$this->opinions = [];
+		$this->races = [];
+		$this->leaders = [];
+		$this->empires = [];
 		
 		// contains most of the raw data for classes
 		include("void_setup.php");
 		
-		$starting_tech = $this->tech_tree->get_starting_tech();
+		//$this->start($width, $height);
+		//$this->map->generate_views($this->players);		
+	}
+	
+	public function start($width, $height){
 		
+		$starting_tech = $this->tech_tree->get_starting_tech();
 		$this->map = new VOID_MAP();
-		$this->players = [];
-		for($i = 1; $i < 8; $i++){
-			$this->players[$i] = new VOID_PLAYER($i);
-			$this->players[$i]->name = "Player ".$i;
-			$this->players[$i]->set_tech($this->tech_tree);
-			$this->players[$i]->done = false;
+		foreach($this->players as $player){
+			$player->set_tech($this->tech_tree);
+			$player->done = false;
 		}
 		
+		$i = count($this->players);
+		// add the neutral players 
 		$this->players[$i] = new VOID_PLAYER($i);
 		$this->neutral_player = $this->players[$i];
 		$this->neutral_player->player = false;
@@ -152,11 +210,18 @@ class VOID {
 		
 		$this->map->generate($width, $height, $this);
 		$this->map->populate($this);
-		
-		
-		
-		//$this->map->generate_views($this->players);		
 	}
+
+	public function add_player($data){
+		$id = count($this->players)+1;
+		$player = new VOID_PLAYER($id);
+		$player->name = "Player ".$id;
+		// for now set a random race and such?
+		
+		$this->players[$player->id] = $player;
+		return $player;
+	}
+
 
 	public function setup_tech_tree(){
 		// init tech tree
@@ -194,17 +259,26 @@ class VOID {
 		global $void_planet_classes;
 		global $void_sector_classes;				
 		
+		// don't send any map data when the game is in lobby mode!
+		if ($this->state == "lobby"){
+			return false;
+		}
+		
 		header("Content-type: application/json");
 		$return = array();
 		$return['debug'] = VOID_DEBUG::dump();
+		$return['state'] = $this->state;
 		$return['map'] = $this->map->dump_map($player_id);
 		$return['players'] = [];
 		foreach($this->players as $player){
 			$return['players'][$player->id] = $player->dump($player_id);
 		}
-		$return['players'][$player_id] = $this->players[$player_id];
-		$return['player'] = $this->players[$player_id];
-		$return['logs'] = VOID_LOG::get($player_id);
+		if ($player_id){
+			$return['players'][$player_id] = $this->players[$player_id];
+			$return['player'] = $this->players[$player_id];
+			$return['logs'] = VOID_LOG::get($player_id);
+		}
+		
 		if ($first){
 			$return['planet_classes'] = $void_planet_classes;
 			$return['sector_classes'] = $void_sector_classes;
@@ -223,17 +297,34 @@ class VOID {
 	public function dump_status($player_id){
 		global $void_planet_classes;
 		global $void_sector_classes;
-		
 		header("Content-type: application/json");
-		$return = array();		
-		$return['players'] = [];
-		foreach($this->players as $player){
-			$return['players'][$player->id] = $player->dump($player_id);
+		// if the game is in lobby mode. only return basic player data (currently returns too much I think)
+		if ($this->state == "lobby"){
+			$return = array();		
+			$return['players'] = [];
+			$return['state'] = $this->state;
+			foreach($this->lobby->players as $player){
+				$return['players'][$player->id] = $player->dump($player_id);
+			}
+			if ($player_id && isset($this->lobby->players[$player_id])){				
+				$return['player'] = $this->lobby->players[$player_id];
+			}
+			$return['races'] = $this->races;
+			
+		}else {			
+			$return = array();		
+			$return['players'] = [];
+			$return['state'] = $this->state;
+			foreach($this->players as $player){
+				$return['players'][$player->id] = $player->dump($player_id);
+			}
+			if ($player_id){
+				$return['players'][$player_id] = $this->players[$player_id];
+				$return['player'] = $this->players[$player_id];
+			}
+			$return['debug'] = VOID_DEBUG::dump();	
+			//$this->map->players = $this->players;
 		}
-		$return['players'][$player_id] = $this->players[$player_id];
-		$return['player'] = $this->players[$player_id];
-		$return['debug'] = VOID_DEBUG::dump();	
-		//$this->map->players = $this->players;
 		echo json_encode($return, JSON_NUMERIC_CHECK);
 	}
 	
@@ -634,6 +725,10 @@ class VOID {
 			$fleet->update($this);
 		}		
 		
+		foreach($this->players as $player){
+			$player->apply_resource_modifiers();
+		}
+		
 		//check for victory and update victory totals	
 
 		$this->map->update_map($this);
@@ -643,9 +738,10 @@ class VOID {
 	
 	public function handle_input($input, $player_id){
 		if (isset($input['action'])){
-			$player = $this->players[$player_id];
-			
-			
+			if ($player_id){
+				$player = $this->players[$player_id];
+			}
+						
 			if ($input['action'] == "end_turn"){
 				
 				if (isset($_POST['player_orders'])){
@@ -740,11 +836,18 @@ class VOID {
 					$this->process_turn();
 				}else {
 					
-				}				
+				}
+			} else if ($input['action'] == "join"){
+				$player = $this->join_game("Peter");
+				return $player->id;
+			} else if ($input['action'] == "start"){				
+				
+				$this->start_game();
 			} else if ($input['action'] == "reset"){
-					$this->map = new VOID_MAP();
-					$this->setup(30,20);
-					//$this->save();
+				//$this->map = new VOID_MAP();
+				$this->init();
+				//$this->setup(30,20);
+				//$this->save();
 			}
 		}
 	}

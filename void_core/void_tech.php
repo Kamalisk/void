@@ -14,6 +14,26 @@ class VOID_POWER_CLASS {
 		$this->name = $name;
 	}
 	
+	public function apply($player){
+		switch($this->type){
+			case "research":{
+				$player->research_modifier = $player->research_modifier + $this->value;	
+				break;
+			}
+			case "credits":{
+				$player->credits_modifier = $player->credits_modifier + $this->value;	
+				break;
+			}
+			case "production":{
+				$player->production_modifier = $player->production_modifier + $this->value;	
+				break;
+			}
+			case "food":{
+				$player->food_modifier = $player->food_modifier + $this->value;	
+				break;
+			}
+		}
+	}
 }
 
 

@@ -1,6 +1,89 @@
 <?php
 
 
+class VOID_RACE {
+	public $id;
+	public $name;
+	public $leaders;
+	public $empires;
+	public $apply;
+	public $powers;
+	
+	function __construct($name){
+		$this->id = void_unique_id();
+		$this->name = $name;
+		$this->leaders = [];
+	}
+	
+	public function add_power($power){
+		$this->powers[$power->id] = $power;
+	}
+	
+	public function add_leader($leader){
+		$this->leaders[$leader->id] = $leader;
+	}
+	public function add_empire($empire){
+		$this->empires[$empire->id] = $empire;
+	}
+	
+	// apply modifiers to player object
+	public function apply($player){
+		foreach($this->powers as $power){
+			$power->apply($player);
+		}
+	}
+	
+}
+
+class VOID_EMPIRE {
+	public $id;
+	public $name;
+	public $selected;
+	public $powers;
+	function __construct($name){
+		$this->id = void_unique_id();
+		$this->name = $name;
+	}
+	
+	public function add_power($power){
+		$this->powers[$power->id] = $power;
+	}
+	
+	// apply modifers to player object
+	public function apply($player){
+		foreach($this->powers as $power){
+			$power->apply($player);
+		}
+	}
+}
+
+
+class VOID_LEADER {
+	public $id;
+	public $name;
+	public $empire_name;
+	
+	public $selected;
+	public $powers;
+	function __construct($name){
+		$this->id = void_unique_id();
+		$this->name = $name;
+		$this->empire_name = $name;
+	}
+	
+	public function add_power($power){
+		$this->powers[$power->id] = $power;
+	}
+	
+	// apply modifers to player object
+	public function apply($player){
+		foreach($this->powers as $power){
+			$power->apply($player);
+		}
+	}
+}
+
+
 class VOID_OPINION {
 	public $id;
 	public $text;
@@ -31,6 +114,9 @@ class VOID_PLAYER_VIEW {
 	
 	function __construct($player, $player_id){
 		$this->name = $player->name;
+		if ($player->empire){
+			$this->name = $player->empire->name;
+		}
 		$this->id = $player->id;
 		$this->color = $player->color;
 		$this->done = $player->done;
@@ -60,11 +146,19 @@ class VOID_PLAYER {
 	public $home;
 	public $resources;
 	public $color;
+	public $leader;
+	public $race;
+	public $empire;
 	
 	public $research_pool;
 	public $research_per_turn;
 	public $credits_pool;
 	public $credits_per_turn;
+	
+	public $research_modifier = 0;
+	public $credits_modifier = 0;	
+	public $production_modifier = 0;
+	public $food_modifier = 0;	
 	
 	public $morale;
 	
@@ -122,6 +216,13 @@ class VOID_PLAYER {
 	public function apply_resources(){
 		$this->credits_pool += $this->credits_per_turn;
 		$this->research_pool += $this->research_per_turn;
+	}
+	
+	public function apply_resource_modifiers(){
+		$research_bonus = ceil($this->research_modifier * $this->research_per_turn);
+		$this->update_resource("research", $research_bonus, "powers");		
+		$credits_bonus = ceil($this->credits_modifier * $this->credits_per_turn);
+		$this->update_resource("credits", $credits_bonus, "powers");
 	}
 	
 	public function update_resource($type, $value, $source=""){
@@ -206,6 +307,7 @@ class VOID_PLAYER {
 	public function add_new_power($tech){
 		foreach($tech->power_classes as &$power){
 			$this->powers[$power->type] = $power;
+			$power->apply($this);
 		}
 	}
 	public function has_power($type){
