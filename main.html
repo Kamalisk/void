@@ -54,7 +54,7 @@
 			<h3>Races</h3>
 			<ul class="race_selector">
 			{{#races:i}}
-			<li class="" onclick="select_race('{{i}}');">
+			<li class="{{#selected}}selected{{/selected}}" onclick="select_race('{{i}}');">
 			<h4>{{name}}</h4>
 			<p>{{#powers:i}} {{description}} {{/powers}}</p>
 			</li>
@@ -62,12 +62,23 @@
 			</ul>
 			<h3>Empires</h3>
 			<ul class="race_selector">
-			{{#selected_race.empires:i}} <li class="{{#selected}}selected{{/selected}}" onclick="select_empire('{{i}}')"> {{name}} </li>{{/selected_race.empires}}
+			{{#selected_race.empires:i}} 
+			<li class="{{#selected}}selected{{/selected}}" onclick="select_empire('{{i}}')"> 
+			<h4>{{name}}</h4>
+			<p>{{#powers:i}} {{description}} {{/powers}}</p>
+			</li>
+			{{/selected_race.empires}}
 			</ul>
 			<h3>Leaders</h3>
 			<ul class="race_selector">
-			{{#selected_race.leaders:i}} <li class="{{#selected}}selected{{/selected}}" onclick="select_leader('{{i}}')"> {{name}} </li> {{/selected_race.leaders}}
+			{{#selected_race.leaders:i}} 
+			<li class="{{#selected}}selected{{/selected}}" onclick="select_leader('{{i}}')"> 
+			<h4>{{name}}</h4>
+			<p>{{#powers:i}} {{description}} {{/powers}}</p>
+			</li> {{/selected_race.leaders}}
 			</ul>
+			
+			<p><button type="button" onclick="send_race()">Select race</button></p>
 			
 			<h2>Current Players</h2>
 			<ul>
@@ -78,7 +89,8 @@
 			<button type="button" onclick="start_game()">START THE GAME</button>
 			{{/player}}
 			<h2>Reset Game</h2>
-			<button type="button" onclick="reset_game()">RESET THE GAME</button>
+			<button type="button" onclick="reset_lobby()">RESET THE LOBBY</button>
+			
 		</div>
 	{{/game_state == "waiting"}}
 	
@@ -400,10 +412,16 @@
 		<div>		
 		{{#tiers:key}}
 			<div class="tech_tier tech_tier_{{key}}">
+			<h3>Tier {{key}}</h3>
 			{{#.}}
 				<div class="tech_tree_item {{#.player_has}}researched_tech{{/.player_has}} {{#.player_available}}available_tech{{/.player_available}} tier_{{tier}} tech_{{id}} {{#.player_current}}current_tech{{/.player_current}}" onclick="select_tech({{id}})">
-					<h4>{{name}}</h4>
-					
+					<h4>
+					{{#.traits_given}}
+					{{.}}
+					{{/.traits_given}}
+					{{name}}
+					</h4>
+					<!--
 					{{#.player_available}}
 						<p>This tech is available to research.</p>
 						<p>{{.player_available.progress}} research points needed</p>
@@ -413,9 +431,11 @@
 						This tech has been researched
 						{{/.player_has}}
 						{{^.player_has}}
+						<p>Requires {{tier_requirement}} from Tier {{key-1}}</p>
 						<p>{{cost}} research points needed</p>
 						{{/.player_has}}		
 					{{/.player_available}}			
+					-->
 					
 					<div class="tech_rewards">										
 					{{#ship_classes}}

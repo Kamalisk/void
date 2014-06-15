@@ -341,17 +341,30 @@ class VOID_PLAYER {
 	}
 	
 	public function update_available_tech($tech_tree){
-		foreach($tech_tree->items as &$tech){
+		// calculate how many of each tier they have
+		$tiers = array();
+		foreach($this->tech as $tech){
+			if (!isset($tiers[$tech->class->tier])){
+				$tiers[$tech->class->tier] = 0;
+			}
+			$tiers[$tech->class->tier]++;
+		}
+		foreach($tech_tree->items as $tech){
 			if (isset($this->tech[$tech->id])){
 				continue;
 			}
+			/*
 			$count = 0;
 			foreach($tech->requirements as $req){
 				if (isset($this->tech[$req])){
 					$count++;
 				}
 			}
-			if ($count >= $tech->get_req_count()){
+			*/
+			if (!isset($tiers[$tech->tier])){
+				$tiers[$tech->tier] = 0;
+			}
+			if ($tech->is_tech_available($tiers[$tech->tier])){
 				$this->available_tech[$tech->id] = new VOID_TECH_ITEM($tech);
 				if (!$this->current_tech){
 					$this->current_tech = $this->available_tech[$tech->id];

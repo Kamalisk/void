@@ -100,7 +100,14 @@ class VOID_LOBBY {
 		$this->players[$player->id] = $player;
 		return $player;
 	}
-
+	public function select_race($player_id, $race, $empire, $leader){
+		$this->players[$player_id]->race = $race;
+		$this->players[$player_id]->empire = $empire;
+		$this->players[$player_id]->leader = $leader;
+	}
+	public function reset(){
+		$this->players = [];		
+	}
 }
 
 class VOID {
@@ -152,7 +159,7 @@ class VOID {
 	public function start_game(){
 		$this->state = "game";		
 		foreach($this->lobby->players as $player){
-			$this->add_player($player->name);			
+			$this->add_player($player);			
 		}
 		$this->start(30, 30);
 	}
@@ -214,9 +221,8 @@ class VOID {
 
 	public function add_player($data){
 		$id = count($this->players)+1;
-		$player = new VOID_PLAYER($id);
-		$player->name = "Player ".$id;
-		// for now set a random race and such?
+		//$player = new VOID_PLAYER($id);
+		$player = clone $data;		
 		
 		$this->players[$player->id] = $player;
 		return $player;
@@ -738,8 +744,10 @@ class VOID {
 	
 	public function handle_input($input, $player_id){
 		if (isset($input['action'])){
-			if ($player_id){
+			if ($player_id && isset($this->players[$player_id])){
 				$player = $this->players[$player_id];
+			}else if ($player_id && isset($this->lobby->players[$player_id])) {
+				$player = $this->lobby->players[$player_id];
 			}
 						
 			if ($input['action'] == "end_turn"){
@@ -840,7 +848,14 @@ class VOID {
 			} else if ($input['action'] == "join"){
 				$player = $this->join_game("Peter");
 				return $player->id;
-			} else if ($input['action'] == "start"){				
+			} else if ($input['action'] == "select"){				
+				$race = $this->races[$input['race_id']];
+				$empire = $this->empires[$input['empire_id']];
+				$leader = $this->leaders[$input['leader_id']];
+				$this->lobby->select_race($player_id, $race, $empire, $leader);
+			} else if ($input['action'] == "reset_lobby"){
+				$this->lobby->reset();
+			} else if ($input['action'] == "start"){
 				
 				$this->start_game();
 			} else if ($input['action'] == "reset"){

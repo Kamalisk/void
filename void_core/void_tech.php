@@ -92,43 +92,64 @@ class VOID_TECH_TREE {
 	}
 	
 	public function init(){
+		
+		// starting tech
 		$tech = new VOID_TECH(1, "Space Flight", 10);
 		$this->add_tech($tech);
 		
+		
 		$tech = new VOID_TECH(2, "Geothermal Frakking", 40);
 		$tech->add_req(1);
+		$tech->add_trait("industry");
+		$tech->add_trait("military");
 		$this->add_tech($tech);
 		
 		$tech = new VOID_TECH(3, "Xenobiology", 40);
+		$tech->add_trait("agriculture");
+		$tech->add_trait("science");
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
 		$tech = new VOID_TECH(4, "Interstellar Trade", 40);
+		$tech->add_trait("commerce");
+		$tech->add_trait("culture");
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
 		$tech = new VOID_TECH(5, "Subspace Communications", 40);
+		$tech->add_trait("science");
+		$tech->add_trait("military");
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
 		$tech = new VOID_TECH(6, "Lukas String Theory", 40);
+		$tech->add_trait("science");
+		$tech->add_trait("military");
 		$tech->add_req(1);
 		$this->add_tech($tech);
 		
 		$tech = new VOID_TECH(7, "Galactic Currency", 800);
+		$tech->add_trait("commerce");
+		$tech->set_tier_requirement(2);
 		$tech->add_req(4);
 		$tech->add_req(5);
 		$this->add_tech($tech);
 		
 		$tech = new VOID_TECH(8, "Organic Manufacturing", 800);
+		$tech->add_trait("agriculture");
+		$tech->set_tier_requirement(2);
 		$tech->add_req(3);
 		$this->add_tech($tech);
 		
 		$tech = new VOID_TECH(9, "Laser Amplification", 800);
+		$tech->add_trait("military");
+		$tech->set_tier_requirement(2);
 		$tech->add_req(2);
 		$this->add_tech($tech);
 		
 		$tech = new VOID_TECH(10, "Gravitational Mapping", 800);
+		$tech->add_trait("science");
+		$tech->set_tier_requirement(2);
 		$tech->add_req(5);
 		$tech->add_req(6);
 		$this->add_tech($tech);
@@ -160,6 +181,10 @@ class VOID_TECH {
 	public $power_classes;
 	public $upgrade_classes;
 	
+	public $traits_required;
+	public $traits_given;
+	public $tier_requirements;
+	
 	function __construct($id, $name, $cost){
 		$this->id = $id;
 		$this->name = $name;
@@ -170,7 +195,8 @@ class VOID_TECH {
 		$this->ship_classes = [];	
 		$this->structure_classes = [];
 		$this->power_classes = [];	
-		$this->upgrade_classes = [];	
+		$this->upgrade_classes = [];
+		$this->tier_requirements = 0;	
 	}
 	public function add_req($id){
 		$this->requirements[$id] = $id;
@@ -208,6 +234,24 @@ class VOID_TECH {
 	public function add_power_class($power_class){
 		$this->power_classes[] = $power_class;
 	}
+	
+	public function is_tech_available($tier){
+		if ($tier >= $this->tier_requirements){
+			return true;
+		}
+		return false;
+	}
+	
+	public function add_trait($name){
+		$this->traits_given[$name] = $name;
+	}
+	public function require_trait($name){
+		$this->traits_required[$name] = $name;
+	}
+	public function set_tier_requirement($number){
+		$this->tier_requirements = $number;
+	}
+	
 }
 
 class VOID_TECH_ITEM {

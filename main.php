@@ -38,9 +38,11 @@ try {
 	if (isset($_POST['action'])){
 		
 		$return = $void->handle_input($_POST, $player_id);
+		
 		if ($return){
-			$player_id = $return;
+			$player_id = $return;			
 		}
+		
 		$void->dump_status($player_id);
 		save($void);
 	}else if (isset($_GET['action']) && $_GET['action'] == "status"){	

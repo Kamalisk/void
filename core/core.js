@@ -197,9 +197,9 @@ function check_lobby_status(){
 			if (data.state){
 				void_view.set("game_state", data.state);
 			}
-			if (data.races){
-				void_view.set("races", data.races);
+			if (data.races && !race_classes){
 				race_classes = data.races;
+				void_view.set("races", race_classes);
 			}
 			setTimeout(check_lobby_status, 3000);
 		}
@@ -211,9 +211,40 @@ function check_lobby_status(){
 var selected_race;
 var selected_empire;
 var selected_leader;
+
+function reset_lobby(){
+	var url = "main.php";
+	if (location.search){
+		url += location.search;
+	}	
+	$.post(url,{
+		"action":"reset_lobby"
+	},check_lobby_status);
+	
+}
+
+function send_race(){
+	var url = "main.php";
+	if (location.search){
+		url += location.search;
+	}
+	if (selected_race && selected_empire && selected_leader){
+		$.post(url,{
+			"action":"select", 
+			"race_id":selected_race.id, 
+			"empire_id":selected_empire.id, 
+			"leader_id":selected_leader.id
+		},check_lobby_status);
+	}
+}
+
 function select_race(id){
+	if (selected_race){
+		selected_race.selected = false;
+	}
 	selected_race = race_classes[id];
-	race_classes[id].selected = true;
+	selected_race.selected = true;
+	void_view.set("races", race_classes);
 	void_view.set("selected_race", selected_race );
 	
 }
@@ -972,8 +1003,8 @@ function handle_start_game(data){
 function join_game(){
 	$.post("main.php",{"action":"join"},handle_join_game);
 }
-function handle_join_game(){
-	window.location = "main.html?player_id=1";
+function handle_join_game(data){
+	window.location = "main.html?player_id="+data.player.id;
 }
 
 function reset_game(){
