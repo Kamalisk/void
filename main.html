@@ -409,17 +409,44 @@
 	</script>
 	
 	<script id="tech_tree_template" type="text/ractive">
-		<div>		
+		<div>
+			<ul class="tech_traits">
+			<li><img width="16" height="16" src="images/icons/traits/military.png"> {{player.tech_traits.military}}</li>
+			<li><img width="16" height="16" src="images/icons/traits/commerce.png"> {{player.tech_traits.commerce}}</li>
+			<li><img width="16" height="16" src="images/icons/traits/culture.png"> {{player.tech_traits.culture}}</li>
+			<li><img width="16" height="16" src="images/icons/traits/agriculture.png"> {{player.tech_traits.agriculture}}</li>
+			<li><img width="16" height="16" src="images/icons/traits/industry.png"> {{player.tech_traits.industry}}</li>
+			<li><img width="16" height="16" src="images/icons/traits/science.png"> {{player.tech_traits.science}}</li>
+			</ul>			
 		{{#tiers:key}}
 			<div class="tech_tier tech_tier_{{key}}">
 			<h3>Tier {{key}}</h3>
 			{{#.}}
 				<div class="tech_tree_item {{#.player_has}}researched_tech{{/.player_has}} {{#.player_available}}available_tech{{/.player_available}} tier_{{tier}} tech_{{id}} {{#.player_current}}current_tech{{/.player_current}}" onclick="select_tech({{id}})">
 					<h4>
-					{{#.traits_given}}
-					{{.}}
-					{{/.traits_given}}
+					{{#.traits_required:type}}
+					{{# type == "agriculture"}}
+						{{# . > 1}}{{.}}{{/.}}<img width="16" height="16" src="images/icons/traits/agriculture.png">
+					{{/type}}
+					{{# type == "military"}}
+						{{# . > 1}}{{.}}{{/.}}<img width="16" height="16" src="images/icons/traits/military.png">
+					{{/.}}
+					{{# type == "culture"}}
+						{{# . > 1}}{{.}}{{/.}}<img width="16" height="16" src="images/icons/traits/culture.png">
+					{{/type}}
+					{{# type == "commerce"}}
+						{{# . > 1}}{{.}}{{/.}}<img width="16" height="16" src="images/icons/traits/commerce.png">
+					{{/type}}
+					{{# type == "industry"}}
+						{{# . > 1}}{{.}}{{/.}}<img width="16" height="16" src="images/icons/traits/industry.png">
+					{{/type}}
+					{{# type == "science"}}
+						{{# . > 1}}{{.}}{{/.}}<img width="16" height="16" src="images/icons/traits/science.png">
+					{{/type}}
+					{{/.traits_required}}					
 					{{name}}
+					
+					[{{id}}]
 					</h4>
 					<!--
 					{{#.player_available}}
@@ -451,6 +478,29 @@
 					<span decorator="tooltip" data-decorator="upgrade-class-tooltip-{{id}}"><img width="16" height="16" src="images/power.png"> {{name}}</span>
 					{{/upgrade_classes}}					
 					</div>
+					<div class="traits_given">
+					{{#.traits_given:type}}
+					{{# type == "agriculture"}}
+						<img width="16" height="16" src="images/icons/traits/agriculture.png">
+					{{/type}}
+					{{# type == "military"}}
+						<img width="16" height="16" src="images/icons/traits/military.png">
+					{{/.}}
+					{{# type == "culture"}}
+						<img width="16" height="16" src="images/icons/traits/culture.png">
+					{{/type}}
+					{{# type == "commerce"}}
+						<img width="16" height="16" src="images/icons/traits/commerce.png">
+					{{/type}}
+					{{# type == "industry"}}
+						<img width="16" height="16" src="images/icons/traits/industry.png">
+					{{/type}}
+					{{# type == "science"}}
+						<img width="16" height="16" src="images/icons/traits/science.png">
+					{{/type}}
+					{{/.traits_given}}
+					</div>
+					
 				</div>
 			{{/.}}
 			</div>
@@ -519,6 +569,13 @@
 					</td>
 					</tr>
 				{{/type_id}}
+				
+				{{#ruin}}
+					<tr>
+					<th>Ruin</th>
+					<td>Ruins here!</td>
+					</tr>
+				{{/ruin}}
 				
 				{{#upgrade_id}}
 					<tr>
@@ -701,36 +758,78 @@
 	
 	<script id="structure_class_template" type="text/ractive">			
 			<h4>{{name}}</h4>
+			
+			<ul class="structure_class">				
+				{{#modifiers}}
+					<ul>
+					{{#modifiers.production}}
+						<li class="production modifier"><img src="images/icons/production.png" alt="Production" title="Production"> Production: {{void.per_turn_value(modifiers.production.value)}}</li>
+					{{/modifiers.production}}
+					{{#modifiers.production_per_population}}
+						<li class="production modifier"><img src="images/icons/production.png" alt="Production" title="Production"> Production: {{void.per_turn_value(value)}} per population {{#max}}(Max: {{max}}){{/max}}</li>
+					{{/modifiers.production_per_population}}
+					{{#modifiers.production_percent}}
+						<li class="production modifier"><img src="images/icons/production.png" alt="Production" title="Production"> Production: {{void.per_turn_value(value)}}%</li>
+					{{/modifiers.production_percent}}
+					
+					{{#modifiers.food}}
+						<li class="food modifier"><img src="images/icons/food.png" alt="Food" title="Food"> Food: {{void.per_turn_value(modifiers.food.value)}}</li>					
+					{{/modifiers.food}}
+					{{#modifiers.food_per_population}}
+						<li class="food modifier"><img src="images/icons/food.png" alt="Food" title="Food"> Food: {{void.per_turn_value(value)}} per population {{#max}}(Max: {{max}}){{/max}}</li>
+					{{/modifiers.food_per_population}}
+					{{#modifiers.food_percent}}
+						<li class="food modifier"><img src="images/icons/food.png" alt="Food" title="Food"> Food: {{void.per_turn_value(value)}}%</li>
+					{{/modifiers.food_percent}}
+					
+					{{#modifiers.research}}
+						<li class="research modifier"><img src="images/icons/research.png" alt="Research" title="Research"> Research: {{void.per_turn_value(modifiers.research.value)}}</li>
+					{{/modifiers.research}}
+					{{#modifiers.research_per_population}}
+						<li class="research modifier"><img src="images/icons/research.png" alt="Research" title="Research"> Research: {{void.per_turn_value(value)}} per population {{#max}}(Max: {{max}}){{/max}}</li>
+					{{/modifiers.research_per_population}}
+					{{#modifiers.research_percent}}
+						<li class="research modifier"><img src="images/icons/research.png" alt="Research" title="Research"> Research: {{void.per_turn_value(value)}}%</li>
+					{{/modifiers.research_percent}}
+					
+					{{#modifiers.credits}}
+						<li class="credits modifier"><img src="images/icons/credits.png" alt="Credits" title="Credits"> Credits: {{void.per_turn_value(modifiers.credits.value)}}</li>
+					{{/modifiers.credits}}
+					{{#modifiers.credits_per_population}}
+						<li class="credits modifier"><img src="images/icons/credits.png" alt="Credits" title="Credits"> Credits: {{void.per_turn_value(value)}} per population {{#max}}(Max: {{max}}){{/max}}</li>
+					{{/modifiers.credits_per_population}}
+					{{#modifiers.credits_percent}}
+						<li class="credits modifier"><img src="images/icons/credits.png" alt="Credits" title="Credits"> Credits: {{void.per_turn_value(value)}}%</li>
+					{{/modifiers.credits_percent}}
+					
+					{{#modifiers.morale}}
+						<li class="morale modifier"><img src="images/icons/happy.png" alt="Morale" title="Morale"> Morale: {{void.per_turn_value(modifiers.morale.value)}}</li>
+					{{/modifiers.morale}}
+					{{#modifiers.morale_per_population}}
+						<li class="morale modifier"><img src="images/icons/happy.png" alt="Morale" title="Morale"> Morale: {{void.per_turn_value(value)}} per population {{#max}}(Max: {{max}}){{/max}}</li>
+					{{/modifiers.morale_per_population}}
+					{{#modifiers.morale_percent}}
+						<li class="morale modifier"><img src="images/icons/happy.png" alt="Morale" title="Morale"> Morale: {{void.per_turn_value(value)}}%</li>
+					{{/modifiers.morale_percent}}
+										
+					{{#modifiers.influence}}
+						<li class="influence modifier"><img src="images/icons/influence.png" alt="Influence" title="Influence"> Influence: {{void.per_turn_value(modifiers.influence.value)}}</li>
+					{{/modifiers.influence}}
+					{{#modifiers.influence_per_population}}
+						<li class="influence modifier"><img src="images/icons/influence.png" alt="Influence" title="Influence"> Influence: {{void.per_turn_value(value)}} per population {{#max}}(Max: {{max}}){{/max}}</li>
+					{{/modifiers.influence_per_population}}
+					{{#modifiers.influence_percent}}
+						<li class="influence modifier"><img src="images/icons/influence.png" alt="Influence" title="Influence"> Influence: {{void.per_turn_value(value)}}%</li>
+					{{/modifiers.influence_percent}}
+					</ul>					
+				{{/modifiers}}
+			</ul>
 			{{#empire_unique}}
 			<p>One per empire.</p>
 			{{/empire_unique}}
 			{{#world_unique}}
 			<p>One per galaxy.</p>
 			{{/world_unique}}
-			<ul class="structure_class">				
-				{{#modifiers}}
-					<ul>
-					{{#modifiers.production}}
-						<li class="production modifier"><img src="images/icons/production.png" alt="Production" title="Production"> {{void.per_turn_value(modifiers.production)}}</li>
-					{{/modifiers.production}}
-					{{#modifiers.food}}
-						<li class="food modifier"><img src="images/icons/food.png" alt="Food" title="Food"> {{void.per_turn_value(modifiers.food)}}</li>					
-					{{/modifiers.food}}
-					{{#modifiers.research}}
-						<li class="research modifier"><img src="images/icons/research.png" alt="Research" title="Research"> {{void.per_turn_value(modifiers.research)}}</li>
-					{{/modifiers.research}}
-					{{#modifiers.credits}}
-						<li class="credits modifier"><img src="images/icons/credits.png" alt="Credits" title="Credits"> {{void.per_turn_value(modifiers.credits)}}</li>
-					{{/modifiers.credits}}
-					{{#modifiers.morale}}
-						<li class="morale modifier"><img src="images/icons/happy.png" alt="Morale" title="Morale"> {{void.per_turn_value(modifiers.morale)}}</li>
-					{{/modifiers.morale}}
-					{{#modifiers.influence}}
-						<li class="influence modifier"><img src="images/icons/influence.png" alt="Influence" title="Influence"> {{void.per_turn_value(modifiers.influence)}}</li>
-					{{/modifiers.influence}}
-					</ul>					
-				{{/modifiers}}
-			</ul>
 	</script>
 	
 	<script id="upgrade_class_template" type="text/ractive">			
@@ -907,7 +1006,7 @@
 				
 				{{^purchased}}
 				{{#production_per_turn}} {{void.turns(progress, production_per_turn)}} {{/production_per_turn}} 
-				<button type="button" onclick="buy_queue_item('{{id}}')">Rush <img src="images/icons/credits.png">{{ship_class_cache[target_id].rush_cost}}</button>
+				<button disabled="{{#player.credits < ship_class_cache[target_id].rush_cost}}disabled{{/player}}" type="button" onclick="buy_queue_item('{{id}}', {{ship_class_cache[target_id].rush_cost}})">Rush {{ship_class_cache[target_id].rush_cost}} <img src="images/icons/credits.png"></button>
 				{{/purchased}}
 				</p>
 				</li>
@@ -917,8 +1016,14 @@
 				<img src="images/structure.png">
 				<h4>{{structure_class_cache[target_id].name}}</h4>
 				<p>
+				{{#purchased}}
+				1 turn
+				{{/purchased}}
+				
+				{{^purchased}}
 				{{#production_per_turn}} {{void.turns(progress, production_per_turn)}} {{/production_per_turn}}
-				<button type="button" onclick="buy_queue_item('{{id}}')">Rush <img src="images/icons/credits.png">{{structure_class_cache[target_id].rush_cost}}</button>
+				<button type="button" onclick="buy_queue_item('{{id}}', {{structure_class_cache[target_id].rush_cost}})">Rush {{structure_class_cache[target_id].rush_cost}} <img src="images/icons/credits.png"></button>
+				{{/purchased}}
 				</p>
 				</li>
 				{{/ type}}				

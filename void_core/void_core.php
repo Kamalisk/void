@@ -24,6 +24,15 @@ function void_unique_id(){
 
 
 
+// upkeep()
+// handle costs from last turn
+// resolve()
+// handle building and any orders and such
+// update()
+// update static values
+// apply()
+// apply any % modifiers and other things which need to be done after the fact 
+
 class VOID_LOG {
 	static $game_id;
 	static $turn;
@@ -67,6 +76,41 @@ class VOID_VIEW {
 	}
 }
 
+
+class VOID_RESOURCE {
+	public $type;
+	public $per_turn;
+	public $percent;
+	public $pool;
+	public $sources;
+	
+	function __construct($type){
+		$this->type = $type;
+		$this->per_turn = 0;
+		$this->percent = 100;
+		$this->pool = 0;
+	}
+	public function reset(){
+		$this->percent = 100;
+		$this->per_turn = 0;
+	}
+	public function add_pool($amount){
+		$this->pool += $amount;
+	}
+	public function apply(){
+		$this->per_turn = $this->per_turn * ($this->percent) / 100;
+	}
+	public function upkeep(){
+		$this->pool = $this->pool + $this->per_turn;
+	}
+	public function add_per_turn($amount){
+		$this->per_turn += $amount;
+	}
+	public function add_percent($amount){
+		$this->percent += $amount;
+	}
+	
+}
 
 
 class VOID_RESOURCES {
@@ -161,7 +205,7 @@ class VOID {
 		foreach($this->lobby->players as $player){
 			$this->add_player($player);			
 		}
-		$this->start(30, 30);
+		$this->start(15, 15);
 	}
 	
 	public function init(){
@@ -177,7 +221,7 @@ class VOID {
 		*/
 	}
 	
-	public function setup($width, $height){
+	public function setup(){
 		
 		$this->setup_tech_tree();
 		
@@ -198,10 +242,11 @@ class VOID {
 	}
 	
 	public function start($width, $height){
-		
+		$this->setup();
 		$starting_tech = $this->tech_tree->get_starting_tech();
 		$this->map = new VOID_MAP();
 		foreach($this->players as $player){
+			$player->reset();
 			$player->set_tech($this->tech_tree);
 			$player->done = false;
 		}
@@ -731,8 +776,11 @@ class VOID {
 			$fleet->update($this);
 		}		
 		
+		foreach($temp_systems as $system){
+			$system->apply();
+		}
 		foreach($this->players as $player){
-			$player->apply_resource_modifiers();
+			//$player->apply_resource_modifiers();
 		}
 		
 		//check for victory and update victory totals	

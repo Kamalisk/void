@@ -226,7 +226,7 @@ $void_sector_classes[3] = [
 	"name" => "Emmission Nebula",
 	"image" => "images/nebula.png",
 	"type" => "nebula",
-	"movement_cost" => 5
+	"movement_cost" => 4
 ];
 
 $void_sector_classes[4] = [
@@ -234,7 +234,7 @@ $void_sector_classes[4] = [
 	"name" => "Proto Nebula",
 	"image" => "images/nebula_b.png",
 	"type" => "nebula",
-	"movement_cost" => 5
+	"movement_cost" => 4
 ];
 
 $void_sector_classes[5] = [
@@ -242,7 +242,7 @@ $void_sector_classes[5] = [
 	"name" => "Thermo Nebula",
 	"image" => "images/nebula_c.png",
 	"type" => "nebula", 
-	"movement_cost" => 5
+	"movement_cost" => 4
 ];
 
 $void_sector_classes[6] = [

@@ -187,7 +187,8 @@ class VOID_MAP {
 			$this->sectors[$key]->system->add_structure($structure);
 						
 			$this->sectors[$key]->system->resolve();						
-			$this->sectors[$key]->system->update();			
+			$this->sectors[$key]->system->update();
+			$this->sectors[$key]->system->apply();
 
 		}
 		

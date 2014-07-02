@@ -544,7 +544,7 @@ function preload_images(data, callback){
 	sources.push({'name':'influence', 'image':'images/icons/influence.png'});
 	
 	sources.push({'name':'map_upgrade', 'image':'images/map_upgrade.png'});
-	sources.push({'name':'ruin', 'image':'images/icons/food.png'});
+	sources.push({'name':'ruin', 'image':'images/icons/happy.png'});
 	
 	// add image data from server for preloading
 	for(key in sector_class_cache){		
@@ -799,15 +799,14 @@ function draw_map_tile(canvas, map_tile, small){
 				  source: sector_class_cache[map_tile.class_id].image,
 				  x: x, y: y
 				});
-			}
-			
+			}						
 			if (map_tile.ruin){
+				console.log("drawing ruin");
 				$(canvas).drawImage({
-				  source: image_cache['ruin'].image,
+				  source: image_cache['ruin'],
 				  x: x, y: y+20
 				});
 			}
-			
 			/*
 			if (map_tile.type == "asteroid"){
 				

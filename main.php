@@ -8,7 +8,7 @@ include_once("void_core/void_core.php");
 $game_id = 1;
 
 //$_POST = $_GET;	
-if (isset($_GET['action']) && $_GET['action'] == "reset"){
+if (isset($_GET['action']) && ($_GET['action'] == "reset" || $_GET['action'] == "start") ){
 	$_POST = $_GET;	
 }
 

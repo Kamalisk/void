@@ -1,5 +1,18 @@
 
+var void_game = function(){
+	var player;
+	var players;
 	
+	var planet_class_cache;
+	var sector_class_cache;
+	var ship_class_cache;
+	var structure_class_cache;
+	var upgrade_class_cache;
+	var power_class_cache;
+	var tech_tree;
+	var race_classes;
+	
+}
 
 var player;
 var players;
@@ -811,11 +824,15 @@ function select_tech(id){
 	render_research();
 }
 
-function buy_queue_item(id){
+function buy_queue_item(id, cost){
 	if (!allow_actions()){
 		return;
 	}
-	player.credits_pool = player.credits_pool - 10;
+	if (player.credits_pool < cost){
+		show_error("You do not have enough credits to rush this production!");
+		return false;
+	}
+	player.credits_pool = player.credits_pool - cost;
 	// update player resources
 	// flag this queue item for speed up
 	if (!system_orders[hex_selected.id]){

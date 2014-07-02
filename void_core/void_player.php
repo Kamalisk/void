@@ -166,6 +166,8 @@ class VOID_PLAYER {
 	public $available_tech;
 	public $current_tech;
 	
+	public $tech_traits;
+	
 	public $available_ship_classes;
 	public $available_structure_classes;
 	public $available_upgrade_classes;
@@ -191,8 +193,15 @@ class VOID_PLAYER {
 	
 	public $orders;
 	
+	public $credits;
+	
 	function __construct($id){
 		$this->id = $id;
+		$this->reset();
+		VOID_LOG::init($id);
+	}
+	
+	public function reset(){
 		$this->research_pool = 0;
 		$this->credits_pool = 0;
 		$this->morale = 0;
@@ -205,7 +214,8 @@ class VOID_PLAYER {
 		$this->combat_zones = [];
 		$this->powers = [];
 		$this->relationships = [];
-		VOID_LOG::init($id);
+		$this->credits = new VOID_RESOURCE("credits");
+		$this->credits = new VOID_RESOURCE("research");
 	}
 	
 	public function dump($player_id){
@@ -265,6 +275,7 @@ class VOID_PLAYER {
 			$this->add_new_upgrade_classes($tech);
 			$this->add_new_power($tech);
 		}
+		
 		$this->update_available_tech($tech_tree);
 	}
 	
@@ -274,12 +285,20 @@ class VOID_PLAYER {
 			$this->current_tech->progress = $this->current_tech->progress - $this->research_per_turn;
 			if ($this->current_tech->progress <= 0){
 				VOID_LOG::write($this->id, "[research] Research has completed on ".$this->current_tech->class->name);
+				
+				foreach($this->current_tech->class->traits_given as $trait => $amount){
+					if (!isset($this->tech_traits[$trait])){
+						$this->tech_traits[$trait] = 0;
+					}
+					$this->tech_traits[$trait] += $amount;
+				}
+	
 				$this->tech[$this->current_tech->class->id] = $this->current_tech;
 				$this->add_new_ship_classes($this->current_tech->class);
 				$this->add_new_structure_classes($this->current_tech->class);
 				$this->add_new_upgrade_classes($this->current_tech->class);
 				$this->add_new_power($this->current_tech->class);
-				unset($this->available_tech[$this->current_tech->class->id]);
+				unset($this->available_tech[$this->current_tech->class->id]);								
 				$this->current_tech = false;
 				$this->update_available_tech($tech_tree);
 			}
@@ -305,8 +324,11 @@ class VOID_PLAYER {
 	}
 	
 	public function add_new_power($tech){
-		foreach($tech->power_classes as &$power){
-			$this->powers[$power->type] = $power;
+		foreach($tech->power_classes as $power){
+			if (!isset($this->powers[$power->type])){
+				$this->powers[$power->type] = [];
+			}
+			$this->powers[$power->type][$power->id] = $power;
 			$power->apply($this);
 		}
 	}
@@ -342,34 +364,36 @@ class VOID_PLAYER {
 	
 	public function update_available_tech($tech_tree){
 		// calculate how many of each tier they have
-		$tiers = array();
-		foreach($this->tech as $tech){
-			if (!isset($tiers[$tech->class->tier])){
-				$tiers[$tech->class->tier] = 0;
-			}
-			$tiers[$tech->class->tier]++;
+		$traits = array();
+		
+		foreach($this->tech as $tech){			
+			foreach($tech->class->traits_given as $trait => $amount){
+				if (!isset($traits[$trait])){
+					$traits[$trait] = 0;
+				}
+				$traits[$trait] += $amount;
+			}			
 		}
 		foreach($tech_tree->items as $tech){
 			if (isset($this->tech[$tech->id])){
 				continue;
 			}
-			/*
-			$count = 0;
-			foreach($tech->requirements as $req){
-				if (isset($this->tech[$req])){
-					$count++;
+			
+			foreach($tech->traits_required as $req => $amount){
+				if (!isset($traits[$req])){
+					continue 2;
+				}
+				if ($traits[$req] < $amount){
+					continue 2;
 				}
 			}
-			*/
-			if (!isset($tiers[$tech->tier])){
-				$tiers[$tech->tier] = 0;
-			}
-			if ($tech->is_tech_available($tiers[$tech->tier])){
+
+			//if ($tech->is_tech_available($tiers[$tech->tier])){
 				$this->available_tech[$tech->id] = new VOID_TECH_ITEM($tech);
 				if (!$this->current_tech){
 					$this->current_tech = $this->available_tech[$tech->id];
 				}
-			}
+			//}
 		}
 	}
 	

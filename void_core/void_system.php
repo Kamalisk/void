@@ -44,11 +44,11 @@ class VOID_SYSTEM_VIEW {
 			$this->influence_pool = $system->influence_pool;
 			$this->influence_per_turn = $system->influence_per_turn;
 			$this->influence_level = $system->influence_level;
-			$this->food_per_turn = $system->food_per_turn;
-			$this->production_per_turn = $system->production_per_turn;
+			$this->food_per_turn = $system->food->per_turn;
+			$this->production_per_turn = $system->production->per_turn;
 			
 			if ($this->owner == $player_id){
-				$this->food_pool = $system->food_pool;
+				$this->food_pool = $system->food->pool;
 				$this->food_growth_threshold = $system->food_growth_threshold;
 				$this->growth_turns = $this->food_per_turn ? ceil(($this->food_growth_threshold - $this->food_pool) / $this->food_per_turn) : " - ";
 				$this->influence_growth_threshold = $system->influence_growth_threshold;
@@ -56,8 +56,10 @@ class VOID_SYSTEM_VIEW {
 				$this->influence_size = $system->influence_size;
 				
 				$this->yours = true;
-				$this->build_queue = $system->build_queue->dump($system->production_per_turn);
+				$this->build_queue = $system->build_queue->dump($system->production->per_turn);
 				
+				$this->food = $system->food;
+				$this->production = $system->production;				
 				
 				$this->available_structures = [];
 				// generate a list of ids of the structures which can be built here
@@ -95,8 +97,8 @@ class VOID_SYSTEM_VIEW {
 			}
 		}
 		$this->population = $system->population;
-		$this->credits_per_turn = $system->get_credits_income();
-		$this->research_per_turn = $system->get_research_income();
+		$this->credits_per_turn = $system->credits->per_turn;
+		$this->research_per_turn = $system->research->per_turn;
 		
 		
 	}
@@ -105,6 +107,21 @@ class VOID_SYSTEM_VIEW {
 
 
 class VOID_SYSTEM {
+	
+	public $food;
+	public $credits;
+	public $research;
+	public $production;
+	
+	public $food_modifier = 0;
+	public $production_modifier = 0;
+	public $influence_modifier = 0;
+	public $research_modifier = 0;
+	public $credits_modifier = 0;
+	
+	public $credits_per_turn;
+	public $research_per_turn;
+	
 	public $food_pool;
 	public $food_per_turn;
 	public $food_growth_threshold;
@@ -158,6 +175,10 @@ class VOID_SYSTEM {
 		
 		$this->influenced_sectors = [];				
 		
+		$this->food = new VOID_RESOURCE("food");
+		$this->credits = new VOID_RESOURCE("credits");
+		$this->research = new VOID_RESOURCE("research");
+		$this->production = new VOID_RESOURCE("production");
 	}
 	
 	public function add_planet($planet){
@@ -192,7 +213,7 @@ class VOID_SYSTEM {
 		$this->influenced_sectors[$sector->id] = $sector;
 	}
 	
-	// apply modifers to system itself and to player 
+	// handle system growth
 	public function upkeep(){
 		// for now disable planet growth for pirates
 		if ($this->owner->player == false){
@@ -207,11 +228,12 @@ class VOID_SYSTEM {
 			// possibly add food to production
 			//$this->food_pool += $this->food_per_turn;	
 		}else {
-			$this->food_pool += $this->food_per_turn;	
+			$this->food_pool += $this->food_per_turn;
+			$this->food->upkeep();
 		}
 	}
 	
-	// resolve orders
+	// check if the system has reached certain thresholds 
 	public function resolve(){				
 		if ($this->influence_pool >= $this->influence_growth_threshold ){
 			$this->influence_pool = 0;
@@ -219,26 +241,13 @@ class VOID_SYSTEM {
 			$this->influence_growth_threshold = pow(6, $this->influence_level) * $this->influence_level;
 			VOID_LOG::write($this->owner->id, "System at (".$this->x.",".$this->z.") has expanded it's influence.");
 		}
-		if ($this->food_pool >= $this->food_growth_threshold ){
+
+		if ($this->food->pool >= $this->food_growth_threshold ){
 			$this->population++;			
-			$this->food_pool = 0;
+			$this->food->pool = 0;
 			$this->food_growth_threshold = pow(2, $this->population) * 10;
 			VOID_LOG::write($this->owner->id, "System at (".$this->x.",".$this->z.") has grown.");
 		}
-		$this->apply_morale();
-	}
-	
-	// recalcuate income from this system
-	public function update(){
-		$this->credits_per_turn = $this->get_credits_income();
-		$this->owner->update_resource("credits",$this->credits_per_turn,"system");
-		
-		$this->research_per_turn = $this->get_research_income();
-		$this->owner->update_resource("research",$this->research_per_turn,"system");
-	
-		$this->food_per_turn = $this->get_food_income();
-		$this->production_per_turn = $this->get_production_income();		
-		$this->influence_per_turn = $this->get_influence_income();				
 		
 		if ($this->influence_level >= 10){
 			$this->influence_size = 4;
@@ -250,10 +259,58 @@ class VOID_SYSTEM {
 			$this->influence_size = 1;
 		}
 		$this->influence_size = $this->influence_level;
+	}
+	
+	// recalcuate static income from this system
+	public function update(){
+		$this->food->reset();
+		$this->production->reset();
+		$this->research->reset();		
+		$this->credits->reset();
+		
+		$this->food->per_turn = $this->get_food_income();
+		$this->production->per_turn = $this->get_production_income();
+		$this->credits->per_turn = $this->get_credits_income();
+		$this->research->per_turn = $this->get_research_income();
+		
+		
+		$this->influence_per_turn = $this->get_influence_income();				
+		
+		$this->owner->apply_morale(-$this->population, "population");
+		$this->owner->apply_morale(-3, "system");
+		
+		//VOID_DEBUG::write("system update: ".$this->credits_per_turn);
+		// resolve all structures 
+		if ($this->structures){
+			foreach($this->structures as $structure){
+				$structure->apply($this);
+			}
+		}
 		
 	}
 	
+	// apply any % modifiers and morale and such
 	public function apply(){
+		// apply % modifiers
+		$this->research->apply();
+		$this->owner->update_resource("credits",$this->credits->per_turn,"system");
+		
+		$this->research->apply();		
+		$this->owner->update_resource("research",$this->research->per_turn,"system");
+		
+		$this->food->apply();
+		// severe food penalty for morale
+		if ($this->owner->morale < 0){
+			$this->food_per_turn = $this->food_per_turn / 10;
+		}
+		$this->owner->update_resource("food",$this->food->per_turn,"system");
+		
+		$this->production->apply();
+		$this->owner->update_resource("production",$this->production->per_turn,"system");
+		
+		$this->influence_per_turn = $this->influence_per_turn * (100 + $this->influence_modifier) / 100;		
+		$this->owner->update_resource("influence",$this->influence_per_turn,"system");
+		
 		
 	}
 	
@@ -284,7 +341,7 @@ class VOID_SYSTEM {
 				}
 			}
 		}
-		
+		/*
 		if ($this->structures){
 			foreach($this->structures as $structure){
 				$modifier = $structure->class->get_modifier("food");
@@ -293,9 +350,8 @@ class VOID_SYSTEM {
 				}
 			}
 		}
-		if ($this->owner->morale < 0){
-			$output = $output / 10;
-		}		
+		*/
+		
 		return ceil($output);
 	}
 	
@@ -312,7 +368,7 @@ class VOID_SYSTEM {
 				}
 			}
 		}
-		
+		/*
 		if ($this->structures){
 			foreach($this->structures as $structure){
 				$modifier = $structure->class->get_modifier("influence");
@@ -321,7 +377,7 @@ class VOID_SYSTEM {
 				}
 			}
 		}
-		
+		*/
 		return $output;
 	}
 	
@@ -343,7 +399,7 @@ class VOID_SYSTEM {
 				}
 			}
 		}
-		
+		/*
 		if ($this->structures){
 			foreach($this->structures as $structure){
 				$modifier = $structure->class->get_modifier("credits");
@@ -352,7 +408,7 @@ class VOID_SYSTEM {
 				}
 			}
 		}
-		
+		*/
 		return $output;
 	}
 	
@@ -374,7 +430,7 @@ class VOID_SYSTEM {
 				}
 			}
 		}
-		
+		/*
 		if ($this->structures){
 			foreach($this->structures as $structure){
 				$modifier = $structure->class->get_modifier("research");
@@ -383,7 +439,7 @@ class VOID_SYSTEM {
 				}
 			}
 		}
-		
+		*/
 		return $output;
 	}
 	public function get_production_income(){
@@ -404,7 +460,7 @@ class VOID_SYSTEM {
 				}
 			}
 		}
-		
+		/*
 		if ($this->structures){
 			foreach($this->structures as $structure){
 				$modifier = $structure->class->get_modifier("production");
@@ -413,7 +469,7 @@ class VOID_SYSTEM {
 				}
 			}
 		}
-		
+		*/
 		return $output;
 	}
 	

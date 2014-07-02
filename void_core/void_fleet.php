@@ -106,7 +106,7 @@ class VOID_FLEET {
 			$core->map->get_sector($old_x, $old_z)->remove_fleet($this);
 			$this->x = $x;
 			$this->z = $z;
-			$core->map->get_sector($old_x, $old_z)->resolve_ruin($core, $core->players[$this->owner] );
+			$core->map->get_sector($x, $z)->resolve_ruin($core, $core->players[$this->owner] );
 			return true;
 		}else {
 			return false;
@@ -405,7 +405,12 @@ class VOID_SHIP_CLASS {
 	public $hull;
 	public $shields;
 	
-	function __construct(){
+	function __construct($id=""){
+		if (!$id){
+			$this->id = void_unique_id();
+		}else {
+			$this->id = $id;
+		}
 		$this->special = [];
 		$this->weapon_type = "laser";
 		$this->weapon_count = 1;

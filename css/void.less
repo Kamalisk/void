@@ -177,7 +177,7 @@ button:active {
 	z-index : @top_layer;
 	position : absolute;
 	padding: 10px;
-  max-width: 200px;
+  max-width: 300px;
   color : #afafaf;
   background-color: #2f2f2f;
   border: 2px solid #6f6f6f;
@@ -619,7 +619,7 @@ div.window_control .close_window {
 	vertical-align : top;
 }
 
-.system_view_selector img {
+.system_view_selector > img {
 	float : left;
 }
 
@@ -649,20 +649,27 @@ div.window_control .close_window {
 
 /* research view */
 
-.tech_tree_item {
-	padding : 0.3em;
+.tech_traits li {
 	display : inline-block;
-	border : solid grey 2px;
+	padding : 0.4em;
+	background-color : rgba(90, 90, 90, 0.4);
+}
+
+.tech_tree_item {
+	
+	display : inline-block;
+	border : solid rgba(70, 70, 70, 0.5) 2px;
 	border-radius : 3px;
-	width : 225px;
-	min-height : 60px;
+	width : 250px;
+	min-height : 70px;
 	margin-bottom : 1em;
 }
 .tech_tree_item h4 {
-	border-bottom : dashed 2px grey;
+	background-color : rgba(200, 200, 200, 0.5);
+	color : black;
 }
-.tech_tree_item:hover {
-	border : solid rgba(200, 40, 40, 0.5) 2px;
+.available_tech:hover {
+	border : solid rgba(200, 150, 150, 0.4) 2px;
 	cursor : pointer;
 }
 
@@ -678,7 +685,11 @@ div.window_control .close_window {
 .tech_tier {
 	display : block;
 	position : absolute;
-	width : 230px;
+	width : 250px;
+}
+
+.tech_tier_0 {
+	display : none;
 }
 
 .tech_tier_1 {
@@ -688,31 +699,33 @@ div.window_control .close_window {
 	left : 270px;	
 }
 .tech_tier_3 {
-	left : 520px;
+	left : 530px;
 }
 .tech_tier_4 {
-	left : 750px;
+	left : 800px;
 }
 
 .available_tech {
-	border : solid orange 2px;
+	background-color : rgba(0, 70, 0, 0.2);
 }
 .researched_tech {
-	border : solid #3d3d3d 2px;
+	background-color : rgba(0, 0, 100, 0.3);
 }
 .researched_tech:hover {
 	border : solid rbga(200, 200, 20, 0.5) 2px;;
 }
-.current_tech {
-	border : solid green 2px;	
-	background-color : rgba(200, 200, 40, 0.1);
+.current_tech {	
+	background-color : rgba(50, 200, 40, 0.3);
 }
 
+.traits_given {
+	text-align : right;		
+}
 
 /* resources */
 
 .modifier {
-	
+	padding : 0.1em;
 }
 
 .food, .credits, .production, .research, .morale, .influence {
