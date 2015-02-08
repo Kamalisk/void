@@ -35,17 +35,22 @@ class VOID_SYSTEM_VIEW {
 	
 	public $influenced_sectors;
 	
-	function __construct($system, $player_id){
+	public $health;
+	
+	function __construct($system, $player){
+		$player_id = $player->id;
 		$this->id = $system->id;
 		$this->yours = false;
 		$this->name = $system->name;
 		if ($system->owner){
 			$this->owner = $system->owner->id;
-			$this->influence_pool = $system->influence_pool;
-			$this->influence_per_turn = $system->influence_per_turn;
+			$this->influence_pool = $system->influence->pool;
+			$this->influence_per_turn = $system->influence->per_turn;
 			$this->influence_level = $system->influence_level;
 			$this->food_per_turn = $system->food->per_turn;
 			$this->production_per_turn = $system->production->per_turn;
+			
+			$this->health = $system->health;
 			
 			if ($this->owner == $player_id){
 				$this->food_pool = $system->food->pool;
@@ -59,7 +64,10 @@ class VOID_SYSTEM_VIEW {
 				$this->build_queue = $system->build_queue->dump($system->production->per_turn);
 				
 				$this->food = $system->food;
-				$this->production = $system->production;				
+				$this->production = $system->production;
+				$this->credits = $system->credits;
+				$this->research = $system->research;
+				$this->influence = $system->influence;
 				
 				$this->available_structures = [];
 				// generate a list of ids of the structures which can be built here
@@ -88,7 +96,7 @@ class VOID_SYSTEM_VIEW {
 		}
 		if ($system->planets){
 			foreach($system->planets as $planet){
-				$this->planets[] = $planet->dump($player_id);
+				$this->planets[] = $planet->dump($player);
 			}
 		}
 		if ($system->structures){
@@ -112,6 +120,7 @@ class VOID_SYSTEM {
 	public $credits;
 	public $research;
 	public $production;
+	public $influence;
 	
 	public $food_modifier = 0;
 	public $production_modifier = 0;
@@ -155,6 +164,10 @@ class VOID_SYSTEM {
 	
 	public $influenced_sectors;
 	
+	public $health;
+	
+	public $killer;
+	
 	public function __construct($x, $z){
 		$this->x = $x;
 		$this->z = $z;
@@ -179,6 +192,10 @@ class VOID_SYSTEM {
 		$this->credits = new VOID_RESOURCE("credits");
 		$this->research = new VOID_RESOURCE("research");
 		$this->production = new VOID_RESOURCE("production");
+		$this->influence = new VOID_RESOURCE("influence");
+		
+		$this->health = 50;
+		$this->killer = false;
 	}
 	
 	public function add_planet($planet){
@@ -220,7 +237,7 @@ class VOID_SYSTEM {
 			return;
 		}
 		
-		$this->influence_pool += $this->influence_per_turn;
+		$this->influence->upkeep();
 		
 		// check if a colony ship is being built
 		$item = $this->build_queue->get_front();
@@ -235,8 +252,8 @@ class VOID_SYSTEM {
 	
 	// check if the system has reached certain thresholds 
 	public function resolve(){				
-		if ($this->influence_pool >= $this->influence_growth_threshold ){
-			$this->influence_pool = 0;
+		if ($this->influence->pool >= $this->influence_growth_threshold ){
+			$this->influence->pool = 0;
 			$this->influence_level++;
 			$this->influence_growth_threshold = pow(6, $this->influence_level) * $this->influence_level;
 			VOID_LOG::write($this->owner->id, "System at (".$this->x.",".$this->z.") has expanded it's influence.");
@@ -263,19 +280,28 @@ class VOID_SYSTEM {
 	
 	// recalcuate static income from this system
 	public function update(){
+		if ($this->health <= 0){
+			$this->owner = false;
+			$this->health = 10;
+			if ($this->killer){
+				$this->owner = $this->killer;
+			}
+			return false;
+		}
+		
+		$this->killer = false;
 		$this->food->reset();
 		$this->production->reset();
 		$this->research->reset();		
 		$this->credits->reset();
+		$this->influence->reset();
 		
 		$this->food->per_turn = $this->get_food_income();
 		$this->production->per_turn = $this->get_production_income();
 		$this->credits->per_turn = $this->get_credits_income();
 		$this->research->per_turn = $this->get_research_income();
-		
-		
-		$this->influence_per_turn = $this->get_influence_income();				
-		
+		$this->influence->per_turn = $this->get_influence_income();
+							
 		$this->owner->apply_morale(-$this->population, "population");
 		$this->owner->apply_morale(-3, "system");
 		
@@ -291,8 +317,18 @@ class VOID_SYSTEM {
 	
 	// apply any % modifiers and morale and such
 	public function apply(){
+		if (!$this->owner){
+			return false;
+		}
+		// add in modifiers from player global effects 
+		$this->credits->add_percent($this->owner->credits->percent);
+		$this->research->add_percent($this->owner->research->percent);
+		$this->production->add_percent($this->owner->production->percent);
+		$this->food->add_percent($this->owner->food->percent);
+		$this->influence->add_percent($this->owner->influence->percent);
+		
 		// apply % modifiers
-		$this->research->apply();
+		$this->credits->apply();
 		$this->owner->update_resource("credits",$this->credits->per_turn,"system");
 		
 		$this->research->apply();		
@@ -300,15 +336,15 @@ class VOID_SYSTEM {
 		
 		$this->food->apply();
 		// severe food penalty for morale
-		if ($this->owner->morale < 0){
-			$this->food_per_turn = $this->food_per_turn / 10;
+		if ($this->owner->morale->per_turn < 0){
+			//$this->food_per_turn = $this->food_per_turn / 10;
 		}
 		$this->owner->update_resource("food",$this->food->per_turn,"system");
 		
 		$this->production->apply();
 		$this->owner->update_resource("production",$this->production->per_turn,"system");
 		
-		$this->influence_per_turn = $this->influence_per_turn * (100 + $this->influence_modifier) / 100;		
+		$this->influence->apply();
 		$this->owner->update_resource("influence",$this->influence_per_turn,"system");
 		
 		
@@ -505,8 +541,8 @@ class VOID_SYSTEM {
 	}
 	
 	
-	public function dump($player_id){		
-		$view = new VOID_SYSTEM_VIEW($this, $player_id);
+	public function dump($player){		
+		$view = new VOID_SYSTEM_VIEW($this, $player);
 		return $view;
 	}
 	
@@ -528,6 +564,10 @@ class VOID_SYSTEM {
 		if (!$this->owner){
 			$this->population = 1;
 			$this->influence_level = 1;
+		}else {
+			if (!$this->owner->has_property_index("terraformable", $planet->class['id'])){
+				return false;
+			}
 		}
 						
 		$planet->colonise();
@@ -564,12 +604,12 @@ class VOID_SYSTEM {
 		// if a construction order get the systems production and see if the item is done yet
 		
 		// apply the progress, if an item is returned, the progress is done, otherwise it is not
-		$item = $this->build_queue->progress($this->production_per_turn);
+		$item = $this->build_queue->progress($this->production->per_turn);
 		if ($item){
 			// create the created item. 
 			if ($item->type == "ship"){
 				$ship_class = $item->data;
-				$ship = new VOID_SHIP($ship_class, $this->owner->id);
+				$ship = new VOID_SHIP($ship_class, $this->owner);
 				if ($fleet = $sector->get_primary_fleet($this->owner->id) ){
 					//print_r($fleet);
 					if ($fleet->add_ship($ship)){

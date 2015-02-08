@@ -10,19 +10,17 @@
 	
 	<script type="text/javascript" src="core/jquery.transit.js"></script>
 	<script type="text/javascript" src="core/jquery.custom-scrollbar.js"></script>
+	<script type="text/javascript" src="core/perfect-scrollbar.js"></script>
 	
 	<script type="text/javascript" src="core/jquery-ui-1.10.3.custom.min.js"></script>
 		
 	<script type="text/javascript" src="core/ractive.js"></script>	
 		
-	<!-- <script type="text/javascript" src="core/handlebars.js"></script> -->
-	<script type="text/javascript" src="core/tooltipsy.js"></script>
-	
 	<script type="text/javascript" src="core/hex_map.js"></script>
 	<script type="text/javascript" src="core/core.js"></script>
 	<script type="text/javascript" src="core/hex.js"></script>	
 	
-	<link rel="stylesheet" type="text/css" href="css/jquery.custom-scrollbar.css" />
+	<link rel="stylesheet" type="text/css" href="css/perfect-scrollbar.css" />
 	<link rel="stylesheet" type="text/css" href="css/void.less.php" />
 	
 	<style>
@@ -36,6 +34,32 @@
 	</div>
 	
 	<script id="primary_template" type="text/ractive">
+	<div id="login">
+		<div class="login">
+			<h1>Voidwars Login</h1>
+			<form>
+				<input id="username" type="text" name="username" placeholder="username">
+				<input id="password" type="password" name="password" placeholder="password">
+				<button type="button" onclick="login()">login</button>
+			</form>
+		</div>
+	</div>
+	<div id="portal">
+		<div>
+			<h1>Voidwars Portal</h1>
+			<button type="button" onclick="logout()">Logout</button>
+			<h2>List of games</h2>
+			<ul>
+			{{#portal.games}}
+				<li>
+				{{name}}
+				{{#state == "lobby" && valid}}<button type="button" onclick="join_lobby({{id}})">Join Game</button>{{/}}
+				{{#state == "started" && valid}}<button type="button" onclick="play_game({{id}})">Play Game</button>{{/}}
+				</li>
+			{{/portal.games}}
+			</ul>
+		</div>
+	</div>
 	<div id="main_loading">
 		<img src="images/voidwars.png">
 		<p><img src="images/ajax-loader-big.gif"> Loading...</p>
@@ -43,53 +67,109 @@
 	</div>
 	{{#game_state == "lobby"}}
 		<div id="lobby">
+			<div id="lobby_header">
+			<h1>Game {{game_id}}</h1>
+			{{#player}}						
+			<button type="button" onclick="start_game()">START THE GAME</button>
+			{{/player}}			
+			<button type="button" onclick="reset_lobby()">RESET THE LOBBY</button>
+			</div>
+			
+			<div id="lobby_content">									
 			{{#!player}}
 			<h2>Join Game</h2>
 			<p>Join the game from here!<p>
 			<button type="button" onclick="join_game()">JOIN THE GAME</button>
+			
 			{{/player}}
 			
-			<p>Select a race and click ready. When all are ready the game will start</p>
-			
-			<h3>Races</h3>
-			<ul class="race_selector">
-			{{#races:i}}
-			<li class="{{#selected}}selected{{/selected}}" onclick="select_race('{{i}}');">
-			<h4>{{name}}</h4>
-			<p>{{#powers:i}} {{description}} {{/powers}}</p>
-			</li>
-			{{/races}}
-			</ul>
-			<h3>Empires</h3>
-			<ul class="race_selector">
-			{{#selected_race.empires:i}} 
-			<li class="{{#selected}}selected{{/selected}}" onclick="select_empire('{{i}}')"> 
-			<h4>{{name}}</h4>
-			<p>{{#powers:i}} {{description}} {{/powers}}</p>
-			</li>
-			{{/selected_race.empires}}
-			</ul>
-			<h3>Leaders</h3>
-			<ul class="race_selector">
-			{{#selected_race.leaders:i}} 
-			<li class="{{#selected}}selected{{/selected}}" onclick="select_leader('{{i}}')"> 
-			<h4>{{name}}</h4>
-			<p>{{#powers:i}} {{description}} {{/powers}}</p>
-			</li> {{/selected_race.leaders}}
+			{{#player}}
+			<h2>Color Select</h2>
+			<p>Select a color for your empire</p>
+			<ul class="color_selector" >
+			{{#player_colors:i}}
+				<li class="" onclick="select_color({{i}})" style="background-color : {{background}}; border : solid 2px {{border}}">{{#.selected}} X {{/.selected}}</li>
+			{{/player_colors}}
 			</ul>
 			
-			<p><button type="button" onclick="send_race()">Select race</button></p>
+			<h2>Race Select</h2>
 			
-			<h2>Current Players</h2>
+			<p>Select a race, empire and leader click ready. When all are ready the game will start</p>
+			
+			<div class="player_race_selector">
+				<div class="race_selector lobby_selector">
+				<h3>Races</h3>
+				<ul>
+				{{#races:i}}
+				<li class="{{#selected}}selected{{/selected}}" onclick="select_race('{{i}}');">
+				<h4>{{name}}</h4>			
+				</li>
+				{{/races}}
+				</ul>
+				</div>
+				
+				<div class="empire_selector lobby_selector">
+				<h3>Empires</h3>
+				<ul>
+				{{#selected_race.empires:i}} 
+				<li class="{{#selected}}selected{{/selected}}" onclick="select_empire('{{i}}')"> 
+				<h4>{{name}}</h4>
+				<p>{{#powers:i}} {{description}} {{/powers}}</p>
+				</li>
+				{{/selected_race.empires}}
+				</ul>
+				</div>
+				
+				<div class="leader_selector lobby_selector">
+				<h3>Leaders</h3>
+				<ul>
+				{{#selected_race.leaders:i}} 
+				<li class="{{#selected}}selected{{/selected}}" onclick="select_leader('{{i}}')"> 
+				<h4>{{name}}</h4>
+				<p>{{#powers:i}} {{description}} {{/powers}}</p>
+				</li> {{/selected_race.leaders}}
+				</ul>
+				</div>
+				
+				<div class="selector_summary">
+					{{#selected_race}}
+						<h2>{{name}}</h2>
+						{{#powers:i}}
+						<p>{{description}}</p>
+						{{/powers}}
+						
+						{{#selected_empire}}
+							<h2>{{name}}</h2>
+							{{#powers:i}}
+							<p>{{description}}</p>
+							{{/powers}}
+						{{/selected_empire}}
+						{{#selected_leader}}
+							<h2>{{name}}</h2>
+							{{#powers:i}}
+							<p>{{description}}</p>
+							{{/powers}}
+						{{/selected_leader}}
+						
+						{{#selected_leader && selected_empire}}
+						<p><button type="button" onclick="send_race()">Select this Race, Empire and Leader</button></p>
+						{{/selected_leader && selected_empire}}
+					{{/selected_race}}
+				</div>
+				
+			</div>
+						
+			{{/player}}
+			</div>
+			
+			
+			<div id="player_list">
+			<h2>Player List</h2>
 			<ul>
 				{{#players:i}}<li>{{name}}</li>{{/players}}
 			<ul>
-			{{#player}}
-			<h2>Start the Game</h2>
-			<button type="button" onclick="start_game()">START THE GAME</button>
-			{{/player}}
-			<h2>Reset Game</h2>
-			<button type="button" onclick="reset_lobby()">RESET THE LOBBY</button>
+			
+			</div>
 			
 		</div>
 	{{/game_state == "waiting"}}
@@ -143,7 +223,7 @@
 	</div>
 	
 	<div id="view_container">
-		<div id="tactical_view" class="view">
+		<div id="tactical_view" class="primary_view">
 			<div id="galactic_map_container" style="position : absolute;">
 				<div id="galactic_map_dragger"></div>
 				<canvas id="galactic_map_hexes" width="2000px" height="2000px"></canvas>
@@ -269,17 +349,17 @@
 		<div class="dialog_body">
 			<div class="dialog_header">
 				<h2> Fleet Management
-				<button class="close_window" onclick="void_view.set('fleet_management', null)">Return to Map</button></h2>				
+				<button class="close_window" onclick="end_fleet_management()">Return to Map</button></h2>				
 			</div>
 			<div id="dialog_content" class="dialog_content">
 				<!-- show all ships in the current fleet and ships in the shipyard -->
 				<div data-fleet="{{fleet_selected.id}}" ondrop="fleet_management_drop(event)" ondragover="event.preventDefault();" class="fleet_management_fleet">
-				<h4>Fleet</h4>
+				<h4>Fleet at {{fleet_selected.x}},{{fleet_selected.z}}</h4>
 				<ul>
 					{{#fleet_selected.ships:key}}
 					<li id="{{id}}" data-fleet="{{fleet_selected.id}}" data-index="{{key}}" ondragstart="fleet_management_drag(event)" draggable="true" class="fleet_management_ship fleet_management_ship_allowed system_view_selector" decorator="tooltip" data-decorator="ship-class-tooltip-{{class_id}}">
-						<img src="images/ship.png">
-						<h4>{{ship_class_cache[class_id].name}}</h4>						
+						<img draggable="false" data-fleet="{{fleet_selected.id}}" src="images/ship.png">
+						<h4 draggable="false" data-fleet="{{fleet_selected.id}}">{{ship_class_cache[class_id].name}}</h4>
 					</li>										
 					{{/fleet_selected.ships}}
 				</ul>
@@ -291,8 +371,8 @@
 				<ul>
 					{{#hex_selected.space_dock.fleet.ships:key}}
 					<li id="{{id}}" data-fleet="{{hex_selected.space_dock.fleet.id}}" data-index="{{key}}" ondragstart="fleet_management_drag(event)" draggable="true" class="fleet_management_ship fleet_management_ship_allowed system_view_selector" decorator="tooltip" data-decorator="ship-class-tooltip-{{class_id}}">
-						<img src="images/ship.png">
-						<h4>{{ship_class_cache[class_id].name}}</h4>						
+						<img draggable="false" data-fleet="{{hex_selected.space_dock.fleet.id}}" src="images/ship.png">
+						<h4 draggable="false" data-fleet="{{hex_selected.space_dock.fleet.id}}">{{ship_class_cache[class_id].name}}</h4>						
 					</li>					
 					{{/hex_selected.space_dock.fleet.ships}}
 				</ul>
@@ -307,8 +387,8 @@
 				<ul>
 					{{#your_fleets.0.ships:key}}
 					<li id="{{id}}" data-fleet="{{your_fleets.0.id}}"  data-index="{{key}}" ondragstart="fleet_management_drag(event)" draggable="{{#from_fleet}}true{{/from_fleet}}" class="{{#from_fleet}}fleet_management_ship_allowed{{/from_fleet}} fleet_management_ship system_view_selector" decorator="tooltip" data-decorator="ship-class-tooltip-{{class_id}}">
-						<img src="images/ship.png">
-						<h4>{{ship_class_cache[class_id].name}}</h4>						
+						<img draggable="false" data-fleet="{{your_fleets.0.id}}" src="images/ship.png">
+						<h4 draggable="false" data-fleet="{{your_fleets.0.id}}">{{ship_class_cache[class_id].name}}</h4>						
 					</li>							
 					{{/your_fleets.0.ships}}
 				</ul>
@@ -323,21 +403,23 @@
 	
 	{{#system_view}}	
 	{{#system_view.system}}
-	<div id="system_view_window" class="dialog">
-		<div class="dialog_body">
+	<div id="system_view_window" class="dialog" >
+		
+			{{# mode == "full"}}
+			{{>system_view_template}}
+			{{/ mode == "full"}}
+			{{# mode == "colonise"}}
+			<div class="dialog_body">
 			<div class="dialog_header">
-				<h2> <span id="dialog_title">{{#name}}{{name}}{{/name}}{{^name}}System{{/name}} at ({{x}}, {{z}})</span> 
+				<h2> <span id="dialog_title">{{#name}}{{name}}{{/name}}{{^name}}System{{/name}} at ({{hex_selected.x}}, {{hex_selected.z}})</span> 
 				<button class="close_window" onclick="void_view.set('system_view', {})">Return to Map</button></h2>				
 			</div>
-			<div id="dialog_content" class="dialog_content">
-				{{# mode == "colonise"}}
-				{{>system_view_colonise_template}}
-				{{/ mode == "colonise"}}
-				{{# mode == "full"}}
-				{{>system_view_template}}
-				{{/ mode == "full"}}
+			<div id="dialog_content" class="dialog_content">				
+				{{>system_view_colonise_template}}				
 			</div>
-		</div>
+			</div>
+			{{/ mode == "colonise"}}
+		
 	</div>	
 	{{/system_view.system}}
 	{{/system_view}}
@@ -349,14 +431,18 @@
 		<div id="diplomacy_player_list_container">
 			<ul class="diplomacy_player_list">
 				{{#players:key}}
-				
+				{{#player.id != key && is_player}}
 				<li class="diplomacy_player_item" onclick="show_diplomacy_detail({{id}})" style="background-color : {{color.background}}; border-color : {{color.border}}">
 				<h3>{{name}}</h3>
 				{{#met}}
 				<p>Status: {{#war}}War{{/war}}{{^war}}Peace{{/war}}</p>
 				<p>Sectors controlled:{{sector_count}}</p>
 				{{/met}}
-				</li>				
+				{{^met}}
+				<p>You have not yet met this empire</p>
+				{{/met}}
+				</li>
+				{{/player.id != key}}
 				{{/players}}
 				
 			</ul>
@@ -370,11 +456,31 @@
 	
 	<script id="diplomacy_detail_template" type="text/ractive">
 		<div class="diplomacy_detail_view" style="border-color : {{color.border}}">
-			<h2>{{name}}</h2>			
-			{{^war}}<button onclick="declare_war({{id}})">Declare War</button>{{/war}}		
-			<p>Status: {{#war}}War{{/war}}{{^war}}Peace{{/war}}</p>
+			<h2>{{name}}</h2>
+			{{#met}}			
+			<p>{{#war}}You are currently at <em>War</em>{{/war}}{{^war}}You are currently at <em>Peace{{/war}}</p>
+			{{^war}}		
+			
+			{{#declaring_war}}
+			<button onclick="undeclare_war({{id}})">Cancel War Declaration</button>
+			{{/declaring_war}}
+			
+			{{#!declaring_war}}
+			<button onclick="declare_war({{id}})">Declare War</button>
+			{{/declaring_war}}
+			
+			{{/war}}
+			
+			{{#war}}
+			<button onclick="declare_peace({{id}})">Request Peace Treaty</button>
+			{{/war}}
+			
 			<p>Sectors controlled:{{sector_count}}</p>
 			<h3>Trade</h3>
+			{{/met}}
+			{{^met}}
+			<p>You have not yet met this empire</p>
+			{{/met}}
 		</div>
 	</script>
 	
@@ -512,20 +618,12 @@
 	
 	<script id="galactic_map_panel_fleet_template" type="text/ractive">		
 		<h3 class="map_panel_header">Your Fleet ({{x}}, {{z}})</h3>
-		<h4>Actions</h4>
-		<p>
-		<button type="button" onclick="start_fleet_order_mode('{{id}}')">Move Fleet</button>
-		<button type="button" onclick="add_fleet_colonise_order_dialog()">Colonise</button>
-		<button type="button" onclick="add_fleet_construct_order_dialog()">Construct</button>
-		<button type="button" onclick="start_fleet_management()">Fleet Management</button>
-		<button type="button" onclick="cancel_fleet_orders()">Cancel All Orders</button>
-		</p>
 		<h4>Ships</h4>
 		{{#ships.length > 0}}			
 			<ul>
 			{{#ships}}
 			<li decorator="tooltip" data-decorator="ship-class-tooltip-{{ship_class_cache[class_id].id}}">
-			{{ship_class_cache[class_id].name}} (Shields: {{shields}} Hull: {{hull}} Damage: {{damage}} )</li>	
+			<img width="16" height="16" src="images/ship.png"> {{ship_class_cache[class_id].name}} {{hull}} Damage: {{damage}} </li>	
 			</li>
 			{{/ships}}
 			</ul>
@@ -533,6 +631,20 @@
 		{{^ships}}
 			None
 		{{/ships}}
+		
+		<h4>Actions</h4>
+		<p>
+		<button type="button" title="Move Fleet"  onclick="start_fleet_order_mode('{{id}}')"><img src="images/move.png"></button>
+		<button type="button" title="Fleet Managements" onclick="start_fleet_management()"><img src="images/logistics.png"></button>
+		<button type="button" title="colonise" onclick="add_fleet_colonise_order_dialog()"><img src="images/colonise.png"></button>
+		<button type="button" title="Construct" onclick="add_fleet_construct_order_dialog()"><img src="images/construct.png"></button>
+		<button type="button" title="Attack" onclick=""><img src="images/attack.png"></button>
+		<button type="button" title="Assault" onclick=""><img src="images/assault.png"></button>
+		<button type="button" title="Siege" onclick="add_fleet_siege_order()"><img src="images/siege.png"></button>
+		
+		<button type="button" title="Cancel All Orders" onclick="cancel_fleet_orders()"><img src="images/cancel.png"></button>
+		</p>
+		
 	</script>
 	
 	<script id="galactic_map_panel_enemy_fleet_template" type="text/ractive">		
@@ -572,8 +684,8 @@
 				
 				{{#ruin}}
 					<tr>
-					<th>Ruin</th>
-					<td>Ruins here!</td>
+					<th>Salvage</th>
+					<td>{{name}}</td>
 					</tr>
 				{{/ruin}}
 				
@@ -605,25 +717,15 @@
 					<td>{{system.name}}</td>
 					</tr>
 				{{/system.name}}
-				
-				{{#system.influence_level}}
-				<tr>
-					<th>Influence</th>
-					<td>
-					Level {{system.influence_level}} ({{system.influence_growth_turns}} turns) 					
-					</td>
-				</tr>
-				{{/system.influence_level}}
-				
+								
 				{{# system.planets.length > 0}}
 				<tr>
 					<th>Planets</th>
 					<td>
 					<ul class="small_planet_list">
-					{{#system.planets}}
-	
+					{{#system.planets}}	
 						{{# planet_class_cache[class_id] }}
-						<li class="{{#terraformed}} terraformed{{/terraformed}}">
+						<li class="{{#terraformed}} terraformed{{/terraformed}}{{^terraformed}}{{#terraformable}} terraformable{{/terraformable}}{{^terraformable}} unterraformable{{/terraformable}}{{/terraformed}}">
 							<img decorator="tooltip" data-decorator="planet-class-tooltip-{{id}}-{{class.id}}" width="30" height="30" src="{{#terraformed}}{{image_populated}}{{/terraformed}}{{^terraformed}}{{image}}{{/terraformed}}" alt="{{name}}">
 							<div class="tooltip" id="planet-class-tooltip-{{id}}-{{class.id}}">						
 								<h4>{{name}}</h4>	
@@ -638,15 +740,31 @@
 				{{/ end of filter }}
 				
 				{{#system.owner}}
+				
+				{{#system.influence}}
+				<tr>
+					<th>Influence</th>
+					<td>
+					Level {{system.influence_level}}
+					<voidprogress text="Growth in {{void.turns(system.influence_growth_turns)}}" class="influence" value="{{pool}}" max="{{system.influence_growth_threshold}}"></voidprogress>
+					</td>
+				</tr>
+				{{/system.influence}}
+				
+				
 				<tr>
 					<th>Population</th>
-					<td>{{system.population}} ({{system.growth_turns}} turns) </td>
+					<td> 
+					{{system.population}}
+					<voidprogress text="Growth in {{void.turns(system.growth_turns)}}" class="food" value="{{system.food.pool}}" max="{{system.food_growth_threshold}}"></voidprogress> </td>					
 				</tr>
 				<tr>
 					<th>Output</th>
 					<td>
-					<img src="images/icons/credits.png"> {{void.per_turn_value(system.credits_per_turn)}} 
-					<img src="images/icons/research.png"> {{void.per_turn_value(system.research_per_turn)}}
+					<ul>
+					<li><img src="images/icons/credits.png"> {{void.per_turn_value(system.credits_per_turn)}} </li>
+					<li><img src="images/icons/research.png"> {{void.per_turn_value(system.research_per_turn)}} </li>
+					</ul>
 					</td>
 				</tr>
 				
@@ -741,7 +859,9 @@
 				<li class="research"><img src="images/icons/research.png" alt="Research" title="Research"> +{{output.research}}</li>
 				<li class="credits"><img src="images/icons/credits.png" alt="Credits" title="Credits"> +{{output.credits}}</li>
 			</ul>
-			{{#terraformed}}Terraformed{{/terraformed}}{{^terraformed}}Uninhabited{{/terraformed}}
+			<li class="{{#terraformed}} terraformed{{/terraformed}}">
+						
+			<p>{{#terraformed}}Terraformed{{/terraformed}}{{^terraformed}}{{#terraformable}} Available{{/terraformable}}{{^terraformable}} Unavailable{{/terraformable}}{{/terraformed}}</p>
 	</script>
 	
 	<script id="ship_class_template" type="text/ractive">			
@@ -762,9 +882,9 @@
 			<ul class="structure_class">				
 				{{#modifiers}}
 					<ul>
-					{{#modifiers.production}}
-						<li class="production modifier"><img src="images/icons/production.png" alt="Production" title="Production"> Production: {{void.per_turn_value(modifiers.production.value)}}</li>
-					{{/modifiers.production}}
+					{{#modifiers.production_per_turn}}
+						<li class="production modifier"><img src="images/icons/production.png" alt="Production" title="Production"> Production: {{void.per_turn_value(modifiers.production_per_turn.value)}}</li>
+					{{/modifiers.production_per_turn}}
 					{{#modifiers.production_per_population}}
 						<li class="production modifier"><img src="images/icons/production.png" alt="Production" title="Production"> Production: {{void.per_turn_value(value)}} per population {{#max}}(Max: {{max}}){{/max}}</li>
 					{{/modifiers.production_per_population}}
@@ -772,9 +892,9 @@
 						<li class="production modifier"><img src="images/icons/production.png" alt="Production" title="Production"> Production: {{void.per_turn_value(value)}}%</li>
 					{{/modifiers.production_percent}}
 					
-					{{#modifiers.food}}
-						<li class="food modifier"><img src="images/icons/food.png" alt="Food" title="Food"> Food: {{void.per_turn_value(modifiers.food.value)}}</li>					
-					{{/modifiers.food}}
+					{{#modifiers.food_per_turn}}
+						<li class="food modifier"><img src="images/icons/food.png" alt="Food" title="Food"> Food: {{void.per_turn_value(modifiers.food_per_turn.value)}}</li>					
+					{{/modifiers.food_per_turn}}
 					{{#modifiers.food_per_population}}
 						<li class="food modifier"><img src="images/icons/food.png" alt="Food" title="Food"> Food: {{void.per_turn_value(value)}} per population {{#max}}(Max: {{max}}){{/max}}</li>
 					{{/modifiers.food_per_population}}
@@ -782,9 +902,9 @@
 						<li class="food modifier"><img src="images/icons/food.png" alt="Food" title="Food"> Food: {{void.per_turn_value(value)}}%</li>
 					{{/modifiers.food_percent}}
 					
-					{{#modifiers.research}}
-						<li class="research modifier"><img src="images/icons/research.png" alt="Research" title="Research"> Research: {{void.per_turn_value(modifiers.research.value)}}</li>
-					{{/modifiers.research}}
+					{{#modifiers.research_per_turn}}
+						<li class="research modifier"><img src="images/icons/research.png" alt="Research" title="Research"> Research: {{void.per_turn_value(modifiers.research_per_turn.value)}}</li>
+					{{/modifiers.research_per_turn}}
 					{{#modifiers.research_per_population}}
 						<li class="research modifier"><img src="images/icons/research.png" alt="Research" title="Research"> Research: {{void.per_turn_value(value)}} per population {{#max}}(Max: {{max}}){{/max}}</li>
 					{{/modifiers.research_per_population}}
@@ -792,9 +912,9 @@
 						<li class="research modifier"><img src="images/icons/research.png" alt="Research" title="Research"> Research: {{void.per_turn_value(value)}}%</li>
 					{{/modifiers.research_percent}}
 					
-					{{#modifiers.credits}}
-						<li class="credits modifier"><img src="images/icons/credits.png" alt="Credits" title="Credits"> Credits: {{void.per_turn_value(modifiers.credits.value)}}</li>
-					{{/modifiers.credits}}
+					{{#modifiers.credits_per_turn}}
+						<li class="credits modifier"><img src="images/icons/credits.png" alt="Credits" title="Credits"> Credits: {{void.per_turn_value(modifiers.credits_per_turn.value)}}</li>
+					{{/modifiers.credits_per_turn}}
 					{{#modifiers.credits_per_population}}
 						<li class="credits modifier"><img src="images/icons/credits.png" alt="Credits" title="Credits"> Credits: {{void.per_turn_value(value)}} per population {{#max}}(Max: {{max}}){{/max}}</li>
 					{{/modifiers.credits_per_population}}
@@ -802,9 +922,9 @@
 						<li class="credits modifier"><img src="images/icons/credits.png" alt="Credits" title="Credits"> Credits: {{void.per_turn_value(value)}}%</li>
 					{{/modifiers.credits_percent}}
 					
-					{{#modifiers.morale}}
-						<li class="morale modifier"><img src="images/icons/happy.png" alt="Morale" title="Morale"> Morale: {{void.per_turn_value(modifiers.morale.value)}}</li>
-					{{/modifiers.morale}}
+					{{#modifiers.morale_per_turn}}
+						<li class="morale modifier"><img src="images/icons/happy.png" alt="Morale" title="Morale"> Morale: {{void.per_turn_value(modifiers.morale_per_turn.value)}}</li>
+					{{/modifiers.morale_per_turn}}
 					{{#modifiers.morale_per_population}}
 						<li class="morale modifier"><img src="images/icons/happy.png" alt="Morale" title="Morale"> Morale: {{void.per_turn_value(value)}} per population {{#max}}(Max: {{max}}){{/max}}</li>
 					{{/modifiers.morale_per_population}}
@@ -812,9 +932,9 @@
 						<li class="morale modifier"><img src="images/icons/happy.png" alt="Morale" title="Morale"> Morale: {{void.per_turn_value(value)}}%</li>
 					{{/modifiers.morale_percent}}
 										
-					{{#modifiers.influence}}
-						<li class="influence modifier"><img src="images/icons/influence.png" alt="Influence" title="Influence"> Influence: {{void.per_turn_value(modifiers.influence.value)}}</li>
-					{{/modifiers.influence}}
+					{{#modifiers.influence_per_turn}}
+						<li class="influence modifier"><img src="images/icons/influence.png" alt="Influence" title="Influence"> Influence: {{void.per_turn_value(modifiers.influence_per_turn.value)}}</li>
+					{{/modifiers.influence_per_turn}}
 					{{#modifiers.influence_per_population}}
 						<li class="influence modifier"><img src="images/icons/influence.png" alt="Influence" title="Influence"> Influence: {{void.per_turn_value(value)}} per population {{#max}}(Max: {{max}}){{/max}}</li>
 					{{/modifiers.influence_per_population}}
@@ -925,7 +1045,10 @@
 	
 	<script id="system_view_template" type="text/ractive">
 		<div id="system_view">
-				
+		<h2> 
+		<span id="dialog_title">{{#name}}{{name}}{{/name}}{{^name}}System{{/name}} at ({{hex_selected.x}}, {{hex_selected.z}})</span>
+		<button class="close_window" onclick="void_view.set('system_view', {})">Return to Map</button>
+		</h2>
 		{{# planets.length > 0}}		
 		<ul class="system_view_planet_list">
 		{{#planets}}
@@ -937,22 +1060,27 @@
 		{{/planets}}
 		</ul>
 		{{/planets}}
-		
+
 		{{#yours}}
 			<ul class="planet_output">			
-			<li><img src="images/icons/food.png" alt="Food" title="Food"> {{food_per_turn}}</li>
+			<li><img src="images/icons/food.png" alt="Food" title="Food"> {{void.per_turn_value(food.per_turn)}}</li>
 			<li class="planet_output_bar">
-			
+				<voidprogress text="Growth in {{void.turns(growth_turns)}}" class="food" value="{{food.pool}}" max="{{food_growth_threshold}}"></voidprogress>
 			</li>
-			<li><img src="images/icons/production.png" alt="Production" title="Production"> {{production_per_turn}}</li>
-			<li><img src="images/icons/research.png" alt="Research" title="Research"> {{research_per_turn}}</li>
-			<li><img src="images/icons/credits.png" alt="Credits" title="Credits"> {{credits_per_turn}}</li>
-			<li><img src="images/icons/influence.png" alt="Influence" title="Influence"> {{influence_per_turn}}</li>
+			<li><img src="images/icons/production.png" alt="Production" title="Production"> {{void.per_turn_value(production.per_turn)}}</li>
+			<li><img src="images/icons/research.png" alt="Research" title="Research"> {{void.per_turn_value(research.per_turn)}}</li>
+			<li><img src="images/icons/credits.png" alt="Credits" title="Credits"> {{void.per_turn_value(credits.per_turn)}}</li>
+			<li>
+			<img src="images/icons/influence.png" alt="Influence" title="Influence"> {{void.per_turn_value(influence.per_turn)}}			
+			</li>
+			<li class="planet_output_bar">			
+			<voidprogress text="Growth in {{void.turns(influence_growth_turns)}}" class="influence" value="{{influence.pool}}" max="{{influence_growth_threshold}}"></voidprogress>
+			</li>
 			</ul>
 			
-			<div class="system_view_list">
+			<div class="system_view_list available_items"  decorator="custom_scroll">
 			<h4>Available Ship Classes</h4>
-			<ul class="selector_list" decorator="custom_scroll">
+			<ul class="selector_list">
 			{{#player.available_ship_classes:key}}
 				<li class="system_view_selector" decorator="tooltip" data-decorator="ship-class-tooltip-{{id}}">
 					<img src="images/ship.png">
@@ -965,11 +1093,9 @@
 				
 			{{/player.available_ship_classes}}
 			</ul>
-			</div>
 			
-			<div class="system_view_list">
 			<h4>Available Structure Classes</h4>
-			<ul class="selector_list" decorator="custom_scroll">
+			<ul class="selector_list">
 			{{#available_structure_classes}}				
 				
 				<li class="system_view_selector" decorator="tooltip" data-decorator="structure-class-tooltip-{{id}}">
@@ -984,13 +1110,15 @@
 				
 			{{/available_structure_classes}}
 			</ul>
+			
+			
 			</div>
 			
-			<div class="system_view_list">
+			<div class="system_view_list queue_items" decorator="custom_scroll">
 			<h4>System Queue</h4>
 			
 			{{#.}}
-			<div class="selector_list custom_scroll" decorator="custom_scroll">
+			<div class="selector_list">
 			<ul class="selector_list" >
 			{{# build_queue.items.length > 0}}
 				{{#build_queue.items}}
@@ -1038,7 +1166,7 @@
 			{{/.}}
 			</div>
 			
-			<div class="system_view_list">
+			<div class="system_view_list existing_items" decorator="custom_scroll">
 			<h4>Structures</h4>
 			{{# structures.length > 0}}
 			<ul class="selector_list" >
@@ -1098,63 +1226,80 @@
 	<script id="player_resources_template" type="text/ractive">
 		<span decorator="tooltip" data-decorator="player-credits-tooltip">		
 		{{#player}}
-		<img src="images/icons/credits.png"> {{credits_pool}} ({{void.per_turn_value(credits_per_turn)}})    
+		<img src="images/icons/credits.png"> {{void.value(credits.pool)}} ({{void.per_turn_value(credits.per_turn)}})    
 		{{/player}}
 		</span>
 
 		<span decorator="tooltip" data-decorator="player-morale-tooltip">
     <img src="images/icons/happy.png"> 
-		<span class="{{# player.morale > 0 }}positive{{/player.morale }}{{#player.morale < 0 }}negative{{/player.morale}}"> 
-    {{player.morale}} 
+		<span class="{{# player.morale.per_turn > 0 }}positive{{/player.morale.per_turn }}{{#player.morale.per_turn < 0 }}negative{{/player.morale.per_turn}}"> 
+    {{void.per_turn_value(player.morale.per_turn)}}
    	</span>
+   	{{#player.golden_age}}
+   	Golden Age ({{player.golden_age}} turns)
+   	{{/player.golden_age}}
+   	{{^player.golden_age}}
+   		({{void.value(player.morale.pool)}} / 500)
+   	{{/player.golden_age}}
    	</span>
    	
    	<div class="tooltip" id="player-morale-tooltip">
+			
 			{{# player.morale < 0}}
 			<p>Negative morale lowers your systems growth to 10% of normal</p>
 			{{/ player.morale < 0}}
-			{{#player.sources.morale}}
+
+			{{#player.morale.sources}}
 			<ul>				
 				<li>Population: {{void.per_turn_value(population)}}</li>
 				<li>Systems: {{void.per_turn_value(system)}}</li>
 				<li>Structures: {{void.per_turn_value(structures)}}</li>
 			</ul>
-			{{/player.sources.morale}}			
+			{{/player.morale.sources}}
+			
+			{{^player.golden_age}}
+				<h4>Golden Age</h4>
+				{{void.turns(500, player.morale.per_turn)}} until your empire enters a golden age.
+			{{/player.golden_age}}
+			
+				
 		</div>
 		
 		<div class="tooltip" id="player-credits-tooltip">
-			<h4>{{void.per_turn_value(player.credits_per_turn)}} per turn</h4>
-			{{#player.sources.credits}}
+			<h4>{{void.per_turn_value(player.credits.per_turn)}} per turn</h4>
+			{{#player.credits.sources}}
 			<ul>				
 				<li>Fleet Upkeep: {{void.per_turn_value(fleet)}}</li>
 				<li>Ship Upkeep: {{void.per_turn_value(ship)}}</li>
 				<li>Systems: {{void.per_turn_value(system)}}</li>
 			</ul>
-			{{/player.sources.credits}}			
+			{{/player.credits.sources}}			
 		</div>
    	
    	<span decorator="tooltip" data-decorator="player-research-tooltip">
-   	<img src="images/icons/research.png"> {{player.current_tech.class.name}} ({{ Math.ceil(player.current_tech.progress / player.research_per_turn) }} turns) 
+   	<img src="images/icons/research.png"> 
+   	<span class="player_research_progress"><voidprogress class="research" text="{{player.current_tech.class.name}}" subtext="{{ Math.ceil(player.current_tech.progress / player.research.per_turn) }} turns" value="{{player.current_tech.class.cost - player.current_tech.progress}}" max="{{player.current_tech.class.cost}}"></voidprogress></span>
    	</span>
    	
    	<div class="tooltip" id="player-research-tooltip">
 			<h4>{{player.current_tech.class.name}}</h4>
 			<p>(completed {{player.current_tech.progress}} of {{player.current_tech.class.cost}})</p>
-			<h4>{{void.per_turn_value(player.research_per_turn)}} per turn.</h4>
-			{{#player.sources.research}}
-			<ul>				
+			<h4>{{void.per_turn_value(player.research.per_turn)}} per turn.</h4>
+			{{#player.research.sources}}
+			<ul>
 				<li>Systems: {{void.per_turn_value(system)}}</li>
 			</ul>
-			{{/player.sources.research}}			
+			{{/player.research.sources}}			
 		</div>
    	
 	</script>
 	
 	
-	<script id="progress_bar_template" type="text/x-handlebars-template">
-		<div class="progress_bar {{this.class}}_bar">
-			<div class="progress_bar_inner" style="width : {{this.percent}}%"></div>
-		</div>
+	<script id="progress_bar_template" type="text/x-handlebars-template">		
+		<span class="progress_bar {{class}}_progress_bar">
+			<span class="progress_bar_text">{{text}} {{#subtext}}({{subtext}}){{/subtext}}</span>
+			<span class="progress_bar_inner" style="width : {{percent(value, max)}}%"></span>
+		</span>
 	</script>
 	
 	

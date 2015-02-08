@@ -21,6 +21,12 @@ class VOID_FLEET {
 	public $done;
 	public $damage;
 	
+	public $attack;
+	public $defense;
+	
+	
+	public $sector;
+	
 	function __construct(){
 		$this->id = void_unique_id();
 		$this->in_transit = false;
@@ -28,11 +34,19 @@ class VOID_FLEET {
 		$this->docked = false;
 		$this->movement_points = 2;
 		$this->movement_capacity = 2;
+		$this->attack = 0;
+		$this->defense = 0;
 		$this->done = false;
 	}
 	
 	public function add_ship($ship){
-		if (count($this->ships) < $this->capacity){
+		
+		if (!$this->owner){
+			$this->ships[] = $ship;
+			$this->owner = $ship->owner;
+			$this->update_fleet_stats();
+			return true;
+		}else if (count($this->ships) < $this->owner->command){
 			$this->ships[] = $ship;
 			$this->owner = $ship->owner;
 			$this->update_fleet_stats();
@@ -51,6 +65,8 @@ class VOID_FLEET {
 	}
 	
 	public function update_fleet_stats(){
+		$this->attack = 0;
+		$this->defense = 0;
 		$lowest_movement_points = 0;
 		if (count($this->ships)){			
 			foreach($this->ships as $ship){
@@ -60,9 +76,15 @@ class VOID_FLEET {
 				if ($ship->class->movement_capacity < $lowest_movement_points){
 					$lowest_movement_points = $ship->class->movement_capacity;
 				}
+				$this->attack += $ship->class->attack;
+				$this->defense += $ship->class->defense;
 			}			
 		}
 		$this->movement_capacity = $lowest_movement_points;
+		
+		if ($this->sector){
+			
+		}
 	}
 	
 	public function reset_orders(){
@@ -102,15 +124,32 @@ class VOID_FLEET {
 	public function move($x, $z, $core){				
 		$old_x = $this->x;
 		$old_z = $this->z;
-		if ($core->map->get_sector($x, $z)->add_fleet($this)){			
+		$target_sector = $core->map->get_sector($x, $z);
+		if ($target_sector->owner && !$target_sector->owner->allow_entry($this->owner)){
+			return false;
+		}
+		if ($target_sector->add_fleet($this)){			
 			$core->map->get_sector($old_x, $old_z)->remove_fleet($this);
 			$this->x = $x;
 			$this->z = $z;
-			$core->map->get_sector($x, $z)->resolve_ruin($core, $core->players[$this->owner] );
+			$target_sector->resolve_ruin($core, $core->players[$this->owner->id] );
+			$this->sector = $target_sector;
 			return true;
 		}else {
 			return false;
 		}
+	}
+	
+	public function siege($system){
+		if (!$system->owner){
+			return false;
+		}
+		if ($this->owner->id == $system->owner->id){
+			return false;
+		}
+		
+		$system->health = $system->health - $this->damage;
+		$system->killer = $this->owner;
 	}
 	
 	public function has_orders(){
@@ -210,11 +249,29 @@ class VOID_FLEET {
 		}
 	}
 	
+	public function resolve(){
+		if ($this->sector && $this->sector->owner && !$this->sector->owner->allow_entry($this->owner)){
+			if ($this->declare_war){
+				// if a player leaves a fleet in their system for a turn, auto-declare war. 
+				$this->owner->declare_war($this->sector->owner);
+				$this->declare_war = false;
+			}else {
+				$this->declare_war = true;
+				VOID_LOG::write($this->owner->id, "[diplomacy] You have a fleet in enemy space. If it is not removed by the end of the turn, war will be declared");
+				VOID_LOG::write($this->sector->owner->id, "[diplomacy] A player has a fleet in your space and will declare war if it is not removed");
+			}
+			
+		}else {
+			$this->declare_war = false;
+		}
+	}
+	
 	public function update($core){
 		if ($this->docked != true && $this->owner){		
-			$core->players[$this->owner]->update_resource("credits", -3, "fleet");
+			$core->players[$this->owner->id]->update_resource("credits", -3, "fleet");
 		}
 		$this->update_damage();
+		$this->update_fleet_stats();
 		foreach($this->ships as $ship){
 			$ship->update($core);			
 		}
@@ -222,9 +279,17 @@ class VOID_FLEET {
 	
 	
 	public function fire($enemy_fleet){		
-		// calculate damage output of fleet			
+		// compare attack and defense of fleets
+		$modifier = 1;
+		if ($enemy_fleet->defense > 0){
+			if ($this->attack > $enemy_fleet->defense){
+				$modifier = $modifier + (($enemy_fleet->defense / $this->attack) * 0.5);
+			}else {
+				$modifier = $modifier - (($this->attack / $enemy_fleet->defense) * 0.5);
+			}
+		}
 		$enemy_fleet->hit($this->damage);
-		VOID_LOG::write($this->owner, "[combat] Your fleet has damaged another fleet");
+		VOID_LOG::write($this->owner->id, "[combat] Your fleet has damaged another fleet");
 	}
 	
 	public function hit($damage){
@@ -263,12 +328,16 @@ class VOID_FLEET_VIEW extends VOID_VIEW {
 	public $movement_capacity;
 	
 	public $damage;
+	public $attack;
+	public $defense;
+	public $docked;
 	
 	function __construct($fleet, $player_id){
 		
 		$this->ships = [];
-		
-		$this->owner = $fleet->owner;
+		if ($fleet->owner){
+			$this->owner = $fleet->owner->id;
+		}
 		$this->movement_points = $fleet->movement_capacity;
 		$this->movement_capacity = $fleet->movement_capacity;
 		// need to turn through all ships and output the "view"
@@ -286,6 +355,10 @@ class VOID_FLEET_VIEW extends VOID_VIEW {
 			$this->orders = $fleet->orders;
 		}
 		//$this->special = $fleet->get_special();
+		$this->docked = $fleet->docked;
+		
+		$this->attack = $fleet->attack;
+		$this->defense = $fleet->defense;
 		
 	}
 	
@@ -308,9 +381,9 @@ class VOID_SHIP {
 	
 	public $damage;
 	
-	function __construct($class, $player_id){
+	function __construct($class, $player){
 		$this->class = $class;
-		$this->owner = $player_id;
+		$this->owner = $player;
 		$this->id = void_unique_id();
 		$this->hull = $class->hull;
 		$this->shields = $class->shields;
@@ -350,7 +423,7 @@ class VOID_SHIP {
 	}
 	
 	public function update($core){
-		$core->players[$this->owner]->update_resource("credits", -2, "ship");
+		$core->players[$this->owner->id]->update_resource("credits", -2, "ship");
 		if ($this->hull){
 			$this->damage = ceil($this->class->damage * ($this->hull / $this->class->hull));
 		}else {
@@ -372,7 +445,7 @@ class VOID_SHIP_VIEW {
 	
 	function __construct($ship, $player_id){
 		$this->class_id = $ship->class->id;
-		$this->owner = $ship->owner;
+		$this->owner = $ship->owner->id;
 		$this->id = $ship->id;
 		//if ($player_id == $this->owner){
 			$this->hull = $ship->hull;
@@ -391,9 +464,7 @@ class VOID_SHIP_CLASS {
 	public $weapon_damage;
 	public $weapon_type;
 	public $weapon_count;
-	
-	public $damage;
-	
+
 	public $movement_capacity;
 	public $vision_range;
 	
@@ -401,9 +472,16 @@ class VOID_SHIP_CLASS {
 	
 	public $work_required;
 	public $rush_cost;
-	
-	public $hull;
+		
 	public $shields;
+	
+	public $attack;
+	public $defense;
+	public $ranged_attack;
+	public $hull;
+	
+	// possibly a damage value
+	public $damage;
 	
 	function __construct($id=""){
 		if (!$id){
@@ -422,6 +500,9 @@ class VOID_SHIP_CLASS {
 		$this->hull = 100;
 		$this->shields = 10;
 		$this->damage = 10;
+		$this->attack = 10;
+		$this->defense = 10;
+		$this->ranged_attack = 10;
 	}
 	
 	function add_special($special){

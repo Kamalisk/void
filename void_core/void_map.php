@@ -6,16 +6,18 @@ class VOID_MAP_VIEW extends VOID_MAP {
 	public $map_height;
 	public $sectors;
 	private $player_id;
+	private $player;
 	
-	function __construct($map, $player_id){
-		$this->player_id = $player_id;
+	function __construct($map, $player){
+		$this->player_id = $player->id;
+		$this->player = $player;
 		$this->map_width = $map->map_width;
 		$this->map_height = $map->map_height;
 	}
 	
 	public function update_sectors($sectors){
 		foreach($sectors as &$sector){
-			$this->sectors['x'.$sector->x.'z'.$sector->z] = $sector->dump_sector($this->player_id);
+			$this->sectors['x'.$sector->x.'z'.$sector->z] = $sector->dump_sector($this->player);
 		}
 	}
 }
@@ -44,17 +46,24 @@ class VOID_MAP {
 			for ($x = -floor($z/2); $x < $width - floor($z/2); $x++){
 				$this->sectors['x'.$x.'z'.$z] = new VOID_SECTOR($x, $z);
 				$current_sector =& $this->sectors['x'.$x.'z'.$z];
-				if (rand(1,10) < 2){
+				if (rand(1,10) < 4){
 					$current_sector->star = 1;
 					$current_sector->system = new VOID_SYSTEM($x, $z);
 					$name = array_pop($void_system_names);					
 					$current_sector->system->set_name($name);
 					
 					$core->systems[$current_sector->system->id] =& $current_sector->system;
-					while (count($current_sector->system->planets) < rand(3,5)){
+					if (mt_rand(1,6) < 3){
 						$planet = new VOID_PLANET();
 						$planet->name = "Awesome";
-						$planet->class = $void_planet_classes[mt_rand(1,6)];
+						$planet->class = $void_planet_classes[1];
+						$this->sectors['x'.$x.'z'.$z]->add_planet($planet);	
+					}
+					
+					while (count($current_sector->system->planets) < rand(3,4)){
+						$planet = new VOID_PLANET();
+						$planet->name = "Awesome";
+						$planet->class = $void_planet_classes[mt_rand(2,6)];
 						$this->sectors['x'.$x.'z'.$z]->add_planet($planet);
 					}
 				}else if (rand(1,30) < 2){
@@ -65,7 +74,7 @@ class VOID_MAP {
 					continue;
 				}
 				$current_sector->set_type(1);
-				if (rand(1,30) < 8){
+				if (rand(1,30) < 3){
 					$current_sector->add_ruin();
 				}
 				if (rand(1,11) < 3){
@@ -85,50 +94,9 @@ class VOID_MAP {
 	}
 	public function populate($core){
 		
-			$colors = [
-				[
-					"background" => "rgba(0,155,0,0.2)", 
-					"border"=>"rgba(0,155,0,1)", 
-					"fleet"=> "images/fleets/fleet_f.png"
-				],
-				[
-					"background" => "rgba(155,0,0,0.2)", "border" => "rgba(155,0,0,1)", "fleet"=> "images/fleets/fleet_e.png"
-				],
-				[
-					"background" => "rgba(0,71,251,0.2)", "border" => "rgba(0,71,251,1)", "fleet"=> "images/fleets/fleet_blue.png"
-				],
-				[
-					"background" => "rgba(255,174,0,0.2)", "border" => "rgba(255,174,0,1)", "fleet"=> "images/fleets/fleet_f.png"
-				],
-				[
-					"background" => "rgba(162,0,186,0.2)", "border" => "rgba(162,0,186,1)", "fleet"=> "images/fleets/fleet_f.png"
-				],
-				[
-					"background" => "rgba(7,245,231,0.2)", "border" => "rgba(7,245,231,1)", "fleet"=> "images/fleets/fleet_f.png"
-				],
-				[
-					"background" => "rgba(255,246,0,0.2)", "border" => "rgba(255,246,0,1)", "fleet"=> "images/fleets/fleet_f.png"
-				],
-				[
-					"background" => "rgba(250,147,254,0.2)", "border" => "rgba(250,147,254,1)", "fleet"=> "images/fleets/fleet_f.png"
-				],
-				[
-					"background" => "rgba(161,255,151,0.2)", "border" => "rgba(161,255,151,1)", "fleet"=> "images/fleets/fleet_f.png"
-				],
-				[
-					"background" => "rgba(244,169,169,0.2)", "border" => "rgba(244,169,169,1)", "fleet"=> "images/fleets/fleet_f.png"
-				],
-				[
-					"background" => "rgba(72,44,0,0.2)", "border" => "rgba(118,78,31,1)", "fleet"=> "images/fleets/fleet_f.png"
-				],
-				[
-					"background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)", "fleet"=> "images/fleets/fleet_f.png"
-				],
-				[
-					"background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)", "fleet"=> "images/fleets/fleet_f.png"
-				],
-			];
-		
+		global $player_colors;
+		$colors = $player_colors;
+				
 		foreach($core->players as $player){
 			if (!$player->player){
 				continue;
@@ -147,10 +115,20 @@ class VOID_MAP {
 				}
 			}
 			
-			$player->race = $core->races[array_rand($core->races)];
+			if (!$player->race){
+				$player->race = $core->races[array_rand($core->races)];	
+			}
+			
+			if (!$player->leader){
+				$player->leader = $player->race->leaders[array_rand($player->race->leaders)];
+			}
+			
+			if (!$player->empire){
+				$player->empire = $player->race->empires[array_rand($player->race->empires)];
+			}
 			//print_r($player->race);
-			$player->leader = $player->race->leaders[array_rand($player->race->leaders)];
-			$player->empire = $player->race->empires[array_rand($player->race->empires)];
+			$color = array_shift($colors);
+			$player->set_color($color);
 			
 			global $void_planet_classes;
 			$planet = new VOID_PLANET();
@@ -178,7 +156,7 @@ class VOID_MAP {
 			$fleet = new VOID_FLEET();
 			$core->fleets[$fleet->id] = $fleet; 
 			// add a ship
-			$ship = new VOID_SHIP($core->ship_classes[1], $player->id);
+			$ship = new VOID_SHIP($core->ship_classes[1], $player);
 			$fleet->add_ship($ship);
 			$this->sectors[$key]->add_fleet($fleet);
 			$fleet->update($core);
@@ -198,8 +176,8 @@ class VOID_MAP {
 		
 		$player = $core->neutral_player;		
 		$color = array_shift($colors);
-		$player->set_color($color);		
-		for ($i = 0; $i < count($core->players)*3; $i++){
+		$player->set_color($color);
+		for ($i = 0; $i < count($core->players)*2; $i++){
 			while(true){
 				$key = array_rand($this->sectors,1);
 				if ($this->sectors[$key]->star == 1 && !$this->sectors[$key]->home){				
@@ -214,7 +192,7 @@ class VOID_MAP {
 			$fleet = new VOID_FLEET();
 			$core->fleets[$fleet->id] = $fleet; 
 			// add a ship
-			$ship = new VOID_SHIP($core->ship_classes[1], $player->id);
+			$ship = new VOID_SHIP($core->ship_classes[1], $player);
 			$fleet->add_ship($ship);
 			$this->sectors[$key]->add_fleet($fleet);
 			$fleet->update($core);
@@ -243,7 +221,7 @@ class VOID_MAP {
 		// run through each sector and apply 
 		// sensor range and influence to all sectors
 		foreach($this->sectors as &$sector){
-			if ($sector->system && isset($sector->system->owner) ){
+			if ($sector->system && isset($sector->system->owner) && $sector->system->owner ){
 				// you always "own" your home system
 				
 				$sector->owner = $sector->system->owner;				
@@ -279,14 +257,14 @@ class VOID_MAP {
 			$fleets =& $sector->fleets;
 			if ($fleets){
 				foreach($fleets as &$player_fleets){
-					foreach($player_fleets as &$fleet){
-						$fleet_owner = $core->players[$fleet->owner];
+					foreach($player_fleets as $fleet){
+						$fleet_owner = $core->players[$fleet->owner->id];
 						if ($fleet_owner->has_power("vision")){
 							$vision_bonus = $fleet_owner->get_power_value("vision");
 						}else {
 							$vision_bonus = 0;
 						}
-						$sector->add_state($fleet->owner, "unknown", 0);
+						$sector->add_state($fleet->owner->id, "unknown", 0);
 						for ($ring = 1; $ring <= $fleet->get_vision_range() + $vision_bonus; $ring++){
 							
 							foreach($void_ranges[$ring] as $range){
@@ -295,7 +273,7 @@ class VOID_MAP {
 							
 								if (isset($this->sectors['x'.$x.'z'.$z])){
 									$n =& $this->sectors['x'.$x.'z'.$z];
-									$n->add_state($fleet->owner, "sensor_power", 1);
+									$n->add_state($fleet->owner->id, "sensor_power", 1);
 									
 								}
 								
@@ -309,7 +287,7 @@ class VOID_MAP {
 		// run through all sectors and calculate who "owns" each sector
 		foreach($this->sectors as &$sector){			
 			$sector->update_owner($core);			
-			$sector->update_fog();
+			$sector->update_fog($core);
 		}
 		
 		
@@ -361,8 +339,8 @@ class VOID_MAP {
 		return false;
 	}
 	
-	public function dump_map($player_id){
-		$map_view = new VOID_MAP_VIEW($this, $player_id);
+	public function dump_map($player){
+		$map_view = new VOID_MAP_VIEW($this, $player);
 		$map_view->update_sectors($this->sectors);
 		return $map_view;
 	}

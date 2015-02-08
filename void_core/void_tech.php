@@ -12,24 +12,36 @@ class VOID_POWER_CLASS {
 	function __construct($id, $name){
 		$this->id = $id;
 		$this->name = $name;
+		$this->modifiers = [];
 	}
 	
+	function set_modifier($type, $category, $value, $max=0, $scope="player"){
+		$modifier = new VOID_MODIFIER($type, $category, $value, $max);
+		$modifier->set_scope($scope);
+		$this->modifiers[$modifier->get_modifier_id()] = $modifier;
+	}
+
 	public function apply($player){
+		foreach($this->modifiers as $type => $modifier){
+			$modifier->apply($player, "player");
+		}
+		VOID_DEBUG::write("power!");
 		switch($this->type){
 			case "research":{
-				$player->research_modifier = $player->research_modifier + $this->value;	
+				$player->research->add_percent($this->value, "power");
+				VOID_DEBUG::write("research race");
 				break;
 			}
 			case "credits":{
-				$player->credits_modifier = $player->credits_modifier + $this->value;	
+				$player->credits->add_percent($this->value, "power");					
 				break;
 			}
 			case "production":{
-				$player->production_modifier = $player->production_modifier + $this->value;	
+				$player->production->add_percent($this->value, "power");	
 				break;
 			}
 			case "food":{
-				$player->food_modifier = $player->food_modifier + $this->value;	
+				$player->food->add_percent($this->value, "power");	
 				break;
 			}
 			case "colonise_planet":{

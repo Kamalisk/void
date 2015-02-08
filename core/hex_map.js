@@ -147,16 +147,54 @@ function initialize_map(width, height){
 	});
 	
 	$('#galactic_map_dragger').bind('mousewheel',function(event){
-		//console.log(event);
+		
+		
+		var offset_x = $("#galactic_map_hexes").position().left + map_buffer;
+		var offset_y = $("#galactic_map_hexes").position().top + map_buffer;
+		
+		var old_map_scale = map_scale;
+				
+		var start_x = (event.offsetX - offset_x) / map_scale - map_scroll_offset.x;
+		var start_y = (event.offsetY - offset_y) / map_scale - map_scroll_offset.y;
+		
+		console.log(start_x);
+		console.log(start_y);
+		
 		var zoom_offset = {};
 		if (event.deltaY > 0){
 			map_scale = map_scale += 0.1;
+			var factor = -0.15;
+			
 		}else {
 			map_scale = map_scale -= 0.1;
+			var factor = +0.15;
 		}
-		console.log(event);
+		//console.log(event);
 		draw_map("galactic_map");
 		redraw_overlay();	
+		
+		var new_x = hexes_layer.position().left + (event.offsetX)*factor;
+		var new_y = hexes_layer.position().top + (event.offsetY)*factor;
+		
+		//var start_x = (event.offsetX - offset_x) / map_scale - map_scroll_offset.x;
+		//var start_y = (event.offsetY - offset_y) / map_scale - map_scroll_offset.y;
+		
+		//var new_offset_x = event.offsetX * map_scale;
+		//var new_offset_y = event.offsetY * map_scale;		
+		
+		
+		
+		//click_x - offset_x) / map_scale - map_scroll_offset.x
+		
+		//console.log(-new_offset_x + start_offset_x);
+		
+		hexes_layer.css({"left": new_x, "top": new_y});	
+		overlay_layer.css({"left": new_x , "top": new_y });
+		objects_layer.css({"left": new_x , "top": new_y });
+		
+		
+		
+		//jump_map(start_x  - $("#galactic_map_container").width()/2/map_scale*factor + event.offsetX/map_scale*factor, start_y - $("#galactic_map_container").height()/2/map_scale*factor + event.offsetY/map_scale*factor);
 		
 		//var click_x = event.pageX - $(this).offset().left;// + offset_x/hex_size/2;
 		//var click_y = event.pageY - $(this).offset().top;// + offset_y/hex_size/2;
@@ -544,7 +582,7 @@ function preload_images(data, callback){
 	sources.push({'name':'influence', 'image':'images/icons/influence.png'});
 	
 	sources.push({'name':'map_upgrade', 'image':'images/map_upgrade.png'});
-	sources.push({'name':'ruin', 'image':'images/icons/happy.png'});
+	sources.push({'name':'ruin', 'image':'images/ruin.png'});
 	
 	// add image data from server for preloading
 	for(key in sector_class_cache){		
@@ -804,7 +842,7 @@ function draw_map_tile(canvas, map_tile, small){
 				console.log("drawing ruin");
 				$(canvas).drawImage({
 				  source: image_cache['ruin'],
-				  x: x, y: y+20
+				  x: x, y: y+28
 				});
 			}
 			/*

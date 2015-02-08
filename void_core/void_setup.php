@@ -197,14 +197,15 @@ $this->ship_classes[$ship_class->id] = $ship_class;
 $structure_class = new VOID_STRUCTURE_CLASS(1);
 $structure_class->name = "Captial";
 $structure_class->set_unique("empire");
-$structure_class->set_modifier("food", 1);
-$structure_class->set_modifier("morale", 25);
-$structure_class->set_modifier("morale_per_population", 1, 5);
-$structure_class->set_modifier("production", 5);
-$structure_class->set_modifier("credits", 5);
-$structure_class->set_modifier("influence", 2);
-$structure_class->set_modifier("research", 500);
-$structure_class->set_modifier("credits_per_population", 2);
+$structure_class->set_modifier("food", "per_turn", 5);
+$structure_class->set_modifier("morale", "per_turn", 25, 0, "player");
+$structure_class->set_modifier("morale", "per_population", 1, 5, "player");
+$structure_class->set_modifier("production", "per_turn", 250);
+$structure_class->set_modifier("credits", "per_turn", 5);
+$structure_class->set_modifier("influence","per_population", 50);
+$structure_class->set_modifier("research","per_turn", 250);
+$structure_class->set_modifier("credits","per_population", 2);
+$structure_class->set_modifier("credits","percent", 10, 0, "player");
 $tech = $this->tech_tree->get_tech(1);
 $tech->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
@@ -212,8 +213,8 @@ $this->structure_classes[$structure_class->id] = $structure_class;
 $structure_class = new VOID_STRUCTURE_CLASS(2);
 $structure_class->name = "Farm I";
 $structure_class->work_required = 40;
-$structure_class->set_modifier("food", 5);
-$structure_class->set_modifier("credits", -1);
+$structure_class->set_modifier("food", "per_turn", 5);
+$structure_class->set_modifier("credits", "per_turn", -1);
 $tech = $this->tech_tree->get_tech(3);
 $tech->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
@@ -221,16 +222,16 @@ $this->structure_classes[$structure_class->id] = $structure_class;
 $structure_class = new VOID_STRUCTURE_CLASS();
 $structure_class->name = "Farm II";
 $structure_class->work_required = 80;
-$structure_class->set_modifier("food", 15);
-$structure_class->set_modifier("credits", -3);
+$structure_class->set_modifier("food", "per_turn", 15);
+$structure_class->set_modifier("credits", "per_turn", -3);
 $this->tech_tree->get_tech(21)->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
 
 $structure_class = new VOID_STRUCTURE_CLASS();
 $structure_class->name = "Orbital Shipyard";
 $structure_class->work_required = 80;
-$structure_class->set_modifier("ship_production", 15);
-$structure_class->set_modifier("credits", -1);
+$structure_class->set_modifier("ship_production", "per_turn", 15);
+$structure_class->set_modifier("credits", "per_turn", -1);
 $this->tech_tree->get_tech(10)->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
 
@@ -238,7 +239,7 @@ $this->structure_classes[$structure_class->id] = $structure_class;
 $structure_class = new VOID_STRUCTURE_CLASS(3);
 $structure_class->name = "Bank I";		
 $structure_class->work_required = 40;
-$structure_class->set_modifier("credits", 5);
+$structure_class->set_modifier("credits", "per_turn", 5);
 $tech = $this->tech_tree->get_tech(5);
 $tech->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
@@ -246,15 +247,15 @@ $this->structure_classes[$structure_class->id] = $structure_class;
 $structure_class = new VOID_STRUCTURE_CLASS();
 $structure_class->name = "Bank II";
 $structure_class->work_required = 80;
-$structure_class->set_modifier("credits", 15);
+$structure_class->set_modifier("credits", "per_turn", 15);
 $this->tech_tree->get_tech(23)->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
 
 $structure_class = new VOID_STRUCTURE_CLASS(4);
 $structure_class->name = "Happy Place I";
 $structure_class->work_required = 40;
-$structure_class->set_modifier("morale_per_population", 1, 3);
-$structure_class->set_modifier("credits", -2);
+$structure_class->set_modifier("morale", "per_population", 1, 3, "player");
+$structure_class->set_modifier("credits", "per_turn", -2);
 $tech = $this->tech_tree->get_tech(7);
 $tech->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
@@ -262,16 +263,16 @@ $this->structure_classes[$structure_class->id] = $structure_class;
 $structure_class = new VOID_STRUCTURE_CLASS();
 $structure_class->name = "Happy Place II";
 $structure_class->work_required = 80;
-$structure_class->set_modifier("morale_per_population", 2, 6);
-$structure_class->set_modifier("credits", -4);
+$structure_class->set_modifier("morale", "per_population", 2, 6, "player");
+$structure_class->set_modifier("credits", "per_turn", -4);
 $this->tech_tree->get_tech(25)->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
 
 $structure_class = new VOID_STRUCTURE_CLASS(5);
 $structure_class->name = "Factory I";
 $structure_class->work_required = 50;
-$structure_class->set_modifier("production", 5);
-$structure_class->set_modifier("credits", -1);
+$structure_class->set_modifier("production", "per_turn", 5);
+$structure_class->set_modifier("credits", "per_turn", -1);
 $tech = $this->tech_tree->get_tech(6);
 $tech->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
@@ -279,8 +280,8 @@ $this->structure_classes[$structure_class->id] = $structure_class;
 $structure_class = new VOID_STRUCTURE_CLASS();
 $structure_class->name = "Factory II";
 $structure_class->work_required = 80;
-$structure_class->set_modifier("production", 15);
-$structure_class->set_modifier("credits", -4);
+$structure_class->set_modifier("production", "per_turn", 15);
+$structure_class->set_modifier("credits", "per_turn", -4);
 $this->tech_tree->get_tech(24)->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
 
@@ -288,8 +289,8 @@ $this->structure_classes[$structure_class->id] = $structure_class;
 $structure_class = new VOID_STRUCTURE_CLASS(6);
 $structure_class->name = "Research Lab I";
 $structure_class->work_required = 40;
-$structure_class->set_modifier("research", 5);
-$structure_class->set_modifier("credits", -2);
+$structure_class->set_modifier("research", "per_turn", 5);
+$structure_class->set_modifier("credits", "per_turn", -2);
 $tech = $this->tech_tree->get_tech(4);
 $tech->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
@@ -297,8 +298,8 @@ $this->structure_classes[$structure_class->id] = $structure_class;
 $structure_class = new VOID_STRUCTURE_CLASS();
 $structure_class->name = "Research Lab II";
 $structure_class->work_required = 80;
-$structure_class->set_modifier("research", 15);
-$structure_class->set_modifier("credits", -4);
+$structure_class->set_modifier("research", "per_turn", 15);
+$structure_class->set_modifier("credits", "per_turn", -4);
 $this->tech_tree->get_tech(22)->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
 
@@ -306,8 +307,8 @@ $this->structure_classes[$structure_class->id] = $structure_class;
 $structure_class = new VOID_STRUCTURE_CLASS(8);
 $structure_class->name = "Galactic Radio I";
 $structure_class->work_required = 40;
-$structure_class->set_modifier("influence", 5);
-$structure_class->set_modifier("credits", -2);
+$structure_class->set_modifier("influence", "per_turn", 5);
+$structure_class->set_modifier("credits", "per_turn", -2);
 $tech = $this->tech_tree->get_tech(11);
 $tech->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
@@ -315,8 +316,8 @@ $this->structure_classes[$structure_class->id] = $structure_class;
 $structure_class = new VOID_STRUCTURE_CLASS();
 $structure_class->name = "Galactic Radio II";
 $structure_class->work_required = 80;
-$structure_class->set_modifier("influence", 15);
-$structure_class->set_modifier("credits", -4);
+$structure_class->set_modifier("influence", "per_turn", 15);
+$structure_class->set_modifier("credits", "per_turn", -4);
 //$this->tech_tree->get_tech(21)->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
 
@@ -324,17 +325,17 @@ $this->structure_classes[$structure_class->id] = $structure_class;
 $structure_class = new VOID_STRUCTURE_CLASS();
 $structure_class->name = "Sonic Refinery";
 $structure_class->work_required = 50;
-$structure_class->set_modifier("production", 5);
-$structure_class->set_modifier("production_percent", 10);
-$structure_class->set_modifier("credits", -3);
+$structure_class->set_modifier("production", "per_turn", 5);
+$structure_class->set_modifier("production", "percent", 10);
+$structure_class->set_modifier("credits", "per_turn", -3);
 $this->tech_tree->get_tech(14)->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
 
 $structure_class = new VOID_STRUCTURE_CLASS();
 $structure_class->name = "Money Percent";
 $structure_class->work_required = 100;
-$structure_class->set_modifier("credits", 3);
-$structure_class->set_modifier("credits_percent", 10);
+$structure_class->set_modifier("credits", "per_turn", 3);
+$structure_class->set_modifier("credits", "percent", 10);
 $this->tech_tree->get_tech(9)->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
 
@@ -343,8 +344,8 @@ $structure_class = new VOID_STRUCTURE_CLASS();
 $structure_class->name = "Orbital Hydroponics";
 $structure_class->set_unique("world");
 $structure_class->work_required = 300;
-$structure_class->set_modifier("food", 10);
-$structure_class->set_modifier("food_percent", 10);
+$structure_class->set_modifier("food", "per_turn", 10);
+$structure_class->set_modifier("food", "percent", 10);
 $this->tech_tree->get_tech(13)->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
 
@@ -353,9 +354,9 @@ $structure_class = new VOID_STRUCTURE_CLASS();
 $structure_class->name = "Greendale Galactic College";
 $structure_class->set_unique("world");
 $structure_class->work_required = 300;
-$structure_class->set_modifier("influence", 5);
-$structure_class->set_modifier("morale", 5);
-$structure_class->set_modifier("research", 5);
+$structure_class->set_modifier("influence", "per_turn", 5);
+$structure_class->set_modifier("morale", "per_turn", 5, 0, "player");
+$structure_class->set_modifier("research", "per_turn", 5);
 $this->tech_tree->get_tech(11)->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
 
@@ -363,8 +364,8 @@ $structure_class = new VOID_STRUCTURE_CLASS();
 $structure_class->name = "80s Cartoon Museum";
 $structure_class->set_unique("world");
 $structure_class->work_required = 300;
-$structure_class->set_modifier("influence", 10);
-$structure_class->set_modifier("influence_per_population", 2);
+$structure_class->set_modifier("influence", "per_turn", 10);
+$structure_class->set_modifier("influence", "per_population", 2);
 $this->tech_tree->get_tech(15)->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
 
@@ -418,6 +419,8 @@ $tech = $this->tech_tree->get_tech(10);
 $this->upgrade_classes[$upgrade_class->id] = $upgrade_class;
 
 
+
+
 $power_class = new VOID_POWER_CLASS(1, "Light Accelerators");
 $power_class->type = "vision";
 $power_class->value = 1;
@@ -426,20 +429,64 @@ $tech = $this->tech_tree->get_tech(3);
 //$tech->add_power_class($power_class);
 $this->power_classes[$power_class->id] = $power_class;
 
-$power_class = new VOID_POWER_CLASS(2, "Sub-surface Purification");
-$power_class->type = "colonise_planet";
-$power_class->value = 6;
+$power_class = new VOID_POWER_CLASS("terraform_class_y", "Colonise Class M");
+$power_class->set_modifier("index", "terraformable", 1);
+$power_class->description = "Allows you to colonise class M planets";
+$this->tech_tree->get_tech(1)->add_power_class($power_class);
+$this->power_classes[$power_class->id] = $power_class;
+
+$power_class = new VOID_POWER_CLASS("terraform_class_y", "Sub-surface Purification");
 $power_class->description = "Allows you to colonise class Y planets.";
-$tech = $this->tech_tree->get_tech(2);
-//$tech->add_power_class($power_class);
+$power_class->set_modifier("index", "terraformable", 6);
+$this->tech_tree->get_tech(12)->add_power_class($power_class);
 $this->power_classes[$power_class->id] = $power_class;
 
+$power_class = new VOID_POWER_CLASS("terraform_class_c", "Atmospheric Cleansing");
+$power_class->description = "Allows you to colonise class C planets.";
+$power_class->set_modifier("index", "terraformable", 5);
+$this->tech_tree->get_tech(18)->add_power_class($power_class);
+$this->power_classes[$power_class->id] = $power_class;
 
-$power_class = new VOID_POWER_CLASS(3, "Sub-surface Purification");
-$power_class->type = "colonise_planet";
-$power_class->value = 6;
+$power_class = new VOID_POWER_CLASS("terraform_class_j", "Terraform Jungle Terrain");
+$power_class->description = "Allows you to colonise class J planets.";
+$power_class->set_modifier("index", "terraformable", 2);
+$this->tech_tree->get_tech(3)->add_power_class($power_class);
+$this->power_classes[$power_class->id] = $power_class;
+
+$power_class = new VOID_POWER_CLASS("terraform_class_x", "Terraform Arid Terrain");
 $power_class->description = "Allows you to colonise class X planets.";
+$power_class->set_modifier("index", "terraformable", 3);
+$this->tech_tree->get_tech(7)->add_power_class($power_class);
 $this->power_classes[$power_class->id] = $power_class;
+
+$power_class = new VOID_POWER_CLASS("terraform_class_p", "Terraform Aquatic Environments");
+$power_class->description = "Allows you to colonise class P planets.";
+$power_class->set_modifier("index", "terraformable", 4);
+$this->tech_tree->get_tech(17)->add_power_class($power_class);
+$this->power_classes[$power_class->id] = $power_class;
+
+
+$power_class = new VOID_POWER_CLASS("command1", "Fleet Logistics");
+$power_class->description = "Increases command limit by 1";
+$power_class->set_modifier("command", "", 1);
+$this->tech_tree->get_tech(17)->add_power_class($power_class);
+$this->power_classes[$power_class->id] = $power_class;
+
+$power_class = new VOID_POWER_CLASS("command2", "Autonomous Operational Diodes");
+$power_class->description = "Increases command limit by 1";
+$power_class->set_modifier("command", "", 1);
+$this->tech_tree->get_tech(18)->add_power_class($power_class);
+$this->power_classes[$power_class->id] = $power_class;
+
+$power_class = new VOID_POWER_CLASS("command3", "Catonian Management Nodes");
+$power_class->description = "Increases command limit by 1";
+$power_class->set_modifier("command", "", 1);
+$this->tech_tree->get_tech(19)->add_power_class($power_class);
+$this->power_classes[$power_class->id] = $power_class;
+
+
+
+
 
 $power_class = new VOID_POWER_CLASS(4, "Sub-surface Purification");
 $power_class->type = "colonise_planet";
@@ -478,64 +525,75 @@ $power_class->value = 5;
 $power_class->description = "Gives bonus morale";
 $this->power_classes[$power_class->id] = $power_class;
 
-$power_class = new VOID_POWER_CLASS(10, "Researchious");
-$power_class->type = "research";
-$power_class->value = 0.1;
-$power_class->description = "Gives 10% more research";
+
+
+$power_class = new VOID_POWER_CLASS("research_10", "Researchious");
+$power_class->set_modifier("research", "percent", 10);
+$power_class->description = "Increase empire research by 10%";
 $this->power_classes[$power_class->id] = $power_class;
 
-$power_class = new VOID_POWER_CLASS(11, "Cybernetically Enhanced");
-$power_class->type = "production";
-$power_class->value = 0.1;
-$power_class->description = "Gives 10% more production";
+$power_class = new VOID_POWER_CLASS("production_10", "Cybernetically Enhanced");
+$power_class->set_modifier("production", "percent", 10);
+$power_class->description = "Increase production of systems by 10%";
 $this->power_classes[$power_class->id] = $power_class;
 
-$power_class = new VOID_POWER_CLASS(12, "Pyschic Ability");
-$power_class->type = "influence";
-$power_class->value = 0.1;
-$power_class->description = "Gives 10% more influence";
+$power_class = new VOID_POWER_CLASS("influence_10", "Pyschic Ability");
+$power_class->set_modifier("influence", "percent", 10);
+$power_class->description = "Increase influence of systems by 10%";
 $this->power_classes[$power_class->id] = $power_class;
 
-$power_class = new VOID_POWER_CLASS(13, "Junk Food");
-$power_class->type = "food";
-$power_class->value = 0.05;
-$power_class->description = "Gives 5% more food";
+$power_class = new VOID_POWER_CLASS("food_credits_5", "Junk Food");
+$power_class->set_modifier("food", "percent", 5);
+$power_class->set_modifier("credits", "percent", 5);
+$power_class->description = "Increases food and credit income by 5%";
 $this->power_classes[$power_class->id] = $power_class;
 
-$power_class = new VOID_POWER_CLASS(14, "Entrepenurs");
-$power_class->type = "credits";
-$power_class->value = 0.05;
-$power_class->description = "Gives 5% more credits";
+$power_class = new VOID_POWER_CLASS("food_10", "Self Consuming");
+$power_class->set_modifier("food", "percent", 10);
+$power_class->description = "Increase food of systems by 10%";
 $this->power_classes[$power_class->id] = $power_class;
 
-$power_class = new VOID_POWER_CLASS(15, "Self Consuming");
-$power_class->type = "food";
-$power_class->value = 0.1;
-$power_class->description = "Gives 10% more credits";
+$power_class = new VOID_POWER_CLASS("research_bakani_empire", "Dedicated");
+$power_class->set_modifier("research", "per_population", 1, 0, "planet");
+$power_class->description = "Increase research by 1 per population";
 $this->power_classes[$power_class->id] = $power_class;
 
-
-$power_class = new VOID_POWER_CLASS(16, "Class J Adaptation");
-$power_class->type = "morale_planet";
-$power_class->value = 2;
-$power_class->description = "Reduce morale loss from colonized Class J planets by 2";
-//$this->tech_tree->get_tech(13)->add_power_class($power_class);
+$power_class = new VOID_POWER_CLASS("research_edam_empire", "Dedicated");
+$power_class->set_modifier("windfall", "research", 100);
+$power_class->description = "Gain 100 research whenever you colonise a new planet";
 $this->power_classes[$power_class->id] = $power_class;
 
+$power_class = new VOID_POWER_CLASS("production_conglomerate_empire", "Dedicated");
+$power_class->set_modifier("windfall", "production", 100);
+$power_class->description = "Gain 100 production in your home system whenever you colonise a new planet";
+$this->power_classes[$power_class->id] = $power_class;
+
+$power_class = new VOID_POWER_CLASS("producsdsdsdate_empire", "Dedicated");
+$power_class->set_modifier("salvage", "credits", 100);
+$power_class->description = "Gain 100 credits whenever you destroy an enemy fleet";
+$this->power_classes[$power_class->id] = $power_class;
+
+$power_class = new VOID_POWER_CLASS("production_constructors_empire", "Dedicated");
+$power_class->set_modifier("salvage", "credits", 100);
+$power_class->description = "Gain 100 credits whenever you destroy an enemy fleet";
+$this->power_classes[$power_class->id] = $power_class;
+
+$power_class = new VOID_POWER_CLASS("salvage_sanctuary_empire", "Dedicated");
+$power_class->set_modifier("salvage", "credits", 100);
+$power_class->description = "Gain 100 credits whenever you destroy an enemy fleet";
+$this->power_classes[$power_class->id] = $power_class;
+
+$power_class = new VOID_POWER_CLASS("salvage_sanctuary_empire", "Dedicated");
+$power_class->set_modifier("salvage", "credits", 100);
+$power_class->description = "Gain 100 credits whenever you destroy an enemy fleet";
+$this->power_classes[$power_class->id] = $power_class;
 
 $power_class = new VOID_POWER_CLASS(17, "Monotomic Discovery");
-$power_class->type = "research";
-$power_class->value = 0.05;
+$power_class->set_modifier("research", "percent", 10);
 $power_class->description = "Increase empire research by 5%";
 $this->tech_tree->get_tech(8)->add_power_class($power_class);
 $this->power_classes[$power_class->id] = $power_class;
 
-$power_class = new VOID_POWER_CLASS(18, "Quantum Coalescence");
-$power_class->type = "ship_production";
-$power_class->value = 0.10;
-$power_class->description = "Increase ship production by 5%";
-//$this->tech_tree->get_tech(8)->add_power_class($power_class);
-$this->power_classes[$power_class->id] = $power_class;
 
 
 // empires / races
@@ -546,14 +604,14 @@ $this->power_classes[$power_class->id] = $power_class;
 // Class M
 
 $bakani = new VOID_RACE("Bakani");
-$bakani->add_power($this->power_classes[10]);
+$bakani->add_power($this->power_classes["research_10"]);
 $this->races[$bakani->id] = $bakani;
 
 // Etrib
 // 10% more production
 // Class M
 $etrib = new VOID_RACE("Etrib");
-$etrib->add_power($this->power_classes[11]);
+$etrib->add_power($this->power_classes["production_10"]);
 $this->races[$etrib->id] = $etrib;
 
 // Terran
@@ -561,24 +619,22 @@ $this->races[$etrib->id] = $etrib;
 // 5% more credits
 // Class M
 $terran = new VOID_RACE("Terran");
-$terran->add_power($this->power_classes[13]);
-$terran->add_power($this->power_classes[14]);
+$terran->add_power($this->power_classes["food_credits_5"]);
 $this->races[$terran->id] = $terran;
 
 // Penguina
 // 10% more influence
 // Class C
 $penguina = new VOID_RACE("Hruskan");
-$penguina->add_power($this->power_classes[12]);
+$penguina->add_power($this->power_classes["influence_10"]);
 $this->races[$penguina->id] = $penguina;
 
 // Nephalem (amoeba people)
 // 10% more food
 // Class K
 $nephalem = new VOID_RACE("Nephalem");
-$nephalem->add_power($this->power_classes[15]);
+$nephalem->add_power($this->power_classes["food_10"]);
 $this->races[$nephalem->id] = $nephalem;
-
 
 $pirates = new VOID_RACE("Pirates");
 $this->races[$pirates->id] = $pirates;
@@ -588,10 +644,12 @@ $this->races[$pirates->id] = $pirates;
 // provides further specialisation and special powers
 
 $empire = new VOID_EMPIRE("Bakani Empire");
+//$empire->add_power($this->power_classes["research_bakani_empire"]);
 $bakani->add_empire($empire);
 $this->empires[$empire->id] = $empire;
 
 $empire = new VOID_EMPIRE("Followers of Edam");
+$empire->add_power($this->power_classes["research_edam_empire"]);
 $bakani->add_empire($empire);
 $this->empires[$empire->id] = $empire;
 
@@ -641,10 +699,14 @@ $this->empires[$empire->id] = $empire;
 // +1 vision. 
 // +1 movement point on all ships
 // +1 fleet size
-// 10% more production towards wonders
+// wonders require 10% less production to build
 // Destroying ships returns production to home system
 // golden ages last longer
 // Free Techs
+// happiness per X techs
+// Gain money for each planet you colonise
+// new systems start at 2 population
+// +1 happiness per population, -1 happiness per system
 
 // Start with one tech?
 

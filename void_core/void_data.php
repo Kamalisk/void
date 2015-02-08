@@ -92,6 +92,52 @@ $void_system_types['space'] = array(
 	"movement_cost" => 1
 );
 
+
+$player_colors = [
+				[], 
+				[
+					"background" => "rgba(0,155,0,0.2)", 
+					"border"=>"rgba(0,155,0,1)", 
+					"fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(155,0,0,0.2)", "border" => "rgba(155,0,0,1)", "fleet"=> "images/fleets/fleet_e.png"
+				],
+				[
+					"background" => "rgba(0,71,251,0.2)", "border" => "rgba(0,71,251,1)", "fleet"=> "images/fleets/fleet_blue.png"
+				],
+				[
+					"background" => "rgba(255,174,0,0.2)", "border" => "rgba(255,174,0,1)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(162,0,186,0.2)", "border" => "rgba(162,0,186,1)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(7,245,231,0.2)", "border" => "rgba(7,245,231,1)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(255,246,0,0.2)", "border" => "rgba(255,246,0,1)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(250,147,254,0.2)", "border" => "rgba(250,147,254,1)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(161,255,151,0.2)", "border" => "rgba(161,255,151,1)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(244,169,169,0.2)", "border" => "rgba(244,169,169,1)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(72,44,0,0.2)", "border" => "rgba(118,78,31,1)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+				[
+					"background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)", "fleet"=> "images/fleets/fleet_f.png"
+				],
+			];
+
 // resources
 // food
 // production
@@ -111,14 +157,14 @@ $void_planet_classes[1] = [
 	"id" => 1,
 	"output" => [
 		"food" => 2,
-		"production" => 2, 
+		"production" => 1, 
 		"research" => 1,
 		"credits" => 1
 	],
 	"morale" => 0, 
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_m.png", 
-	"image_populated" => "images/planets/class_m.png", 
+	"image_populated" => "images/planets/class_m_populated.png", 
 	"max_population" => 4
 ];
 
@@ -128,13 +174,13 @@ $void_planet_classes[2] = [
 	"output" => [
 		"food" => 2,
 		"production" => 1, 
-		"research" => 3,
+		"research" => 2,
 		"credits" => 0
 	],
 	"morale" => 0, 
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_j.png", 
-	"image_populated" => "images/planets/class_j.png", 
+	"image_populated" => "images/planets/class_j_populated.png", 
 	"max_population" => 5
 ];
 
@@ -144,13 +190,13 @@ $void_planet_classes[3] = [
 	"output" => [
 		"food" => 1,
 		"production" => 4, 
-		"research" => 1,
+		"research" => 0,
 		"credits" => 0
 	],
 	"morale" => -2, 
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_x.png", 
-	"image_populated" => "images/planets/class_x.png", 
+	"image_populated" => "images/planets/class_x_populated.png", 
 	"max_population" => 6
 ];
 
@@ -160,13 +206,13 @@ $void_planet_classes[4] = [
 	"output" => [
 		"food" => 4,
 		"production" => 1, 
-		"research" => 1,
+		"research" => 0,
 		"credits" => 0
 	],
 	"morale" => -1, 
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_p.png", 
-	"image_populated" => "images/planets/class_p.png", 
+	"image_populated" => "images/planets/class_p_populated.png", 
 	"max_population" => 6
 ];
 
@@ -174,8 +220,8 @@ $void_planet_classes[5] = [
 	"name" => "Class C",
 	"id" => 5, 
 	"output" => [
-		"food" => 0,
-		"production" => 3, 
+		"food" => 1,
+		"production" => 1, 
 		"research" => 0,
 		"credits" => 3
 	],
@@ -190,15 +236,15 @@ $void_planet_classes[6] = [
 	"name" => "Class Y",
 	"id" => 6, 
 	"output" => [
-		"food" => 0,
+		"food" => 1,
 		"production" => 1, 
-		"research" => 5,
+		"research" => 3,
 		"credits" => 0
 	],
 	"morale" => -2, 
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_y.png", 
-	"image_populated" => "images/planets/class_y.png", 
+	"image_populated" => "images/planets/class_y_populated.png", 
 	"max_population" => 6
 ];
 
@@ -221,12 +267,16 @@ $void_sector_classes[2] = [
 ];
 
 
+$modifier = new VOID_MODIFIER("attack", "percent", 10);
+$modifier->set_scope("fleet");
+
 $void_sector_classes[3] = [
 	"id" => 3,
 	"name" => "Emmission Nebula",
 	"image" => "images/nebula.png",
 	"type" => "nebula",
-	"movement_cost" => 4
+	"movement_cost" => 4,
+	"modifiers" => [ $modifier ]
 ];
 
 $void_sector_classes[4] = [

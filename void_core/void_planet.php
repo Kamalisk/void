@@ -8,13 +8,22 @@ class VOID_PLANET_VIEW {
 	
 	public $id;
 	
-	function __construct($planet, $player_id){
+	public $terraformable;
+	
+	function __construct($planet, $player){
 		$this->name = $planet->name;
 		$this->class_id = $planet->class['id'];
 		$this->terraformed = $planet->terraformed;
 		$this->population = $planet->population;	
-		$this->id = $planet->id;		
+		$this->id = $planet->id;				
+		$this->terraformable = false;
+		if ($player->has_property_index("terraformable", $this->class_id)){
+			$this->terraformable = true;
+		}
 	}
+	
+	
+	
 }
 
 class VOID_PLANET {
@@ -57,8 +66,8 @@ class VOID_PLANET {
 		}
 	}
 	
-	public function dump($player_id){
-		$view = new VOID_PLANET_VIEW($this, $player_id);
+	public function dump($player){
+		$view = new VOID_PLANET_VIEW($this, $player);
 		return $view;
 	}
 	

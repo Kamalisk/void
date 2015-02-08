@@ -84,7 +84,8 @@ class VOID_SECTOR_VIEW {
 	
 	//public $space_dock;
 	
-	function __construct($sector, $player_id){
+	function __construct($sector, $player){
+		$player_id = $player->id;
 		$this->name = $sector->name;
 		$this->unknown = $sector->unknown;
 		$this->x = $sector->x;
@@ -107,7 +108,7 @@ class VOID_SECTOR_VIEW {
 			$this->type = $sector->type;
 			$this->type_id = $sector->class['id'];
 			if ($sector->system){
-				$this->system = $sector->system->dump($player_id);
+				$this->system = $sector->system->dump($player);
 			}
 			//$this->fleets = $sector->fleets;
 			$this->star = $sector->star;
@@ -126,7 +127,7 @@ class VOID_SECTOR_VIEW {
 			
 			foreach($sector->fleets as $key => $player_fleets){
 				foreach($player_fleets as $key => $fleet){
-					if ($fleet->owner == $player_id){
+					if ($fleet->owner->id == $player_id){
 						$this->your_fleets[] = $fleet->dump_view($player_id);
 					}else {
 						$this->enemy_fleets[] = $fleet->dump_view($player_id);
@@ -217,14 +218,15 @@ class VOID_SECTOR {
 	
 	
 	public function add_ruin($type=""){
+		$ruins = [
+			["name"=>"Desolate Ancient Cruiser", "effect"=>"research"],
+			["name"=>"Desolate Ancient Cruiser", "effect"=>"credits"]
+		];
 		if ($type){
 			
 		}else {
 			// add a random ruin
-			$this->ruin = [
-				"name" => "Desolate Ancient Cruiser",
-				"effect" => "research"
-			];
+			$this->ruin = $ruins[array_rand($ruins)];
 		}
 	}
 	
@@ -233,8 +235,17 @@ class VOID_SECTOR {
 			
 			if ($this->ruin['effect'] == "research"){
 				// grant the player a research boost 
-				$object->update_research($core->tech_tree);
-				VOID_LOG::write($object->id, "[explore] Analysing the derelict Ancient ship has revealed technological secrets");
+				if ($object->current_tech){
+					$object->current_tech->progress = $object->current_tech->progress - 50;
+					if ($object->current_tech->progress <= 0){
+						$object->current_tech->progress = 1;
+					}
+					VOID_LOG::write($object->id, "[explore] Analysing the derelict Ancient ship has revealed technological secrets");
+				}
+			}else if ($this->ruin['effect'] == "credits"){
+				// grant the player a credits boost 
+				$object->credits->pool += 50;				
+				VOID_LOG::write($object->id, "[explore] The derelict Ancient ship was beyond repair but full of raw materials to sell on the black market");
 			}
 		}
 		$this->ruin = false;
@@ -390,18 +401,18 @@ class VOID_SECTOR {
 		$fleet->x = $this->x;
 		$fleet->z = $this->z;
 		
-		if (isset($this->fleets[$fleet->owner]) && count($this->fleets[$fleet->owner]) > 0){
+		if (isset($this->fleets[$fleet->owner->id]) && count($this->fleets[$fleet->owner->id]) > 0){
 			$fleet->in_transit = true;
 		}
-		$this->fleets[$fleet->owner][$fleet->id] = $fleet;
+		$this->fleets[$fleet->owner->id][$fleet->id] = $fleet;
 		return true;
 	}
 	public function remove_fleet($fleet){
 		
 		//VOID_LOG::write($fleet->owner, print_r($this->fleets, 1) );
-		unset($this->fleets[$fleet->owner][$fleet->id]);
-		if (count($this->fleets[$fleet->owner]) <= 0){
-			unset($this->fleets[$fleet->owner]);
+		unset($this->fleets[$fleet->owner->id][$fleet->id]);
+		if (count($this->fleets[$fleet->owner->id]) <= 0){
+			unset($this->fleets[$fleet->owner->id]);
 		}
 		//VOID_LOG::write($fleet->owner, print_r($this->fleets, 1) );
 	}
@@ -473,7 +484,8 @@ class VOID_SECTOR {
 	
 	// dump the sector data as an array for output to the client
 	// dump from the perspective of a specific player
-	public function dump_sector($player_id){		
+	public function dump_sector($player){
+		$player_id = $player->id;
 		if (!isset($this->state[$player_id]) && isset($this->fog_state[$player_id]) && isset($this->fog_state[$player_id]['view']) ){
 			$fog = $this->fog_state[$player_id]['view'];
 			$fog->fog = true;
@@ -481,7 +493,7 @@ class VOID_SECTOR {
 			$fog->enemy_fleets = [];
 			return $fog;
 		} else {
-			$view = new VOID_SECTOR_VIEW($this, $player_id);
+			$view = new VOID_SECTOR_VIEW($this, $player);
 			return $view;
 		}
 	}
@@ -506,7 +518,7 @@ class VOID_SECTOR {
 	}
 	
 	public function update_owner($core){
-		if (isset($this->system->owner)){
+		if (isset($this->system->owner) && $this->system->owner){
 			$this->owner->sector_count++;
 			$this->owner = $this->system->owner;
 			return true;
@@ -544,10 +556,10 @@ class VOID_SECTOR {
 		}
 	}
 	
-	public function update_fog(){
+	public function update_fog($core){
 		foreach($this->state as $player_id => $state){
 			$this->fog_state[$player_id]['owner'] = $this->owner;
-			$this->fog_state[$player_id]['view'] = $this->dump_sector($player_id);
+			$this->fog_state[$player_id]['view'] = $this->dump_sector($core->players[$player_id]);
 		}
 	}
 	

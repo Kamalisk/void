@@ -28,6 +28,7 @@ var power_class_cache;
 var tech_tree;
 
 var race_classes;
+var player_colors;
 
 var game_state;
 
@@ -76,6 +77,10 @@ $(document).ready(function (){
 	var custom_scroll_decorator = function ( node, content ) {
 	  // setup work goes here...
 		
+		
+		$(node).perfectScrollbar({			
+		});
+		
 		/*
 		$(node).customScrollbar({
 			hScroll: false,
@@ -85,6 +90,9 @@ $(document).ready(function (){
 		*/
 		
 	  return {
+	  	update: function(){
+	  		console.log("update!");
+	  	},
 	    teardown: function () {
 	      //$(node).customScrollbar("remove")
 	    }
@@ -153,6 +161,29 @@ $(document).ready(function (){
 	  };
 	};
 	
+	var progress_bar = Ractive.extend({
+		isolated: false,
+	  template: '#progress_bar_template',
+	  beforeInit : function(options){
+	  		  	
+	  },
+	  init: function () {
+	  	
+	  },
+	  data: {	    
+	    value: 0,
+	    max: 500,
+	    percent : function (a, b){
+	    	if (b > 0){
+	    		return Math.floor(a / b * 100);
+	    	}else {
+	    		return 0;
+	    	}
+	    }
+	  }
+	  
+	});
+	
 	void_view = new Ractive({
 	  el: "void_app",
 	  template: "#primary_template",	
@@ -165,13 +196,24 @@ $(document).ready(function (){
 		  			return number;
 		  		}
 		  	},
+		  	value : function(number){
+		  		return Math.round(number * 100) / 100;
+		  	},
 		  	turns: function (target, per_turn){
-		  		var turns = Math.ceil(target / per_turn);
+		  		if (per_turn){
+		  			var turns = Math.ceil(target / per_turn);
+		  		}else {
+		  			var turns = target;
+		  		}
 		  		if (turns == 1){
 		  			return turns+" turn";
 		  		}else {
 		  			return turns+" turns";
 		  		}
+		  	},
+		  	percent : function (value, max){
+		  		console.log(value);
+		  		return " "+Math.floor(value / max * 100);
 		  	}
 	  	}
 	  },
@@ -180,29 +222,103 @@ $(document).ready(function (){
 	    tooltip: tooltip_decorator,
 	    lock: lock_decorator
 	  },
+	  components: {
+	  	voidprogress : progress_bar
+	  },
 	  modifyArrays: false
 	});
 	
-	// on first page load get game status
-	$.get("main.php"+location.search,{'action':'status'},function(data){
-		console.log(data);
-		if (data && data.state == "lobby"){
-			// game is in lobby mode
-			// start loop checking for lobby mode
-			check_lobby_status();
+	
+	// check login 
+	$.get("main.php",{'action':'auth'},function(data){
+		if (data && data.user){
+			// on first page load get game status
+			if (location.search){
+				$.get("main.php"+location.search,{'action':'status'},function(data){
+					
+					if (data && data.state == "lobby"){
+						// game is in lobby mode
+						// start loop checking for lobby mode
+						check_lobby_status();
+					}else {
+						fetch_game_data(true);		
+					}
+				});
+			}else {
+				// show games list
+				show_portal();
+			}			
 		}else {
-			fetch_game_data(true);		
+			// no login show login page 
+			$("#login").show();
+			$("#portal").hide();
+			$("#main_loading").hide();
 		}
-	});	
+	});
+	
+	
+	
 		
 });
+
+function login(){
+	$.post("main.php",{
+		"action":"auth",
+		"username": $("#username").val(), 
+		"password": $("#password").val()
+	},function(data){
+		if (data && data.user){
+			show_portal();
+		}
+	});
+}
+function logout(){
+	$.post("main.php",{
+		"action":"auth_end"
+	},function(data){
+		window.location = "";
+	});
+}
+
+function show_portal(){
+	$("#portal").show();
+	$("#login").hide();
+	$("#main_loading").hide();
+	
+	setInterval(function(){
+		$.get("main.php",{'action':'list_games'},function(data){			
+			if (data && data.games){
+				// get list of games from portal
+				void_view.set("portal.games", data.games);
+			}
+		});
+	}, 1000);
+}
+
+function play_game(id){
+	window.location = "?game_id="+id;
+}
+function join_lobby(id){
+	$.post("main.php",{
+		"action":"join_game",
+		"game_id": id
+	},function(data){
+		if (data && data.players){
+			window.location = "?game_id="+data.game_id;
+		}
+	});
+}
+
 
 function check_lobby_status(){
 	$.get("main.php"+location.search,{'action':'status'},function(data){		
 		if (data && data.state == "lobby"){
 			$('#main_loading').hide();
+			$('#portal').hide();
+			$('#login').hide();
 			if (data.player){
 				void_view.set("player", data.player);
+				player = data.player;
 			}
 			if (data.players){
 				void_view.set("players", data.players);
@@ -213,6 +329,10 @@ function check_lobby_status(){
 			if (data.races && !race_classes){
 				race_classes = data.races;
 				void_view.set("races", race_classes);
+			}
+			if (data.colors){
+				player_colors = data.colors;				
+				void_view.set("player_colors", player_colors);
 			}
 			setTimeout(check_lobby_status, 3000);
 		}
@@ -261,23 +381,48 @@ function select_race(id){
 	void_view.set("selected_race", selected_race );
 	
 }
-function select_empire(id){
-	if (selected_empire){
-		selected_empire.selected = false;
-	}
+function select_empire(id){	
+	if (selected_race.selected_empire){
+		selected_race.selected_empire.selected = false;
+		selected_race.selected_empire = false;
+	}	
 	selected_empire = selected_race.empires[id];
 	selected_empire.selected = true;
+	selected_race.selected_empire = selected_empire;
 	//void_view.set("selected_race.empires["+id+"].selected", true );
 	void_view.set("selected_race", selected_race );
 }
 function select_leader(id){
-	if (selected_leader){
-		selected_leader.selected = false;
-	}
+	if (selected_race.selected_leader){
+		selected_race.selected_leader.selected = false;
+		selected_race.selected_leader = false;
+	}	
 	selected_leader = selected_race.leaders[id];
 	selected_leader.selected = true;
-	void_view.set("selected_race", selected_race );
+	selected_race.selected_leader = selected_leader;
+	void_view.set("selected_race", selected_race );	
 }
+function select_color(id){
+	$.each(player_colors ,function (value, key){
+		if (value.selected == player.id){
+			value.selected = false;
+		}
+	});	
+	player_colors[id].selected = player.id;
+	
+	var url = "main.php";
+	if (location.search){
+		url += location.search;
+	}
+	$.post(url,{
+		"action":"color", 
+		"color_id":id
+	},check_lobby_status);		
+	
+	void_view.update("player");
+	void_view.update("player_colors");
+}
+
 
 function allow_actions(){
 	if (player.done){
@@ -620,6 +765,13 @@ function start_fleet_management(){
 	void_view.set("fleet_management", fleet_selected);
 	void_view.set("fleet_management_hexes", adj_hexes);
 }
+function end_fleet_management(){
+	if (!void_view.get("fleet_management_valid")){
+		show_error("A fleet cannot exceed "+player.command+" ships. ");
+		return false;
+	}
+	void_view.set('fleet_management', null);
+}
 
 function fleet_management_drag(event){
 	$("#tooltip_display").hide();	
@@ -631,22 +783,32 @@ function fleet_management_drop(event){
 	if (!allow_actions()){
 		return;
 	}
+	
 	//console.log( event.dataTransfer.getData("from_fleet"));
 	// now move the ship from one fleet to another somehow? :P
 	var from_fleet = fleet_cache[event.dataTransfer.getData("from_fleet")];
 	var from_ship_index = event.dataTransfer.getData("from_ship")
 	
+	console.log(event.target);
+	
 	var to_fleet = fleet_cache[$(event.target).attr("data-fleet")];
 	//var to_ship_index = $(event.target).attr("data-index");
-	
+	if (from_fleet.id == to_fleet.id){
+		return false;
+	}
 	//console.log($(event.target).attr("data-fleet"));
 	if (!to_fleet.ships){
 		to_fleet.ships = [];
 	}
 	// player.fleet_size
-	if (to_fleet.ships.length >= 3){
-		show_error("A fleet cannot exceed 3 ships");
+	if (to_fleet.ships.length >= player.command+1){
+		show_error("A fleet cannot exceed "+player.command+" ships (plus 1 for wiggle room)");
 		return false;
+	}
+	if (to_fleet.ships.length >= player.command){
+		void_view.set("fleet_management_valid", false);		
+	}else {
+		void_view.set("fleet_management_valid", true);
 	}
 	if (!from_fleet.ships[from_ship_index].from_fleet){
 		from_fleet.ships[from_ship_index].from_fleet = from_fleet.id;
@@ -785,6 +947,24 @@ function add_fleet_construct_order(uid){
 }
 
 
+function add_fleet_siege_order(){
+	if (!allow_actions()){
+		return;
+	}
+	if (fleet_orders[fleet_selected.id] && fleet_orders[fleet_selected.id].length > 0){
+		var previous_order = fleet_orders[fleet_selected.id][fleet_orders[fleet_selected.id].length-1];
+	}else {
+		var previous_order = {'x':fleet_cache[fleet_selected.id].x , 'z':fleet_cache[fleet_selected.id].z};
+		fleet_orders[fleet_selected.id] = [];
+	}
+	var order = {'type':'siege', "x":previous_order.x, "z":previous_order.z};
+	fleet_orders[fleet_selected.id].push(order);
+	
+	redraw_overlay();
+}
+
+
+
 function cancel_fleet_orders(){
 	if (!allow_actions()){
 		return;
@@ -807,7 +987,16 @@ function hide_combat_comparison(){
 
 
 function declare_war(player_id){
+	console.log(player_id);
+	players[player_id].declaring_war = true;	
 	player_orders.push({"type":"war", "target":player_id});
+	void_view.update("players");
+	void_view.update("diplomacy");
+}
+function undeclare_war(player_id){	
+	players[player_id].declaring_war = false;		
+	void_view.update("players");
+	void_view.update("diplomacy");
 }
 
 function select_tech(id){
@@ -828,11 +1017,11 @@ function buy_queue_item(id, cost){
 	if (!allow_actions()){
 		return;
 	}
-	if (player.credits_pool < cost){
+	if (player.credits.pool < cost){
 		show_error("You do not have enough credits to rush this production!");
 		return false;
 	}
-	player.credits_pool = player.credits_pool - cost;
+	player.credits.pool = player.credits.pool - cost;
 	// update player resources
 	// flag this queue item for speed up
 	if (!system_orders[hex_selected.id]){
@@ -1014,7 +1203,7 @@ function start_game(){
 	$.post("main.php",{"action":"start"},handle_start_game);
 }
 function handle_start_game(data){
-	window.location = "main.html?player_id=1";
+	window.location = "main.html?game_id="+data.game_id;
 }
 
 function join_game(){
@@ -1025,7 +1214,9 @@ function handle_join_game(data){
 }
 
 function reset_game(){
-	$.post("main.php"+location.search,{"action":"reset"},handle_end_turn);
+	$.post("main.php"+location.search,{"action":"reset"},function(){
+		window.location = "";
+	});
 }
 
 function fetch_game_data(first){
@@ -1107,6 +1298,7 @@ function handle_fetch_game_data(data){
 		}else {
 			game_update(data);
 		}
+		
 	}
 }
 
@@ -1124,6 +1316,7 @@ function game_update(data){
 		fleet_selected.sub = false;
 		void_view.set("fleet_selected", fleet_selected);
 	}
+	void_view.update("diplomacy");
 	
 	if (!player.done){
 		$("#end_turn_button").html('<img src="images/ajax-loader.png" style="visibility: hidden;"> End Turn ');
@@ -1134,6 +1327,8 @@ function game_update(data){
 		$("#end_turn_button").attr("disabled", true);
 	}
 	$('#main_loading').hide();
+	$('#portal').hide();
+	$('#login').hide();
 }
 
 

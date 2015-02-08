@@ -5,7 +5,12 @@ function exception_error_handler($errno, $errstr, $errfile, $errline ) {
 }
 set_error_handler("exception_error_handler");
 
+include_once("password_hash.php");
+include_once("void_user.php");
+include_once("void_modifier.php");
 include_once("void_debug.php");
+include_once("void_log.php");
+include_once("void_lobby.php");
 include_once("void_data.php");
 include_once("void_player.php");
 include_once("void_tech.php");
@@ -15,6 +20,8 @@ include_once("void_fleet.php");
 include_once("void_map.php");
 include_once("void_queue.php");
 include_once("void_structure.php");
+
+include_once("void_resource.php");
 include_once("void_planet.php");
 include_once("void_order.php");
 
@@ -33,35 +40,6 @@ function void_unique_id(){
 // apply()
 // apply any % modifiers and other things which need to be done after the fact 
 
-class VOID_LOG {
-	static $game_id;
-	static $turn;
-	static $game_path;
-	
-	static function init($player_id){
-		file_put_contents(self::$game_path."player".$player_id.".log", "");
-	}
-	
-	static function write($player_id, $text){
-		if ($player_id){
-			file_put_contents(self::$game_path."player".$player_id.".log", $text."\n", FILE_APPEND);
-		}
-	}
-	
-	static function get($player_id){
-		if ($player_id){
-			$contents = file_get_contents(self::$game_path."player".$player_id.".log");
-			return VOID_LOG::parse($contents);
-		}
-	}
-	
-	static function parse($contents){
-		$entries = explode("\n", $contents);
-		array_pop($entries);
-		return $entries;
-	}
-}
-
 
 
 class VOID_VIEW {
@@ -74,42 +52,6 @@ class VOID_VIEW {
 			return false;
 		}
 	}
-}
-
-
-class VOID_RESOURCE {
-	public $type;
-	public $per_turn;
-	public $percent;
-	public $pool;
-	public $sources;
-	
-	function __construct($type){
-		$this->type = $type;
-		$this->per_turn = 0;
-		$this->percent = 100;
-		$this->pool = 0;
-	}
-	public function reset(){
-		$this->percent = 100;
-		$this->per_turn = 0;
-	}
-	public function add_pool($amount){
-		$this->pool += $amount;
-	}
-	public function apply(){
-		$this->per_turn = $this->per_turn * ($this->percent) / 100;
-	}
-	public function upkeep(){
-		$this->pool = $this->pool + $this->per_turn;
-	}
-	public function add_per_turn($amount){
-		$this->per_turn += $amount;
-	}
-	public function add_percent($amount){
-		$this->percent += $amount;
-	}
-	
 }
 
 
@@ -128,31 +70,6 @@ class VOID_RESOURCES {
 	
 }
 
-class VOID_LOBBY {
-	public $players;
-	public $settings;
-	
-	public $races = [];
-	public $leaders = [];
-	public $empires = [];
-	
-	public function add_player($name){
-		$id = count($this->players)+1;
-		$player = new VOID_PLAYER($id);
-		$player->name = "Player ".$id;
-		// for now set a random race and such?		
-		$this->players[$player->id] = $player;
-		return $player;
-	}
-	public function select_race($player_id, $race, $empire, $leader){
-		$this->players[$player_id]->race = $race;
-		$this->players[$player_id]->empire = $empire;
-		$this->players[$player_id]->leader = $leader;
-	}
-	public function reset(){
-		$this->players = [];		
-	}
-}
 
 class VOID {
 	public $lobby;
@@ -201,11 +118,12 @@ class VOID {
 	}
 	
 	public function start_game(){
-		$this->state = "game";		
+		$this->state = "game";
+		$this->players = [];
 		foreach($this->lobby->players as $player){
 			$this->add_player($player);			
 		}
-		$this->start(15, 15);
+		$this->start(8, 8);
 	}
 	
 	public function init(){
@@ -247,11 +165,12 @@ class VOID {
 		$this->map = new VOID_MAP();
 		foreach($this->players as $player){
 			$player->reset();
+			$player->update();
 			$player->set_tech($this->tech_tree);
 			$player->done = false;
 		}
 		
-		$i = count($this->players);
+		$i = 999;
 		// add the neutral players 
 		$this->players[$i] = new VOID_PLAYER($i);
 		$this->neutral_player = $this->players[$i];
@@ -267,8 +186,7 @@ class VOID {
 	public function add_player($data){
 		$id = count($this->players)+1;
 		//$player = new VOID_PLAYER($id);
-		$player = clone $data;		
-		
+		$player = clone $data;				
 		$this->players[$player->id] = $player;
 		return $player;
 	}
@@ -314,12 +232,14 @@ class VOID {
 		if ($this->state == "lobby"){
 			return false;
 		}
-		
+		if (!isset($this->players[$player_id])){
+			return false;
+		}
 		header("Content-type: application/json");
 		$return = array();
 		$return['debug'] = VOID_DEBUG::dump();
 		$return['state'] = $this->state;
-		$return['map'] = $this->map->dump_map($player_id);
+		$return['map'] = $this->map->dump_map($this->players[$player_id]);
 		$return['players'] = [];
 		foreach($this->players as $player){
 			$return['players'][$player->id] = $player->dump($player_id);
@@ -353,6 +273,7 @@ class VOID {
 		if ($this->state == "lobby"){
 			$return = array();		
 			$return['players'] = [];
+			$return['game_id'] = $this->game_id;
 			$return['state'] = $this->state;
 			foreach($this->lobby->players as $player){
 				$return['players'][$player->id] = $player->dump($player_id);
@@ -361,9 +282,10 @@ class VOID {
 				$return['player'] = $this->lobby->players[$player_id];
 			}
 			$return['races'] = $this->races;
-			
+			$return['colors'] = $this->lobby->colors;
 		}else {			
-			$return = array();		
+			$return = array();
+			$return['game_id'] = $this->game_id;
 			$return['players'] = [];
 			$return['state'] = $this->state;
 			foreach($this->players as $player){
@@ -413,7 +335,8 @@ class VOID {
 		// income and upkeep
 		foreach($this->players as $player){			
 			// update resources on the values calculate previously
-			$player->apply_resources();
+			
+			$player->upkeep();
 		}
 		
 		// resolve tech tree
@@ -502,8 +425,8 @@ class VOID {
 				unset($hitty[$shoot['shooter']->id]);
 				$sector1 = $this->map->get_sector($shoot['shooter']->x, $shoot['shooter']->z);
 				$sector2 = $this->map->get_sector($shoot['target']->x, $shoot['target']->z);
-				$this->players[$shoot['shooter']->owner]->combat_zones[$sector1->id] = $sector1->get_direction($sector2, $this);	
-				$this->players[$shoot['target']->owner]->combat_zones[$sector2->id] = $sector2->get_direction($sector1, $this);
+				$this->players[$shoot['shooter']->owner->id]->combat_zones[$sector1->id] = $sector1->get_direction($sector2, $this);	
+				$this->players[$shoot['target']->owner->id]->combat_zones[$sector2->id] = $sector2->get_direction($sector1, $this);
 			}
 			
 			// retaliate against ships which attacked you
@@ -556,7 +479,7 @@ class VOID {
 				}else if ($order && $order->type == "colonise"){
 					$sector = $this->map->get_sector($fleet->x, $fleet->z);
 					if ($sector->system && $fleet->get_special("colony")){							
-						$sector->system->colonise($this->players[$fleet->owner], $this, $order->planet_id);							
+						$sector->system->colonise($this->players[$fleet->owner->id], $this, $order->planet_id);							
 						$fleet->movement_points = 0;
 						$sector->system->resolve();
 						$sector->system->update();							
@@ -574,8 +497,19 @@ class VOID {
 					$fleet->complete_order();
 					$from_fleet->movement_points = 0;
 					$to_fleet->movement_points = 0;
+				}else if ($order && $order->type == "siege"){						
+					$sector = $this->map->get_sector($fleet->x, $fleet->z);
+					if ($sector->system){
+						$system = $sector->system;
+						if (!$fleet->siege($system)){
+							$fleet->complete_order();
+						}
+					}else {
+						$fleet->complete_order();
+					}
+					$fleet->movement_points = 0;
 				}else if ($order && $order->type == "construct"){
-					$sector = $this->map->get_sector($fleet->x, $fleet->z);						
+					$sector = $this->map->get_sector($fleet->x, $fleet->z);
 					if ($fleet->get_special("construct") && $order->upgrade_id){							
 						$upgrade = $this->upgrade_classes[$order->upgrade_id];
 						if ($upgrade->requirements_met($sector)){								
@@ -597,9 +531,9 @@ class VOID {
 			// if fleet moved next to enemy fleet, prevent all further movement
 			foreach($temp_fleets_with_orders as $fleet){
 				$sector1 = $this->map->get_sector($fleet->x, $fleet->z);
-				if ($sector1->is_enemy_adjacent($fleet->owner, $this)){
+				if ($sector1 && $sector1->is_enemy_adjacent($fleet->owner->id, $this)){
 					$fleet->movement_points = 0;
-					VOID_LOG::write($fleet->owner, "[movement] Fleet stopped due to enemy contact");
+					VOID_LOG::write($fleet->owner->id, "[movement] Fleet stopped due to enemy contact");
 				}
 			}
 			
@@ -625,6 +559,201 @@ class VOID {
 		}
 		
 		
+
+		
+		// resolve player orders (such as declare war)
+		foreach($this->players as $player){			
+			foreach($player->get_orders_by_type("war") as $order){				
+				if (isset($order['player_id']) && isset($this->players[$order['player_id']]) ){
+					$player->declare_war($this->players[$order['player_id']]);
+				}
+			}
+			$player->clear_orders();
+		}
+		
+		foreach($temp_systems as $system){
+			$system->process_orders($this);
+		}
+		
+		foreach($this->players as $player){
+			$player->resolve();
+		}
+		
+		// resolve building orders and growth
+		foreach($temp_systems as $system){
+			$system->resolve();
+		}
+		
+		$this->map->update_map($this);
+		foreach($temp_fleet_cache as $fleet){
+			$fleet->resolve($this);
+		}		
+		
+		
+		foreach($this->players as $player){
+			$player->update();
+		}
+		foreach($temp_systems as $system){
+			$system->update();
+		}
+		foreach($temp_fleet_cache as $fleet){
+			if (!$fleet->docked){
+				$this->map->get_sector($fleet->x, $fleet->z)->clean_up();
+			}
+			$fleet->update($this);
+		}		
+		
+		
+		foreach($temp_systems as $system){
+			$system->apply();
+		}
+		foreach($this->players as $player){
+			$player->apply();
+		}
+		
+		//check for victory and update victory totals	
+
+		
+		$this->reset_player_state();
+		//$this->save();
+	}
+	
+	public function handle_input($input, $player_id, $user){
+		if (isset($input['action'])){
+			if ($player_id && isset($this->players[$player_id])){
+				$player = $this->players[$player_id];
+			}else if ($player_id && isset($this->lobby->players[$player_id])) {
+				$player = $this->lobby->players[$player_id];
+			}
+						
+			if ($input['action'] == "end_turn"){
+				
+				if (isset($_POST['player_orders'])){
+					$player_orders = $_POST['player_orders'];
+					foreach($player_orders as $key => $order){
+						if ($order['type'] == "war"){
+							$player->add_order("war", ["player_id"=>$order['target']]);
+						}
+					}
+					
+				}
+				
+				if (isset($_POST['fleet_orders'])){
+					$fleet_orders = $_POST['fleet_orders'];
+					foreach($fleet_orders as $key => $orders){
+						if (isset($this->fleets[$key])){
+							$this->fleets[$key]->reset_orders();
+							foreach($orders as $order){
+								if ($order['type'] == "move"){
+									$this->fleets[$key]->add_order("move", array("x"=>$order['x'], "z"=>$order['z']));
+								}else if ($order['type'] == "colonise"){									
+									$this->fleets[$key]->add_order("colonise", array("x"=>$order['x'], "z"=>$order['z'], "planet_id" => $order['planet_id']));
+								}else if ($order['type'] == "siege"){									
+									$this->fleets[$key]->add_order("siege", array("x"=>$order['x'], "z"=>$order['z']));
+								}else if ($order['type'] == "construct"){									
+									$this->fleets[$key]->add_order("construct", array("x"=>$order['x'], "z"=>$order['z'], "upgrade_id" => $order['upgrade_id']));
+								}
+							}
+						}
+					}
+				}
+				
+				if (isset($_POST['fleet_transfers'])){
+					$fleet_transfers = $_POST['fleet_transfers'];
+					foreach($fleet_transfers as $key => $transfer){
+						// reset all orders again. no transfer and orders allowed
+						$this->fleets[$key]->reset_orders();
+						if ($transfer['fleet_id']){
+							$this->fleets[$transfer['fleet_id']]->reset_orders();
+							if ($transfer['ship_id']){
+								$this->fleets[$key]->add_order("transfer", array("ship_id"=>$transfer['ship_id'], "fleet_id"=>$transfer['fleet_id']));								
+							}
+						}
+					}
+				}
+				
+				if (isset($_POST['system_orders'])){
+					$system_orders = $_POST['system_orders'];
+					//print_r($system_orders);
+					//print_r($this->systems);
+					foreach($system_orders as $key => $orders){
+						
+						if (isset($this->systems[$key])){
+							//$this->systems[$key]->reset_orders();
+							foreach($orders as $order_key => $order){
+								$queue_item = $this->systems[$key]->build_queue->get($order_key);
+								if ($queue_item){
+									// updating an existing item
+									if (isset($order['purchased']) && $order['purchased']){
+										$queue_item->purchase($this->systems[$key]->owner);
+									}
+								}else {
+									// adding a new one
+									if ($order['type'] == "ship"){
+										$target = $this->ship_classes[$order['target_id']];
+									}else if ($order['type'] == "structure"){
+										$target = $this->structure_classes[$order['target_id']];
+									}
+									
+									$queue_item = $this->systems[$key]->add_order($order['type'], $target);
+									if (isset($order['purchased']) && $order['purchased']){
+										$queue_item->purchase($this->systems[$key]->owner);
+									}
+								}
+							}
+						}
+					}
+				}
+				
+				if (isset($_POST['current_tech']) && $_POST['current_tech']){
+					$player = $this->players[$player_id];
+					if ($player->available_tech[$_POST['current_tech']]){
+						$player->current_tech = $player->available_tech[$_POST['current_tech']];
+					}
+				}
+				
+				$player->done = true;
+				
+				// if all players have ended their turn.
+				// process a turn
+				// (this might need to be in a regularly run cron job)
+				// for now it is run every time someone ends their turn
+				if ($this->are_players_finished()){
+					$this->process_turn();
+				}else {
+					
+				}
+			} else if ($input['action'] == "join_game"){
+				$player = $this->join_game($user);
+				return $player->id;
+			} else if ($input['action'] == "select"){				
+				$race = $this->races[$input['race_id']];
+				$empire = $this->empires[$input['empire_id']];
+				$leader = $this->leaders[$input['leader_id']];
+				$this->lobby->select_race($player_id, $race, $empire, $leader);
+			} else if ($input['action'] == "color"){
+				global $player_colors;
+				//$this->lobby->set_color($player_id, $input['color_id']);				
+			} else if ($input['action'] == "reset_lobby"){
+				$user->reset_game($this->game_id);
+				$this->setup();
+				$this->lobby->reset();				
+			} else if ($input['action'] == "start"){				
+				$user->start_game($this->game_id);
+				$this->start_game();
+			} else if ($input['action'] == "reset"){
+				//$this->map = new VOID_MAP();
+				$this->init();
+				//$this->setup(30,20);
+				//$this->save();
+			}
+		}
+	}
+	
+}
+
+
+/*
 		// other orders
 		
 		// intercept
@@ -746,175 +875,7 @@ class VOID {
 			}
 			$combat_sectors = [];
 		}
-		
-		// resolve player orders (such as declare war)
-		foreach($this->players as $player){			
-			foreach($player->get_orders_by_type("war") as $order){				
-				if (isset($order['player_id']) && isset($this->players[$order['player_id']]) ){
-					$player->declare_war($this->players[$order['player_id']]);
-				}
-			}
-			$player->clear_orders();
-		}
-		
-		foreach($temp_systems as $system){
-			$system->process_orders($this);
-		}
-		
-		// resolve building orders and growth
-		foreach($temp_systems as $system){
-			$system->resolve();
-		}	
-						
-		foreach($temp_systems as $system){
-			$system->update();
-		}
-		foreach($temp_fleet_cache as $fleet){
-			if (!$fleet->docked){
-				$this->map->get_sector($fleet->x, $fleet->z)->clean_up();
-			}
-			$fleet->update($this);
-		}		
-		
-		foreach($temp_systems as $system){
-			$system->apply();
-		}
-		foreach($this->players as $player){
-			//$player->apply_resource_modifiers();
-		}
-		
-		//check for victory and update victory totals	
 
-		$this->map->update_map($this);
-		$this->reset_player_state();
-		//$this->save();
-	}
-	
-	public function handle_input($input, $player_id){
-		if (isset($input['action'])){
-			if ($player_id && isset($this->players[$player_id])){
-				$player = $this->players[$player_id];
-			}else if ($player_id && isset($this->lobby->players[$player_id])) {
-				$player = $this->lobby->players[$player_id];
-			}
-						
-			if ($input['action'] == "end_turn"){
-				
-				if (isset($_POST['player_orders'])){
-					$player_orders = $_POST['player_orders'];
-					foreach($player_orders as $key => $order){
-						if ($order['type'] == "war"){
-							$player->add_order("war", ["player_id"=>$order['target']]);
-						}
-					}
-					
-				}
-				
-				if (isset($_POST['fleet_orders'])){
-					$fleet_orders = $_POST['fleet_orders'];
-					foreach($fleet_orders as $key => $orders){
-						if (isset($this->fleets[$key])){
-							$this->fleets[$key]->reset_orders();
-							foreach($orders as $order){
-								if ($order['type'] == "move"){
-									$this->fleets[$key]->add_order("move", array("x"=>$order['x'], "z"=>$order['z']));
-								}else if ($order['type'] == "colonise"){									
-									$this->fleets[$key]->add_order("colonise", array("x"=>$order['x'], "z"=>$order['z'], "planet_id" => $order['planet_id']));
-								}else if ($order['type'] == "construct"){									
-									$this->fleets[$key]->add_order("construct", array("x"=>$order['x'], "z"=>$order['z'], "upgrade_id" => $order['upgrade_id']));
-								}
-							}
-						}
-					}
-				}
-				
-				if (isset($_POST['fleet_transfers'])){
-					$fleet_transfers = $_POST['fleet_transfers'];
-					foreach($fleet_transfers as $key => $transfer){
-						// reset all orders again. no transfer and orders allowed
-						$this->fleets[$key]->reset_orders();
-						if ($transfer['fleet_id']){
-							$this->fleets[$transfer['fleet_id']]->reset_orders();
-							if ($transfer['ship_id']){
-								$this->fleets[$key]->add_order("transfer", array("ship_id"=>$transfer['ship_id'], "fleet_id"=>$transfer['fleet_id']));								
-							}
-						}
-					}
-				}
-				
-				if (isset($_POST['system_orders'])){
-					$system_orders = $_POST['system_orders'];
-					//print_r($system_orders);
-					//print_r($this->systems);
-					foreach($system_orders as $key => $orders){
-						
-						if (isset($this->systems[$key])){
-							//$this->systems[$key]->reset_orders();
-							foreach($orders as $order_key => $order){
-								$queue_item = $this->systems[$key]->build_queue->get($order_key);
-								if ($queue_item){
-									// updating an existing item
-									if (isset($order['purchased']) && $order['purchased']){
-										$queue_item->purchase($this->systems[$key]->owner);
-									}
-								}else {
-									// adding a new one
-									if ($order['type'] == "ship"){
-										$target = $this->ship_classes[$order['target_id']];
-									}else if ($order['type'] == "structure"){
-										$target = $this->structure_classes[$order['target_id']];
-									}
-									
-									$queue_item = $this->systems[$key]->add_order($order['type'], $target);
-									if (isset($order['purchased']) && $order['purchased']){
-										$queue_item->purchase($this->systems[$key]->owner);
-									}
-								}
-							}
-						}
-					}
-				}
-				
-				if (isset($_POST['current_tech']) && $_POST['current_tech']){
-					$player = $this->players[$player_id];
-					if ($player->available_tech[$_POST['current_tech']]){
-						$player->current_tech = $player->available_tech[$_POST['current_tech']];
-					}
-				}
-				
-				$player->done = true;
-				
-				// if all players have ended their turn.
-				// process a turn
-				// (this might need to be in a regularly run cron job)
-				// for now it is run every time someone ends their turn
-				if ($this->are_players_finished()){
-					$this->process_turn();
-				}else {
-					
-				}
-			} else if ($input['action'] == "join"){
-				$player = $this->join_game("Peter");
-				return $player->id;
-			} else if ($input['action'] == "select"){				
-				$race = $this->races[$input['race_id']];
-				$empire = $this->empires[$input['empire_id']];
-				$leader = $this->leaders[$input['leader_id']];
-				$this->lobby->select_race($player_id, $race, $empire, $leader);
-			} else if ($input['action'] == "reset_lobby"){
-				$this->lobby->reset();
-			} else if ($input['action'] == "start"){
-				
-				$this->start_game();
-			} else if ($input['action'] == "reset"){
-				//$this->map = new VOID_MAP();
-				$this->init();
-				//$this->setup(30,20);
-				//$this->save();
-			}
-		}
-	}
-	
-}
+*/
 
 ?>

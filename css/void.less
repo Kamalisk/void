@@ -23,7 +23,7 @@ body {
 	font-family : "verdana";
 	font-size : 0.7em!important;
 	color : #afafaf;
-	line-height : 1.4;
+	line-height : 1.2;
 	vertical-align : center;
 }
 
@@ -195,19 +195,29 @@ button:active {
 
 /* progress bar */
 
-.progress_bar {
+.progress_bar, progress {
 	width : 100%;
 	height : 14px;
 	border : lighten(@primary_background_color, 20%) solid 2px;
 	border-radius : 5px;	
+	color : red;
+	position : relative;
+	display : inline-block;
 }
 .progress_bar_inner {
 	width : 100%;
 	height : 14px;
 	border-radius : 1px;	
 	background-color : lighten(@primary_background_color, 10%);
+	display : inline-block;
 }
-
+.progress_bar_text {
+	color : white;
+	text-align : center;
+	position : absolute;
+	width : 100%;
+	display : inline-block;
+}
 
 /* generic dialog */
 .dialog {
@@ -248,12 +258,13 @@ button:active {
 		padding-left : 0.4em;
 		margin : 0.1em;
 		display : inline-block;
-	}
+	}	
 }
 
 div#player_resources {
 	display : inline-block;	
-	padding : 0.3em;
+	padding : 0.2em;
+	
 }
 
 div#player_status {
@@ -275,6 +286,16 @@ div#player_status {
 	left : 0px;
 	
 	
+}
+
+.view {
+	background-color : rgba(50, 50, 50, 0.9);
+	z-index : @top_layer;
+	position : absolute;
+	top : 0;
+	left : 0;
+	bottom : 0;
+	right : 0;
 }
 
 #main_loading{
@@ -486,7 +507,8 @@ div#player_status {
 
 .map_panel_content {
 	padding : 0.3em;
-	overflow : auto;	
+	overflow : auto;
+	background-color : rgba(50, 50, 50, 0.9);
 }
 	
 	
@@ -522,6 +544,16 @@ div#player_status {
 	border : solid green 2px;
 	border-radius : 20px;
 }
+.small_planet_list li.terraformable {
+	border : solid rgba(200, 200, 200, 0.5) 2px;
+	border-radius : 20px;
+}
+
+.small_planet_list li.unterraformable {
+	border : solid rgba(200, 20, 20, 0.5) 2px;
+	border-radius : 20px;
+}
+
 
 
 /* system view */	
@@ -577,31 +609,38 @@ div.window_control .close_window {
 }
 .planet_output li {
 	display : inline-block;
-	width : 40px;
+	
 	font-weight : bold;
 	vertical-align : top;
 	margin : 0;
 	padding : 0.5em;
 }
 .planet_output li.planet_output_bar {
-	width : 100px;
+	width : 160px;
 	margin : 0;
 }
 
 .system_view_list {
 	display : inline-block;
-	width : 210px;
+	width : 300px;
 	vertical-align : top;
+	position : relative;
+	
+	overflow : hidden;
+	border-radius : 5px 5px 5px 5px;
+	border : solid rgba(200, 200, 200, 0.1) 2px;
+	background-color : rgba(20, 20, 20, 0.8)
 }
 .selector_list {
-	height : 230px;	
+	
 	overflow : auto;
 	overflow-x : hidden;
 	overflow : hidden;
-	border : solid #434343 1px;
-	border-bottom : solid #434343 1px;
+	
+	
 	margin-bottom : 0.1em;
-	border-radius : 5px 5px 5px 5px;
+	
+	position : relative;
 }
 
 .ship_class_selector_list {
@@ -613,9 +652,9 @@ div.window_control .close_window {
 }
 .system_view_selector {
 	display : inline-block;
-	width : 192px;
+	width : 270px;
 	height : 40px;
-	border : #212121 1px solid;	
+	
 	vertical-align : top;
 }
 
@@ -644,6 +683,27 @@ div.window_control .close_window {
 .selectable:hover {
 	border : solid grey 2px;
 	border-radius : 5px 5px 5px 5px;
+}
+
+
+.available_items {
+	position : absolute;
+	bottom : 0;
+	left : 0;
+	top : 250px;
+}
+.existing_items {
+	position : absolute;
+	bottom : 0;
+	right : 0;
+	top : 250px;
+}
+.queue_items {
+	position : absolute;
+	bottom : 0;
+	left : 350px;
+	right : 350px;
+	width : auto;
 }
 
 
@@ -683,26 +743,15 @@ div.window_control .close_window {
 }
 
 .tech_tier {
-	display : block;
-	position : absolute;
-	width : 250px;
+	
 }
 
 .tech_tier_0 {
 	display : none;
 }
-
-.tech_tier_1 {
-	left : 5px;
-}
-.tech_tier_2 {
-	left : 270px;	
-}
-.tech_tier_3 {
-	left : 530px;
-}
-.tech_tier_4 {
-	left : 800px;
+.tech_tree_item {
+	height : 100px;
+	vertical-align: top;
 }
 
 .available_tech {
@@ -732,8 +781,20 @@ div.window_control .close_window {
 	font-weight : bold;
 }
 
-.growth_bar .progress_bar_inner {
+.food_progress_bar .progress_bar_inner {
 	background-color : green;
+}
+.influence_progress_bar .progress_bar_inner {
+	background-color : purple;
+}
+.research_progress_bar .progress_bar_inner {
+	background-color : blue;	
+}
+
+.player_research_progress {
+	width : 250px;
+	display : inline-block;	
+	vertical-align : top;	
 }
 
 /* events */
@@ -747,7 +808,7 @@ div.window_control .close_window {
 /* diplomacy */
 
 #diplomacy_view {
-	vertical-align : top;
+	vertical-align : top;	
 }
 
 #diplomacy_player_list_container {
@@ -757,7 +818,10 @@ div.window_control .close_window {
 
 .diplomacy_player_list {
 	padding : 0.3em;
-	display : inline-block;
+	position : absolute;
+	left : 0;
+	top : 0;
+	bottom : 0;
 	vertical-align : top;
 	height : 100%;
 }
@@ -777,6 +841,10 @@ div.window_control .close_window {
 #diplomacy_detail_view {
 	display : inline-block;
 	vertical-align : top;
+	position : absolute;
+	top : 0;
+	left : 320px;
+	
 }
 
 .diplomacy_detail_view {
@@ -843,28 +911,138 @@ div.window_control .close_window {
 }
 
 
+/* login */
+
+.login {
+	margin : auto;
+	position : absolute;
+	border : dashed white 2px;
+	border-radius : 5px;
+	top : 50%;
+	left : 50%;
+	margin-top : -150px;
+	margin-left : -150px;
+	padding : 1em;
+	background-color : black;
+	width : 300px;
+	text-align : center;
+}
+.login h1 {
+	text-align : center;
+	margin : 5px;
+}
+
+.login form input, .login form button{
+	font-size : 20px;
+	margin-bottom : 5px;
+}
+
+.login input, .login button {
+	width : 100%;
+}
 
 
 /*lobby*/
-ul.race_selector {
-	display : block;
+
+.player_race_selector {
+	position : relative;	
+	height : 300px;
 }
 
-ul.race_selector {
+
+.lobby_selector ul {		
 	li {
-		padding : 1em;
-		display : inline-block;
-		width : 200px;
-		height : 75px;
-		cursor : pointer;
-		border : solid grey 2px;
+		padding : 1em;						
+		cursor : pointer;		
 		border-radius : 4px;
+		margin : 0;
 	}
 	li:hover {
 		background-color : rgba(100, 67, 140, 0.5);
 	}
 	li.selected {
 		background-color : rgba(120, 40, 40, 0.6);
+	}
+	
+	width : 200px;
+}
+
+.lobby_selector {
+	border : solid rgba(80, 80, 80, 0.3) 2px;
+}
+
+.race_selector {
+	position : absolute;
+	left : 0;
+	top : 0;
+	bottom : 0;
+	width : 200px;
+}
+.empire_selector {
+	position : absolute;
+	left : 200px;
+	top : 0;
+	bottom : 0;
+	width : 200px;
+}
+.leader_selector {
+	position : absolute;
+	left : 400px;
+	top : 0;
+	bottom : 0;
+	width : 200px;
+}
+.selector_summary {
+	position : absolute;
+	left : 600px;
+	top : 0;
+	bottom : 0;
+	right : 0;
+	padding : 0.1em;
+}
+.color_selector {
+	li {
+		width : 50px;
+		height : 50px;
+		display : inline-block;
+		cursor : pointer;
+		border-radius : 10px;
+		vertical-align : top
+	}
+	li.selected {
+		text-align : center;
+		vertical-align : middle;
+	}
+}
+
+#player_list {
+	position : absolute;
+	left : 0;
+	top : 35px;
+	bottom : 0;
+	width : 190px;
+	border-right : solid rgba(70, 70, 70, 0.6) 2px;
+}
+
+#lobby_content {
+	position : absolute;
+	left : 200px;
+	top : 35px;
+	bottom : 0;
+	right : 0;
+}
+#lobby_header {
+	position : absolute;
+	top : 0;
+	left : 0;
+	right : 0;
+	height : 35px;
+	overflow: hidden;
+	border-bottom : rgba(100, 100, 100, 0.3) solid 2px;
+	h1 {
+		padding : 0.2em;
+		margin : 0;
+		display : inline-block;
 	}
 }
 

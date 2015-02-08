@@ -13,6 +13,8 @@ class VOID_RACE {
 		$this->id = void_unique_id();
 		$this->name = $name;
 		$this->leaders = [];
+		$this->empires = [];
+		$this->powers = [];
 	}
 	
 	public function add_power($power){
@@ -23,11 +25,14 @@ class VOID_RACE {
 		$this->leaders[$leader->id] = $leader;
 	}
 	public function add_empire($empire){
+		
 		$this->empires[$empire->id] = $empire;
+		
 	}
 	
 	// apply modifiers to player object
 	public function apply($player){
+		
 		foreach($this->powers as $power){
 			$power->apply($player);
 		}
@@ -40,9 +45,12 @@ class VOID_EMPIRE {
 	public $name;
 	public $selected;
 	public $powers;
+	
 	function __construct($name){
 		$this->id = void_unique_id();
 		$this->name = $name;
+		$this->powers = [];		
+		
 	}
 	
 	public function add_power($power){
@@ -69,6 +77,7 @@ class VOID_LEADER {
 		$this->id = void_unique_id();
 		$this->name = $name;
 		$this->empire_name = $name;
+		$this->powers = [];
 	}
 	
 	public function add_power($power){
@@ -134,6 +143,8 @@ class VOID_PLAYER_VIEW {
 		}else {
 			$this->war = false;
 		}
+		$this->is_player = $player->player;
+		$this->declaring_war = false;
 	}
 }
 
@@ -150,6 +161,14 @@ class VOID_PLAYER {
 	public $race;
 	public $empire;
 	
+	public $food;
+	public $research;
+	public $production;
+	public $credits;	
+	
+	public $influence;
+	public $morale;
+	
 	public $research_pool;
 	public $research_per_turn;
 	public $credits_pool;
@@ -158,9 +177,7 @@ class VOID_PLAYER {
 	public $research_modifier = 0;
 	public $credits_modifier = 0;	
 	public $production_modifier = 0;
-	public $food_modifier = 0;	
-	
-	public $morale;
+	public $food_modifier = 0;			
 	
 	public $tech;
 	public $available_tech;
@@ -193,7 +210,12 @@ class VOID_PLAYER {
 	
 	public $orders;
 	
-	public $credits;
+	public $property_index;
+	
+	public $command;
+	
+	public $golden_age = false;
+	
 	
 	function __construct($id){
 		$this->id = $id;
@@ -204,7 +226,7 @@ class VOID_PLAYER {
 	public function reset(){
 		$this->research_pool = 0;
 		$this->credits_pool = 0;
-		$this->morale = 0;
+		
 		$this->current_tech = false;
 		$this->met_players = [];
 		$this->sector_count = 0;
@@ -215,7 +237,13 @@ class VOID_PLAYER {
 		$this->powers = [];
 		$this->relationships = [];
 		$this->credits = new VOID_RESOURCE("credits");
-		$this->credits = new VOID_RESOURCE("research");
+		$this->research = new VOID_RESOURCE("research");
+		$this->production = new VOID_RESOURCE("production");
+		$this->food = new VOID_RESOURCE("food");
+		$this->morale = new VOID_RESOURCE("morale");
+		$this->influence = new VOID_RESOURCE("influence");
+		
+		$this->command = 3;
 	}
 	
 	public function dump($player_id){
@@ -223,17 +251,85 @@ class VOID_PLAYER {
 		return $view;
 	}
 	
-	public function apply_resources(){
-		$this->credits_pool += $this->credits_per_turn;
-		$this->research_pool += $this->research_per_turn;
+	// pay costs and get resources as generated from last turn
+	public function upkeep(){
+		$this->credits->upkeep();
+		$this->morale->upkeep();
+		$this->influence->upkeep();
+	}
+	
+	// resolve any player triggers, such as a golden age starting
+	public function resolve(){
+		if ($this->golden_age){
+			$this->golden_age--;
+			if ($this->golden_age <= 0){
+				$this->golden_age = false;
+				$this->morale->pool = 0;
+			}
+		}
+		if (!$this->golden_age && $this->morale->pool >= 500){
+			$this->golden_age = 5;
+			$this->morale->pool = 0;
+			$this->influence->pool = 0;
+		}
+	}
+	
+	// update values for the next turn
+	public function update(){
+		
+		if ($this->race){
+			$this->race->apply($this);
+		}
+		if ($this->empire){
+			$this->empire->apply($this);
+		}
+		if ($this->leader){
+			$this->leader->apply($this);
+		}
+		if ($this->golden_age){
+			$this->credits->add_percent(10, "golden_age");
+			$this->research->add_percent(10, "golden_age");
+			$this->food->add_percent(10, "golden_age");
+		}
+		//print_r($this->powers);
+		foreach($this->powers as $power){			
+			$power->apply($this);
+		}
+	}
+	
+	// apply any percentage resource modifiers, or other such things which need to be done lastest
+	public function apply(){
+		$this->credits->apply();
+		$this->research->apply();
+		
+	}
+	
+	
+	public function add_property_index($key, $value){
+		if (!isset($this->property_index[$key])){
+			$this->property_index[$key] = [];
+		}
+		if (!isset($this->property_index[$key][$value])){
+			$this->property_index[$key][$value] = [];
+		}
+		$this->property_index[$key][$value] = $value;
+	}
+	
+	public function has_property_index($key, $value){
+		if (isset($this->property_index[$key][$value])){
+			return true;
+		}
+		return false;
 	}
 	
 	public function apply_resource_modifiers(){
-		$research_bonus = ceil($this->research_modifier * $this->research_per_turn);
-		$this->update_resource("research", $research_bonus, "powers");		
-		$credits_bonus = ceil($this->credits_modifier * $this->credits_per_turn);
-		$this->update_resource("credits", $credits_bonus, "powers");
+		//$research_bonus = ceil($this->research_modifier * $this->research_per_turn);
+		//$this->update_resource("research", $research_bonus, "powers");		
+		//$credits_bonus = ceil($this->credits_modifier * $this->credits_per_turn);
+		//$this->update_resource("credits", $credits_bonus, "powers");
 	}
+	
+	
 	
 	public function update_resource($type, $value, $source=""){
 		if ($source ==""){
@@ -243,11 +339,11 @@ class VOID_PLAYER {
 			$this->sources[$type][$source] = 0;
 		}
 		if ($type == "credits"){			
-			$this->credits_per_turn = $this->credits_per_turn + $value;				
+			$this->credits->add_per_turn($value, $source);				
 		}else if ($type == "research"){
-			$this->research_per_turn = $this->research_per_turn + $value;
+			$this->research->add_per_turn($value, $source);	
 		}else if ($type == "morale"){
-			$this->morale = $this->morale + $value;
+			$this->morale->add_per_turn($value, $source);
 		}else {
 			return false;
 		}
@@ -258,8 +354,13 @@ class VOID_PLAYER {
 	public function reset_per_turn(){
 		$this->credits_per_turn = 0;
 		$this->research_per_turn = 0;
-		$this->morale = 0;
-		$this->combat_zones = [];		
+		$this->morale->reset();
+		$this->combat_zones = [];
+		$this->credits->reset();
+		$this->research->reset();
+		$this->food->reset();
+		$this->influence->reset();
+		$this->command = 3;
 	}
 	
 	public function set_color($color){
@@ -282,7 +383,7 @@ class VOID_PLAYER {
 	public function update_research($tech_tree){
 		if ($this->current_tech){
 			
-			$this->current_tech->progress = $this->current_tech->progress - $this->research_per_turn;
+			$this->current_tech->progress = $this->current_tech->progress - $this->research->per_turn;
 			if ($this->current_tech->progress <= 0){
 				VOID_LOG::write($this->id, "[research] Research has completed on ".$this->current_tech->class->name);
 				
@@ -325,10 +426,10 @@ class VOID_PLAYER {
 	
 	public function add_new_power($tech){
 		foreach($tech->power_classes as $power){
-			if (!isset($this->powers[$power->type])){
-				$this->powers[$power->type] = [];
+			if (!isset($this->powers)){
+				$this->powers = [];
 			}
-			$this->powers[$power->type][$power->id] = $power;
+			$this->powers[$power->id] = $power;
 			$power->apply($this);
 		}
 	}
@@ -398,7 +499,7 @@ class VOID_PLAYER {
 	}
 	
 	public function update_morale($morale){		
-		$this->morale = $morale;
+		$this->morale->per_turn = $morale;
 	}
 	public function apply_morale($morale, $source=""){
 		$this->update_resource("morale", $morale, $source);		
@@ -406,6 +507,9 @@ class VOID_PLAYER {
 	
 	public function add_met_player($player_id){
 		if (isset($this->met_players[$player_id])){
+			return false;
+		}
+		if ($player_id == $this->id){
 			return false;
 		}
 		$this->met_players[$player_id] = $player_id;
@@ -419,13 +523,27 @@ class VOID_PLAYER {
 		return false;
 	}
 	
+	// function to determine if a player can enter this players controlled space or not
+	public function allow_entry($player){
+		if ($this->is_at_war($player->id)){
+			return true;
+		}
+		// always allowed in your own space !
+		if ($this->id == $player->id){
+			return true;
+		}
+		return false;
+	}
+	
 	
 	public function declare_war($player){
 		if (!$this->is_at_war($player->id)){
 			$this->relationships[$player->id]['state'] = "war";
 			$player->relationships[$this->id]['state'] = "war";
-			VOID_LOG::write($this->id, "[diplomacy] You have declared war on ".$player->name);
-			VOID_LOG::write($player->id, "[diplomacy] ".$player->name." has declared war on you");
+			if ($player->player && $this->player){
+				VOID_LOG::write($this->id, "[diplomacy] You have declared war on ".$player->name);
+				VOID_LOG::write($player->id, "[diplomacy] ".$player->name." has declared war on you");
+			}
 		}
 	}
 	

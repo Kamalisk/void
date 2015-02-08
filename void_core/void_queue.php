@@ -83,8 +83,8 @@ class VOID_QUEUE_ITEM {
 	
 	function purchase($player){
 		
-		if ($player->credits_pool >= $this->data->rush_cost){			
-			$player->credits_pool = $player->credits_pool - $this->data->rush_cost;
+		if ($player->credits->pool >= $this->data->rush_cost){			
+			$player->credits->pool = $player->credits->pool - $this->data->rush_cost;
 			$this->purchased = true;
 		}
 	}

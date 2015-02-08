@@ -7,6 +7,80 @@ include_once("void_core/void_core.php");
 
 $game_id = 1;
 
+session_start();
+
+$user = new VOID_USER();
+
+if (isset($_GET['action']) && $_GET['action'] == "auth"){	
+	// check if the player is authed.
+	header("Content-type: application/json");
+	$return = [];
+	if ($user->is_authed()){
+		$return['user'] = $user;
+	}
+	echo json_encode($return, JSON_NUMERIC_CHECK);
+	exit();
+}
+if (isset($_POST['action']) && $_POST['action'] == "auth"){	
+	
+	if ($user->auth($_POST['username'], $_POST['password'])){	
+		// auth the player
+		header("Content-type: application/json");
+		$return['user'] = $user;	
+		echo json_encode($return, JSON_NUMERIC_CHECK);
+		exit();
+	}
+}
+if (isset($_POST['action']) && $_POST['action'] == "auth_end"){	
+	
+	$user->unauth();
+	// auth the player
+	header("Content-type: application/json");
+	$return = [];	
+	echo json_encode($return, JSON_NUMERIC_CHECK);
+	exit();
+}
+
+session_write_close();
+// should not pass this point without being a valid user
+
+
+if (!$user->is_authed()){
+	return;
+}
+
+if (isset($_GET['action']) && $_GET['action'] == "list_games"){	
+		
+	// auth the player
+	header("Content-type: application/json");
+	$return = [];
+	$return['games'] = $user->get_games();	
+	echo json_encode($return, JSON_NUMERIC_CHECK);
+	exit();
+}
+
+
+if (isset($_POST['action']) && $_POST['action'] == "join_game"){	
+	$game_id = $_POST['game_id'];
+	$user->join_game($game_id+0);
+	/*
+	// auth the player
+	header("Content-type: application/json");
+	$return = [];	
+	$return['game_id'] = $game_id+0;
+	echo json_encode($return, JSON_NUMERIC_CHECK);
+	exit();
+	*/
+}
+
+// one branch for portal
+
+// one branch for games if game_id is set 
+
+if (!$user->is_valid_game($game_id)){
+	return;
+}
+
 //$_POST = $_GET;	
 if (isset($_GET['action']) && ($_GET['action'] == "reset" || $_GET['action'] == "start") ){
 	$_POST = $_GET;	
@@ -24,20 +98,24 @@ try {
 	// load the game object from storage
 	$void = load($game_id);
 	
+	$player_id = 0;
+	
+	if ($user->is_authed()){
+		$player_id = $user->id;
+	}
+	
 	if (isset($_GET['player_id'])){
-		$player_id = $_GET['player_id'];
+		//$player_id = $_GET['player_id'];
 	}else {
 		if ($void->state != "lobby"){
 			//return false;
-		}
-		$player_id = 0;
+		}		
 	}
-	
 	
 	
 	if (isset($_POST['action'])){
 		
-		$return = $void->handle_input($_POST, $player_id);
+		$return = $void->handle_input($_POST, $player_id, $user);
 		
 		if ($return){
 			$player_id = $return;			
