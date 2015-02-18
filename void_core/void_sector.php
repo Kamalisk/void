@@ -199,6 +199,7 @@ class VOID_SECTOR {
 	public $upgrade;
 	public $ruin;
 	
+	
 	function __construct($x, $z){
 		$this->x = $x;
 		$this->z = $z;
@@ -395,18 +396,35 @@ class VOID_SECTOR {
 	}
 	
 	public function add_fleet($fleet){
+		// need to add an "in-lieu" state to buffer fleets.
+		// once movement is over, move fleets into the correct sector
+		
 		if (count($this->fleets) > 0){
-			return false;
+			if (isset($this->fleets['lieu'])){
+				throw new Exception("CANNOT HAVE 2 FLEETS IN LIEU");
+			}
+			$this->fleets['lieu'] = $fleet;
+		}else {
+			$this->fleets[$fleet->owner->id][$fleet->id] = $fleet;
 		}
 		$fleet->x = $this->x;
 		$fleet->z = $this->z;
 		
 		if (isset($this->fleets[$fleet->owner->id]) && count($this->fleets[$fleet->owner->id]) > 0){
-			$fleet->in_transit = true;
+			//$fleet->in_transit = true;
 		}
-		$this->fleets[$fleet->owner->id][$fleet->id] = $fleet;
+		
 		return true;
 	}
+	
+	public function resolve_lieu(){
+		// move fleets from limbo into this sector
+		if (isset($this->fleets['lieu'])){
+			$this->fleets[$this->fleets['lieu']->owner->id][$this->fleets['lieu']->id] = $this->fleets['lieu'];
+			unset($this->fleets['lieu']);
+		}
+	}
+	
 	public function remove_fleet($fleet){
 		
 		//VOID_LOG::write($fleet->owner, print_r($this->fleets, 1) );

@@ -243,6 +243,13 @@ class VOID_PLAYER {
 		$this->morale = new VOID_RESOURCE("morale");
 		$this->influence = new VOID_RESOURCE("influence");
 		
+		$this->tech_traits['military'] = 0;
+		$this->tech_traits['culture'] = 0;
+		$this->tech_traits['science'] = 0;
+		$this->tech_traits['commerce'] = 0;
+		$this->tech_traits['industry'] = 0;
+		$this->tech_traits['agriculture'] = 0;
+		
 		$this->command = 3;
 	}
 	

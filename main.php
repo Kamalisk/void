@@ -6,7 +6,9 @@ ini_set("memory_limit","274217728");
 include_once("void_core/void_core.php");
 
 $game_id = 1;
-
+if (isset($_GET['game_id'])){
+	$game_id = $_GET['game_id']+0;
+}
 session_start();
 
 $user = new VOID_USER();
@@ -54,11 +56,24 @@ if (isset($_GET['action']) && $_GET['action'] == "list_games"){
 	// auth the player
 	header("Content-type: application/json");
 	$return = [];
-	$return['games'] = $user->get_games();	
+	$return['games'] = $user->get_games();
+	$return['your_games'] = $user->get_own_games();
 	echo json_encode($return, JSON_NUMERIC_CHECK);
 	exit();
 }
 
+if (isset($_POST['action']) && $_POST['action'] == "create_game"){	
+	$game_id = $user->create_game($_POST['name']);
+	if ($game_id){
+		mkdir("games/".$game_id."/");
+	}
+	// auth the player
+	header("Content-type: application/json");
+	$return = [];		
+	echo json_encode($return, JSON_NUMERIC_CHECK);
+	exit();
+	
+}
 
 if (isset($_POST['action']) && $_POST['action'] == "join_game"){	
 	$game_id = $_POST['game_id'];
@@ -89,13 +104,14 @@ if (isset($_GET['action']) && ($_GET['action'] == "reset" || $_GET['action'] == 
 if (isset($_POST['action'])){
 	// need to get a lock before continuing
 	$fp = fopen("games/".$game_id."/lock.void", "w");
-	while (!flock($fp, LOCK_EX)) {  
+	while (!flock($fp, LOCK_EX)) {
 	   sleep(1);
 	}
 }
 
 try {
 	// load the game object from storage
+
 	$void = load($game_id);
 	
 	$player_id = 0;

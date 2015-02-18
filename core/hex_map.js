@@ -779,7 +779,8 @@ function draw_map(map_id, first, custom_offset){
 			var coords = hex_to_pixel(hex, offset);
 			hex.pixel_x = coords.x;
 			hex.pixel_y = coords.y;
-			draw_hex_border(canvas_objects, hex.pixel_x, hex.pixel_y, value, "orange", 5);			
+			draw_hex_border(canvas_objects, hex.pixel_x, hex.pixel_y, value, "red", 10);
+			console.log(player.combat_zones);
 		});
 	}
 	
@@ -839,7 +840,7 @@ function draw_map_tile(canvas, map_tile, small){
 				});
 			}						
 			if (map_tile.ruin){
-				console.log("drawing ruin");
+				//console.log("drawing ruin");
 				$(canvas).drawImage({
 				  source: image_cache['ruin'],
 				  x: x, y: y+28

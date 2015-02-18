@@ -104,8 +104,9 @@ class VOID {
 		$this->game_path = "games/".$this->game_id."/";
 		if (!file_exists($this->game_path)){
 			mkdir($this->game_path);
-		}
-		
+		}		
+		$this->post_load();
+		$this->setup();
 	}
 	
 	public function post_load(){
@@ -278,7 +279,7 @@ class VOID {
 			foreach($this->lobby->players as $player){
 				$return['players'][$player->id] = $player->dump($player_id);
 			}
-			if ($player_id && isset($this->lobby->players[$player_id])){				
+			if ($player_id && isset($this->lobby->players[$player_id])){
 				$return['player'] = $this->lobby->players[$player_id];
 			}
 			$return['races'] = $this->races;
@@ -288,6 +289,7 @@ class VOID {
 			$return['game_id'] = $this->game_id;
 			$return['players'] = [];
 			$return['state'] = $this->state;
+			
 			foreach($this->players as $player){
 				$return['players'][$player->id] = $player->dump($player_id);
 			}
@@ -391,6 +393,7 @@ class VOID {
 			$shooty = [];
 			$hitty = [];
 			$collisions = [];
+			$stalemates = [];
 			$fleets_to_check = [];
 			foreach($temp_fleets_with_orders as $fleet){
 				// for now lets go with one fleet per sector and see what happens
@@ -403,7 +406,7 @@ class VOID {
 					if ($sector1 && $sector2){												
 						// check if an enemy is there to attack
 						$enemy_fleet = $sector2->get_fleet();
-						if ($enemy_fleet){
+						if ($enemy_fleet && $enemy_fleet->owner->id != $fleet->owner->id){
 							$shooty[] = ["shooter"=>$fleet, "target"=>$enemy_fleet];
 							if (!isset($hitty[$enemy_fleet->id])){
 								$hitty[$enemy_fleet->id] = [];
@@ -412,8 +415,14 @@ class VOID {
 							$fleets_to_check[] = $fleet;
 							$fleets_to_check[] = $enemy_fleet;
 							$fleet->reset_orders();
+						}else if ($enemy_fleet){
+							$collisions[] = $fleet;
+						}else {
+							// if no enemy fleet, add to collision check
+							$stalemates[$sector2->id][] = $fleet;
+							
+							
 						}
-						$collisions[$sector2->id][] = $fleet;						
 					}
 				}				
 			}												
@@ -422,7 +431,7 @@ class VOID {
 			foreach($shooty as $shoot){
 				$shoot['shooter']->fire($shoot['target']);				
 				// if ship was told to shoot. ignore retaliation.
-				unset($hitty[$shoot['shooter']->id]);
+				//unset($hitty[$shoot['shooter']->id]);
 				$sector1 = $this->map->get_sector($shoot['shooter']->x, $shoot['shooter']->z);
 				$sector2 = $this->map->get_sector($shoot['target']->x, $shoot['target']->z);
 				$this->players[$shoot['shooter']->owner->id]->combat_zones[$sector1->id] = $sector1->get_direction($sector2, $this);	
@@ -443,20 +452,51 @@ class VOID {
 					$fleet->reset_orders();
 				}
 			}
-									
-			foreach($collisions as $sector_id => $fleets){
-				if (count($fleets) > 1){
-					foreach($fleets as $fleet){
-						VOID_LOG::write($fleet->owner, "[movement] Fleet collided with another fleet");
-						$fleet->reset_orders();	
+			
+			
+			foreach($stalemates as $sector){
+				if (count($sector) > 1){
+					VOID_LOG::write($fleet->owner->id, "[movement] Several fleets tried to enter the same sector");
+					foreach($sector as $fleet){						
+						$fleet->reset_orders();
 					}
-				}				
+				}
+			}
+			// for each collision, check to see if that fleets chain of orders is possible 
+			foreach($collisions as $fleet){
+				//print_r($collisions);
+				$starting_fleet = $fleet;
+				// get which order the fleet was trying to do
+				$cancel = false;
+				while ($fleet){
+					$order = $fleet->get_order();
+					if ($order && $order->type == "move" && $fleet->movement_points > 0){
+						$sector2 = $this->map->get_sector($order->x, $order->z);
+						// check the sector it was trying to go to. if the fleet there has an order, no collision possibly 
+						if ($target_fleet = $sector2->get_fleet()){
+							
+							if ($target_fleet && $target_fleet->id != $starting_fleet->id){
+								$fleet = $target_fleet;
+								continue;
+							}
+						}
+					}else {
+						$cancel = true;
+					}
+					$fleet = "";
+					break;
+				}
+				if ($cancel && $starting_fleet){
+					$starting_fleet->reset_orders();
+				}
+				
 			}
 			
+			$check_sectors = [];
 			foreach($temp_fleets_with_orders as $fleet){
 				// do the actual fleet moves
 				$order = $fleet->get_order();
-				if ($order && $order->type == "move" && $fleet->movement_points > 0){					
+				if ($order && $order->type == "move" && $fleet->movement_points > 0){
 					$sector1 = $this->map->get_sector($fleet->x, $fleet->z);
 					$sector2 = $this->map->get_sector($order->x, $order->z);
 					if ($sector1 && $sector2){
@@ -464,6 +504,7 @@ class VOID {
 							$fleet->movement_points = $fleet->movement_points - $sector2->movement_cost;
 							if ($fleet->move($order->x, $order->z, $this)){
 								$fleet->complete_order();
+								$check_sectors[] = $sector2;
 							}else {
 								$fleet->reset_orders();
 								$fleet->movement_points = 0;	
@@ -528,10 +569,14 @@ class VOID {
 				}	
 			}
 			
+			foreach($check_sectors as $sector){
+				$sector->resolve_lieu();
+			}
+			
 			// if fleet moved next to enemy fleet, prevent all further movement
 			foreach($temp_fleets_with_orders as $fleet){
 				$sector1 = $this->map->get_sector($fleet->x, $fleet->z);
-				if ($sector1 && $sector1->is_enemy_adjacent($fleet->owner->id, $this)){
+				if ($sector1 && !isset($shooty[$fleet->id]) && !isset($hitty[$fleet->id]) && $sector1->is_enemy_adjacent($fleet->owner->id, $this)){
 					$fleet->movement_points = 0;
 					VOID_LOG::write($fleet->owner->id, "[movement] Fleet stopped due to enemy contact");
 				}

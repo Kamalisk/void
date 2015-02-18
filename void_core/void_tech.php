@@ -272,6 +272,50 @@ class VOID_TECH_TREE {
 		$this->add_tech($tech);
 
 		
+		
+		$tech = new VOID_TECH(26, "", 3200);
+		$tech->require_trait("military",4);
+		$tech->require_trait("industry",4);
+		$tech->add_trait("military");
+		$tech->set_tier(5);
+		$this->add_tech($tech);
+		
+		$tech = new VOID_TECH(27, "", 3200);		
+		$tech->require_trait("agriculture",4);
+		$tech->require_trait("science",4);
+		$tech->add_trait("agriculture");		
+		$tech->set_tier(5);
+		$this->add_tech($tech);		
+		
+		$tech = new VOID_TECH(28, "", 3200);
+		$tech->require_trait("science",4);
+		$tech->require_trait("culture",4);
+		$tech->add_trait("science");
+		$tech->set_tier(5);
+		$this->add_tech($tech);
+		
+		$tech = new VOID_TECH(29, "", 3200);
+		$tech->require_trait("commerce",4);
+		$tech->require_trait("military",4);
+		$tech->add_trait("commerce");
+		$tech->set_tier(5);
+		$this->add_tech($tech);
+				
+		$tech = new VOID_TECH(30, "", 3200);
+		$tech->require_trait("industry",4);
+		$tech->require_trait("commerce",4);
+		$tech->add_trait("industry");
+		$tech->set_tier(5);
+		$this->add_tech($tech);
+		
+		$tech = new VOID_TECH(31, "", 3200);
+		$tech->require_trait("culture",4);
+		$tech->require_trait("agriculture",4);
+		$tech->add_trait("culture");
+		$tech->set_tier(5);
+		$this->add_tech($tech);
+		
+		
 		//$this->calculate_tier();
 	}
 	

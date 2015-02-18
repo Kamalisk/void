@@ -1,6 +1,18 @@
 <?
 
 
+class VOID_COMBAT_ZONE {
+	
+	public $direction;
+	public $id;
+	
+	function __construct(){
+		
+	}
+}
+
+
+
 class VOID_FLEET {
 	public $x;
 	public $z;
@@ -23,7 +35,8 @@ class VOID_FLEET {
 	
 	public $attack;
 	public $defense;
-	
+	public $health;
+	public $max_health;
 	
 	public $sector;
 	
@@ -67,6 +80,9 @@ class VOID_FLEET {
 	public function update_fleet_stats(){
 		$this->attack = 0;
 		$this->defense = 0;
+		$this->health = 0;
+		$this->max_health = 0;
+		
 		$lowest_movement_points = 0;
 		if (count($this->ships)){			
 			foreach($this->ships as $ship){
@@ -78,6 +94,8 @@ class VOID_FLEET {
 				}
 				$this->attack += $ship->class->attack;
 				$this->defense += $ship->class->defense;
+				$this->max_health += 100;
+				$this->health += $ship->health;
 			}			
 		}
 		$this->movement_capacity = $lowest_movement_points;
@@ -187,7 +205,7 @@ class VOID_FLEET {
 			if (!$ship){
 				unset($this->ships[$key]);
 			}
-			if ($ship->hull <= 0){
+			if ($ship->health <= 0){
 				unset($this->ships[$key]);
 			}
 		}
@@ -280,6 +298,7 @@ class VOID_FLEET {
 	
 	public function fire($enemy_fleet){		
 		// compare attack and defense of fleets
+		// if your attack is higher than defense, you get up to 50% more, or up to 50% less 
 		$modifier = 1;
 		if ($enemy_fleet->defense > 0){
 			if ($this->attack > $enemy_fleet->defense){
@@ -288,12 +307,13 @@ class VOID_FLEET {
 				$modifier = $modifier - (($this->attack / $enemy_fleet->defense) * 0.5);
 			}
 		}
-		$enemy_fleet->hit($this->damage);
+		$enemy_fleet->hit($this->damage * $modifier);
 		VOID_LOG::write($this->owner->id, "[combat] Your fleet has damaged another fleet");
 	}
 	
 	public function hit($damage){
 		// do damage to the ships in the fleet
+		// damage is split equally 
 		$damage = ceil($damage / count($this->ships));
 		foreach($this->ships as $ship){
 			$ship->hit($damage);
@@ -330,6 +350,9 @@ class VOID_FLEET_VIEW extends VOID_VIEW {
 	public $damage;
 	public $attack;
 	public $defense;
+	public $health;
+
+	public $max_health;
 	public $docked;
 	
 	function __construct($fleet, $player_id){
@@ -359,6 +382,9 @@ class VOID_FLEET_VIEW extends VOID_VIEW {
 		
 		$this->attack = $fleet->attack;
 		$this->defense = $fleet->defense;
+		$this->max_health = $fleet->max_health;
+		$this->health = $fleet->health;
+		$this->damage = $fleet->damage;
 		
 	}
 	
@@ -379,6 +405,8 @@ class VOID_SHIP {
 	public $hull;
 	public $shields;
 	
+	public $health;
+	
 	public $damage;
 	
 	function __construct($class, $player){
@@ -386,6 +414,7 @@ class VOID_SHIP {
 		$this->owner = $player;
 		$this->id = void_unique_id();
 		$this->hull = $class->hull;
+		$this->health = 100;
 		$this->shields = $class->shields;
 		$this->damage = $class->damage;
 	}
@@ -408,14 +437,8 @@ class VOID_SHIP {
 		$this->damage($damage);
 	}
 	
-	public function damage($amount){
-		if ($this->shields > 0){
-			$amount = $amount - $this->shields;
-			if ($amount <= 0){
-				return;
-			}
-		}				
-		$this->hull = $this->hull - $amount;
+	public function damage($amount){			
+		$this->health = $this->health - $amount;
 	}
 	
 	public function get_special($special=""){
@@ -450,6 +473,8 @@ class VOID_SHIP_VIEW {
 		//if ($player_id == $this->owner){
 			$this->hull = $ship->hull;
 			$this->shields = $ship->shields;
+			$this->health = $ship->health;
+			$this->max_health = $ship->class->max_health;
 		//}
 		$this->damage = $ship->damage;
 	}
@@ -479,6 +504,7 @@ class VOID_SHIP_CLASS {
 	public $defense;
 	public $ranged_attack;
 	public $hull;
+	public $max_health;
 	
 	// possibly a damage value
 	public $damage;
@@ -499,10 +525,11 @@ class VOID_SHIP_CLASS {
 		$this->movement_capacity = 4;
 		$this->hull = 100;
 		$this->shields = 10;
-		$this->damage = 10;
+		$this->damage = 50;
 		$this->attack = 10;
 		$this->defense = 10;
 		$this->ranged_attack = 10;
+		$this->max_health = 100;
 	}
 	
 	function add_special($special){

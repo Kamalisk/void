@@ -37,27 +37,61 @@
 	<div id="login">
 		<div class="login">
 			<h1>Voidwars Login</h1>
-			<form>
+			<form onsubmit="return false;">
 				<input id="username" type="text" name="username" placeholder="username">
 				<input id="password" type="password" name="password" placeholder="password">
-				<button type="button" onclick="login()">login</button>
+				<button type="submit" onclick="login()">login</button>
 			</form>
 		</div>
 	</div>
 	<div id="portal">
 		<div>
-			<h1>Voidwars Portal</h1>
-			<button type="button" onclick="logout()">Logout</button>
-			<h2>List of games</h2>
-			<ul>
+			<header class="portal_header">
+				<h1>Voidwars Portal</h1>
+				
+				<button type="button" onclick="logout()">Logout</button>
+				<button type="button" onclick="create_game()">Create Game</button>
+			</header>
+			
+			{{#portal.your_games.length > 0}}
+			<h2>Your Games</h2>
+			<table class="portal_list">
+				<tr>
+					<th>Name</th>
+					<th>Created</th>
+					<th>Actions</th>
+				</tr>
+			{{#portal.your_games}}
+				<tr>
+				<td>{{name}}</td>
+				<td></td>
+				<td>{{#state == "lobby" && joinable && !joined}}<button type="button" onclick="join_lobby({{id}})">Join Game</button>{{/}}
+				{{#state == "lobby" && joined}}<button type="button" onclick="join_lobby({{id}})">View Game</button>{{/}}
+				{{#state == "started" && joined}}<button type="button" onclick="play_game({{id}})">Play Game</button>{{/}}
+				</td>
+				</tr>
+			{{/portal.your_games}}
+			</table>
+			{{/portal.your_games > 0}}
+			
+			<h2>Available Games</h2>
+			<table class="portal_list">
+				<tr>
+					<th>Name</th>
+					<th>Created</th>
+					<th>Actions</th>
+				</tr>
 			{{#portal.games}}
-				<li>
-				{{name}}
-				{{#state == "lobby" && valid}}<button type="button" onclick="join_lobby({{id}})">Join Game</button>{{/}}
-				{{#state == "started" && valid}}<button type="button" onclick="play_game({{id}})">Play Game</button>{{/}}
-				</li>
+				<tr>
+				<td>{{name}}</td>
+				<td></td>
+				<td>{{#state == "lobby" && joinable && !joined}}<button type="button" onclick="join_lobby({{id}})">Join Game</button>{{/}}
+				{{#state == "lobby" && joined}}<button type="button" onclick="join_lobby({{id}})">View Game</button>{{/}}
+				{{#state == "started" && joined}}<button type="button" onclick="play_game({{id}})">Play Game</button>{{/}}
+				</td>
+				</tr>
 			{{/portal.games}}
-			</ul>
+			</table>
 		</div>
 	</div>
 	<div id="main_loading">
@@ -286,11 +320,13 @@
 		</div>
 		
 		{{#tech_tree}}
-		<div id="research_view" style="display : none;" class="view">
+		<div id="research_view" style="display : none;" class="view" decorator="custom_scroll">
 			<!-- canvas used to drew line between techs 
 			<canvas id="tech_tree_back" width="800px" height="800px"></canvas>-->
-			<div id="tech_tree_items">
+			<div>
+			<div id="tech_tree_items" >
 				{{>tech_tree_template}}
+			</div>
 			</div>
 		</div>
 		{{/tech_tree}}
@@ -498,6 +534,12 @@
 				{{# category == "research"}}
 				<img src="images/icons/research.png" alt="Research" title="Research">
 				{{/category}}
+				{{# category == "combat"}}
+				<img src="images/icons/influence.png" alt="Generic" title="Generic">
+				{{/category}}
+				{{# category == "movement"}}
+				<img src="images/icons/influence.png" alt="Generic" title="Generic">
+				{{/category}}
 				{{# category == "generic"}}
 				<img src="images/icons/happy.png" alt="Generic" title="Generic">
 				{{/category}}
@@ -515,44 +557,26 @@
 	</script>
 	
 	<script id="tech_tree_template" type="text/ractive">
-		<div>
+		<div class="tech_tree_view">
 			<ul class="tech_traits">
-			<li><img width="16" height="16" src="images/icons/traits/military.png"> {{player.tech_traits.military}}</li>
-			<li><img width="16" height="16" src="images/icons/traits/commerce.png"> {{player.tech_traits.commerce}}</li>
-			<li><img width="16" height="16" src="images/icons/traits/culture.png"> {{player.tech_traits.culture}}</li>
-			<li><img width="16" height="16" src="images/icons/traits/agriculture.png"> {{player.tech_traits.agriculture}}</li>
-			<li><img width="16" height="16" src="images/icons/traits/industry.png"> {{player.tech_traits.industry}}</li>
-			<li><img width="16" height="16" src="images/icons/traits/science.png"> {{player.tech_traits.science}}</li>
+			<li>Research Credits</li>
+			<li><img width="16" height="16" src="images/icons/traits/military.png"> {{player.tech_traits.military}} military</li>
+			<li><img width="16" height="16" src="images/icons/traits/commerce.png"> {{player.tech_traits.commerce}} commerce</li>
+			<li><img width="16" height="16" src="images/icons/traits/culture.png"> {{player.tech_traits.culture}} culture</li>
+			<li><img width="16" height="16" src="images/icons/traits/agriculture.png"> {{player.tech_traits.agriculture}} agriculture</li>
+			<li><img width="16" height="16" src="images/icons/traits/industry.png"> {{player.tech_traits.industry}} industry</li>
+			<li><img width="16" height="16" src="images/icons/traits/science.png"> {{player.tech_traits.science}} science</li>
 			</ul>			
+			<div class="tech_tiers">
 		{{#tiers:key}}
 			<div class="tech_tier tech_tier_{{key}}">
-			<h3>Tier {{key}}</h3>
+			
 			{{#.}}
-				<div class="tech_tree_item {{#.player_has}}researched_tech{{/.player_has}} {{#.player_available}}available_tech{{/.player_available}} tier_{{tier}} tech_{{id}} {{#.player_current}}current_tech{{/.player_current}}" onclick="select_tech({{id}})">
+				<div class="tech_tree_item {{#.player_has}}researched_tech{{/.player_has}} {{#.player_available}}available_tech{{/.player_available}} tier_{{tier}} tech_{{id}} {{#.player_current}}current_tech{{/.player_current}}" onclick="select_tech({{id}})">					
 					<h4>
-					{{#.traits_required:type}}
-					{{# type == "agriculture"}}
-						{{# . > 1}}{{.}}{{/.}}<img width="16" height="16" src="images/icons/traits/agriculture.png">
-					{{/type}}
-					{{# type == "military"}}
-						{{# . > 1}}{{.}}{{/.}}<img width="16" height="16" src="images/icons/traits/military.png">
-					{{/.}}
-					{{# type == "culture"}}
-						{{# . > 1}}{{.}}{{/.}}<img width="16" height="16" src="images/icons/traits/culture.png">
-					{{/type}}
-					{{# type == "commerce"}}
-						{{# . > 1}}{{.}}{{/.}}<img width="16" height="16" src="images/icons/traits/commerce.png">
-					{{/type}}
-					{{# type == "industry"}}
-						{{# . > 1}}{{.}}{{/.}}<img width="16" height="16" src="images/icons/traits/industry.png">
-					{{/type}}
-					{{# type == "science"}}
-						{{# . > 1}}{{.}}{{/.}}<img width="16" height="16" src="images/icons/traits/science.png">
-					{{/type}}
-					{{/.traits_required}}					
-					{{name}}
 					
-					[{{id}}]
+					{{name}}
+					{{^name}}Tech {{id}}{{/name}}
 					</h4>
 					<!--
 					{{#.player_available}}
@@ -570,6 +594,33 @@
 					{{/.player_available}}			
 					-->
 					
+					{{#traits_required}}
+					
+					<div class="traits_required">
+					Requires: {{#traits_required:type}}
+					{{# type == "agriculture"}}
+						{{# . > 1}}{{.}}{{/.}} <img title="agriculture" width="16" height="16" src="images/icons/traits/agriculture.png">
+					{{/type}}
+					{{# type == "military"}}
+						{{# . > 1}}{{.}}{{/.}} <img title="military" width="16" height="16" src="images/icons/traits/military.png">
+					{{/.}}
+					{{# type == "culture"}}
+						{{# . > 1}}{{.}}{{/.}} <img title="culture" width="16" height="16" src="images/icons/traits/culture.png">
+					{{/type}}
+					{{# type == "commerce"}}
+						{{# . > 1}}{{.}}{{/.}} <img title="commerce" width="16" height="16" src="images/icons/traits/commerce.png">
+					{{/type}}
+					{{# type == "industry"}}
+						{{# . > 1}}{{.}}{{/.}} <img title="industry" width="16" height="16" src="images/icons/traits/industry.png">
+					{{/type}}
+					{{# type == "science"}}
+						{{# . > 1}}{{.}}{{/.}} <img title="science" width="16" height="16" src="images/icons/traits/science.png">
+					{{/type}}
+					{{/traits_required}}	
+					
+					</div>
+					{{/traits_required}}
+					
 					<div class="tech_rewards">										
 					{{#ship_classes}}
 					<span decorator="tooltip" data-decorator="ship-class-tooltip-{{id}}"><img width="16" height="16" src="images/ship.png"> {{name}}</span>
@@ -582,82 +633,106 @@
 					{{/power_classes}}
 					{{#upgrade_classes}}
 					<span decorator="tooltip" data-decorator="upgrade-class-tooltip-{{id}}"><img width="16" height="16" src="images/power.png"> {{name}}</span>
-					{{/upgrade_classes}}					
-					</div>
-					<div class="traits_given">
+					{{/upgrade_classes}}
 					{{#.traits_given:type}}
 					{{# type == "agriculture"}}
-						<img width="16" height="16" src="images/icons/traits/agriculture.png">
+						<span><img width="16" height="16" src="images/icons/traits/agriculture.png"> 1 Agriculture credit</span>
 					{{/type}}
 					{{# type == "military"}}
-						<img width="16" height="16" src="images/icons/traits/military.png">
+						<span><img width="16" height="16" src="images/icons/traits/military.png"> 1 Military credit</span>
 					{{/.}}
 					{{# type == "culture"}}
-						<img width="16" height="16" src="images/icons/traits/culture.png">
+						<span><img width="16" height="16" src="images/icons/traits/culture.png"> 1 Culture credit</span>
 					{{/type}}
 					{{# type == "commerce"}}
-						<img width="16" height="16" src="images/icons/traits/commerce.png">
+						<span><img width="16" height="16" src="images/icons/traits/commerce.png"> 1 Commerce credit</span>
 					{{/type}}
 					{{# type == "industry"}}
-						<img width="16" height="16" src="images/icons/traits/industry.png">
+						<span><img width="16" height="16" src="images/icons/traits/industry.png"> 1 Industry credit</span>
 					{{/type}}
 					{{# type == "science"}}
-						<img width="16" height="16" src="images/icons/traits/science.png">
+						<span><img width="16" height="16" src="images/icons/traits/science.png"> 1 Science credit</span>
 					{{/type}}
 					{{/.traits_given}}
+					</div>
+					<div class="traits_given">
+					
 					</div>
 					
 				</div>
 			{{/.}}
 			</div>
 		{{/tiers}}
-		
+		</div>
 		</div>	
 	</script>
 	
 	
 	<script id="galactic_map_panel_fleet_template" type="text/ractive">		
 		<h3 class="map_panel_header">Your Fleet ({{x}}, {{z}})</h3>
+						
+		<span style="display : inline-block; width : 90%;"><voidprogress class="fleet_health" text="{{health}}" subtext="{{max_health}}" value="{{health}}" max="{{max_health}}"></voidprogress></span>
+		Attack: {{attack}}
+		Defense: {{defense}}
+		Damage : {{damage}}
 		<h4>Ships</h4>
 		{{#ships.length > 0}}			
-			<ul>
+			<table>
 			{{#ships}}
-			<li decorator="tooltip" data-decorator="ship-class-tooltip-{{ship_class_cache[class_id].id}}">
-			<img width="16" height="16" src="images/ship.png"> {{ship_class_cache[class_id].name}} {{hull}} Damage: {{damage}} </li>	
-			</li>
+			<tr>
+			
+			<td decorator="tooltip" data-decorator="ship-class-tooltip-{{ship_class_cache[class_id].id}}">
+			<img width="16" height="16" src="images/ship.png"> {{ship_class_cache[class_id].name}} 
+			</td>
+			<td>	
+			<span style="display : inline-block; width : 100px;"><voidprogress class="ship_health" text="{{health}}" subtext="{{max_health}}" value="{{health}}" max="{{max_health}}"></voidprogress></span>
+			</td>
+			</tr>
+			
 			{{/ships}}
-			</ul>
+			</table>
 		{{/ships.length > 0}}
 		{{^ships}}
 			None
 		{{/ships}}
 		
 		<h4>Actions</h4>
-		<p>
-		<button type="button" title="Move Fleet"  onclick="start_fleet_order_mode('{{id}}')"><img src="images/move.png"></button>
-		<button type="button" title="Fleet Managements" onclick="start_fleet_management()"><img src="images/logistics.png"></button>
-		<button type="button" title="colonise" onclick="add_fleet_colonise_order_dialog()"><img src="images/colonise.png"></button>
-		<button type="button" title="Construct" onclick="add_fleet_construct_order_dialog()"><img src="images/construct.png"></button>
-		<button type="button" title="Attack" onclick=""><img src="images/attack.png"></button>
-		<button type="button" title="Assault" onclick=""><img src="images/assault.png"></button>
-		<button type="button" title="Siege" onclick="add_fleet_siege_order()"><img src="images/siege.png"></button>
+		<p class="fleet_actions">
+		<button type="button" title="Move Fleet"  onclick="start_fleet_order_mode('{{id}}')"><img src="images/move.png"> Move</button>
+		<button type="button" title="Fleet Managements" onclick="start_fleet_management()"><img src="images/logistics.png"> Manage</button>
+		<button type="button" title="colonise" onclick="add_fleet_colonise_order_dialog()"><img src="images/colonise.png"> Colonise</button>
+		<button type="button" title="Construct" onclick="add_fleet_construct_order_dialog()"><img src="images/construct.png"> Construct</button>
+		<button type="button" title="Attack" onclick=""><img src="images/attack.png"> Attack</button>
+		<button type="button" title="Assault" onclick=""><img src="images/assault.png"> Assault</button>
+		<button type="button" title="Siege" onclick="add_fleet_siege_order()"><img src="images/siege.png"> Siege</button>
 		
-		<button type="button" title="Cancel All Orders" onclick="cancel_fleet_orders()"><img src="images/cancel.png"></button>
+		<button type="button" title="Cancel All Orders" onclick="cancel_fleet_orders()"><img src="images/cancel.png"> Cancel</button>
 		</p>
 		
 	</script>
 	
 	<script id="galactic_map_panel_enemy_fleet_template" type="text/ractive">		
 		<h3 class="map_panel_header">Enemy Fleet ({{x}}, {{z}})</h3>
+		<span style="display : inline-block; width : 90%;"><voidprogress class="fleet_health" text="{{health}}" subtext="{{max_health}}" value="{{health}}" max="{{max_health}}"></voidprogress></span>
+		Attack: {{attack}}
+		Defense: {{defense}}
+		Damage : {{damage}}
 		<h4>Ships</h4>
 		{{#ships.length > 0}}			
-			<ul>
+			<table>
 			{{#ships}}
-			<li decorator="tooltip" data-decorator="ship-class-tooltip-{{class.id}}">
-			{{class.name}} (Shields: {{shields}} Hull: {{hull}} Damage: {{damage}} )</li>	
-			</li>
+			<tr>
+			
+			<td decorator="tooltip" data-decorator="ship-class-tooltip-{{ship_class_cache[class_id].id}}">
+			<img width="16" height="16" src="images/ship.png"> {{ship_class_cache[class_id].name}} 
+			</td>
+			<td>	
+			<span style="display : inline-block; width : 100px;"><voidprogress class="ship_health" text="{{health}}" subtext="{{max_health}}" value="{{health}}" max="{{max_health}}"></voidprogress></span>
+			</td>
+			</tr>
+			
 			{{/ships}}
-			</ul>
+			</table>
 		{{/ships.length > 0}}
 		{{^ships}}
 			None
@@ -849,6 +924,10 @@
 	<script id="combat_comparison_template" type="text/ractive">
 		<p style="color : red;">Damage done to you: {{incoming}}</p> 
 		<p style="color : green;">Damage done to them: {{outgoing}}</p> 
+		{{your_attack}}
+		{{enemy_attack}}
+		{{your_defense}}
+		{{enemy_defense}}
 	</script>
 	
 	<script id="planet_template" type="text/ractive">
@@ -867,11 +946,12 @@
 	<script id="ship_class_template" type="text/ractive">			
 			<h4>{{name}}</h4>
 			<table class="ship_class">			
+				<tr><th>Attack</th> <td>{{attack}}</td></tr>
+				<tr><th>Defense</th> <td>{{defense}}</td></tr>
 				<tr><th>Damage</th> <td>{{damage}}</td></tr>				
+				<tr><th>Health</th> <td>{{max_health}}</td></tr>
 				<tr><th>Special</th> <td>{{#special:key}}{{.}}{{/special}}</td></tr>
-				<tr><th>Movement</th> <td>{{movement_capacity}}</td></tr>
-				<tr><th>Hull</th> <td>{{hull}}</td></tr>
-				<tr><th>Shields</th> <td>{{shields}}</td></tr>
+				<tr><th>Movement</th> <td>{{movement_capacity}}</td></tr>				
 				<tr><th>Production</th> <td>{{work_required}}</td></tr>
 			</table>
 	</script>

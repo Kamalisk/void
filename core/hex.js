@@ -96,7 +96,7 @@ function get_path_between_hexes(hexA, hexB, cost_threshold){
 	hex1.h = 0;
 	// add start space to open list
 	open_list['x'+hex1.x+'z'+hex1.z] = hex1;
-	console.log(cost_threshold);
+	//console.log(cost_threshold);
 	if (hex2.movement_cost > cost_threshold || hex2.fleets){			
 		return false;
 	}

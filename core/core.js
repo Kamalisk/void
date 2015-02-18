@@ -290,6 +290,7 @@ function show_portal(){
 			if (data && data.games){
 				// get list of games from portal
 				void_view.set("portal.games", data.games);
+				void_view.set("portal.your_games", data.your_games);
 			}
 		});
 	}, 1000);
@@ -302,6 +303,17 @@ function join_lobby(id){
 	$.post("main.php",{
 		"action":"join_game",
 		"game_id": id
+	},function(data){
+		if (data && data.players){
+			window.location = "?game_id="+data.game_id;
+		}
+	});
+}
+
+function create_game(){
+	$.post("main.php",{
+		"action":"create_game",
+		"name": window.prompt
 	},function(data){
 		if (data && data.players){
 			window.location = "?game_id="+data.game_id;
@@ -979,6 +991,29 @@ function show_combat_comparison(fleet1, fleet2){
 	var combat_comparison = {};
 	combat_comparison.outgoing = fleet1.damage;
 	combat_comparison.incoming = fleet2.damage;
+	
+	combat_comparison.your_attack = fleet1.attack;
+	combat_comparison.enemy_attack = fleet2.attack;
+	
+	combat_comparison.your_defense = fleet1.defense;
+	combat_comparison.enemy_defense = fleet2.defense;
+	
+	var your_modifier = 1;
+	if (fleet1.attack > fleet2.defense){
+		your_modifier = your_modifier + ((fleet2.defense / fleet1.attack) * 0.5);
+	}else {
+		your_modifier = your_modifier - ((fleet1.attack / fleet2.defense) * 0.5);
+	}
+	var enemy_modifier = 1;
+	if (fleet2.attack > fleet1.defense){
+		enemy_modifier = your_modifier + ((fleet1.defense / fleet2.attack) * 0.5);
+	}else {
+		enemy_modifier = your_modifier - ((fleet2.attack / fleet1.defense) * 0.5);
+	}
+	
+	combat_comparison.outgoing = combat_comparison.outgoing * your_modifier;
+	combat_comparison.incoming = combat_comparison.incoming * enemy_modifier;
+	
 	void_view.set("combat_comparison", combat_comparison)
 }
 function hide_combat_comparison(){
@@ -1200,7 +1235,7 @@ function click_to_hex(x, y, param, event){
 }
 
 function start_game(){
-	$.post("main.php",{"action":"start"},handle_start_game);
+	$.post("main.php"+location.search,{"action":"start"},handle_start_game);
 }
 function handle_start_game(data){
 	window.location = "main.html?game_id="+data.game_id;

@@ -25,6 +25,7 @@ body {
 	color : #afafaf;
 	line-height : 1.2;
 	vertical-align : center;
+	margin : 0;
 }
 
 img {
@@ -709,10 +710,31 @@ div.window_control .close_window {
 
 /* research view */
 
+#research_view {
+	background-color: rgba(40, 40, 40, 0.95);	
+	overflow : hidden;
+}
+
+.tech_traits {
+	margin : auto;
+	width : 400px;
+	position : fixed;
+	background-color : black;
+	padding : 0.4em;
+	border-radius : 5px;
+	width : 100%;
+	text-align : center;
+	z-index : 50;
+}
+
 .tech_traits li {
 	display : inline-block;
 	padding : 0.4em;
 	background-color : rgba(90, 90, 90, 0.4);
+}
+
+#tech_tree_items {
+	
 }
 
 .tech_tree_item {
@@ -720,9 +742,10 @@ div.window_control .close_window {
 	display : inline-block;
 	border : solid rgba(70, 70, 70, 0.5) 2px;
 	border-radius : 3px;
-	width : 250px;
-	min-height : 70px;
+	width : 230px;
+	min-height : 30px;
 	margin-bottom : 1em;
+	position : relative;
 }
 .tech_tree_item h4 {
 	background-color : rgba(200, 200, 200, 0.5);
@@ -738,13 +761,40 @@ div.window_control .close_window {
 	padding : 0.4em;
 }
 .tech_rewards span {
-	display : inline-block;
+	display : block;
 	padding : 0.1em;
 }
 
-.tech_tier {
-	
+
+.tech_tiers {
+	padding-top : 40px;
 }
+
+@media (min-width: 550px) {
+	.tech_tier {
+		width : 550px;
+	}
+}
+
+@media (min-width: 790px) {
+	.tech_tier {
+		width : 790px;
+	}
+}
+
+@media (min-width: 1430px) {
+	.tech_tier {
+		width : 1430px;
+	}
+}
+
+
+.tech_tier {
+	margin : auto;	
+	padding : 2px;	
+	margin-bottom : 5px;	
+}
+
 
 .tech_tier_0 {
 	display : none;
@@ -752,6 +802,7 @@ div.window_control .close_window {
 .tech_tree_item {
 	height : 100px;
 	vertical-align: top;
+	
 }
 
 .available_tech {
@@ -767,8 +818,19 @@ div.window_control .close_window {
 	background-color : rgba(50, 200, 40, 0.3);
 }
 
+.traits_required {
+	border-bottom : dashed 1px grey;
+	text-align : right;
+	font-weight : bold;
+	padding : 1px;
+}
+
 .traits_given {
-	text-align : right;		
+	text-align : right;
+	position : absolute;
+	bottom : 2px;
+	right : 2px;
+	
 }
 
 /* resources */
@@ -876,6 +938,22 @@ div.window_control .close_window {
 
 /* fleet management */
 
+#galactic_map_panel_fleet {
+	
+}
+
+.fleet_actions {
+	vertical-align : top;
+}
+.fleet_actions button {
+	width : 100px;
+}
+.fleet_actions button img {
+	width : 20px;
+	height : 20px;
+	float : left;
+}
+
 .fleet_management_fleet {
 	min-height : 150px;
 	border : solid grey 1px;
@@ -941,6 +1019,46 @@ div.window_control .close_window {
 	width : 100%;
 }
 
+/* portal */
+
+.portal {
+	
+}
+.portal_header {
+	background-color : black;
+	margin : 0;
+	padding : 0.5em;
+}
+.portal_header button {
+	float : right;
+}
+.portal_header h1 {
+	display : inline-block;
+}
+
+#portal h2 {
+	background-color : rgba(70, 70, 70, 0.5);
+	padding : 0.1em;
+}
+
+table.portal_list {
+	width : 50%;
+	border-collapse: collapse; 
+	border-spacing: 0;
+	text-align : right;
+}
+
+table.portal_list th {
+	background-color : rgba(90, 90, 90, 0.1);
+}
+
+table.portal_list td {
+	padding : 0.5em;
+}
+
+table.portal_list tr:hover td {
+	background-color : rgba(120, 120, 110, 0.1);
+}
 
 /*lobby*/
 

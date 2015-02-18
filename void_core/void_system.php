@@ -564,6 +564,9 @@ class VOID_SYSTEM {
 		if (!$this->owner){
 			$this->population = 1;
 			$this->influence_level = 1;
+			$this->owner = $owner;
+			$structure = new VOID_STRUCTURE($core->structure_classes["colony_hub"]);
+			$this->add_structure($structure);
 		}else {
 			if (!$this->owner->has_property_index("terraformable", $planet->class['id'])){
 				return false;
@@ -571,7 +574,7 @@ class VOID_SYSTEM {
 		}
 						
 		$planet->colonise();
-		$this->owner = $owner;				
+		$this->owner = $owner;
 				
 		$this->docked_fleet = new VOID_FLEET();
 		$this->docked_fleet->capacity = 10;

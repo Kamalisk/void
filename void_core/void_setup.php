@@ -219,6 +219,19 @@ $tech = $this->tech_tree->get_tech(3);
 $tech->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
 
+
+$structure_class = new VOID_STRUCTURE_CLASS("colony_hub");
+$structure_class->name = "Colony Hub";
+$structure_class->work_required = 0;
+$structure_class->set_modifier("food", "per_population", 1);
+$structure_class->set_modifier("research", "per_population", 1);
+$structure_class->set_modifier("credits", "per_population", 1);
+$structure_class->set_modifier("production", "per_population", 1);
+$structure_class->set_unique("planet");
+$tech = $this->tech_tree->get_tech(1);
+$tech->add_structure_class($structure_class);
+$this->structure_classes[$structure_class->id] = $structure_class;
+
 $structure_class = new VOID_STRUCTURE_CLASS();
 $structure_class->name = "Farm II";
 $structure_class->work_required = 80;
