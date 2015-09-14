@@ -76,6 +76,18 @@ class VOID_MODIFIER {
 				$resource = $scope_target->morale;
 				break;
 			}
+			case "attack":{
+				$scope_target->attack += $value;
+				break;
+			}
+			case "defense":{
+				$scope_target->defense += $value;
+				break;
+			}
+			case "health":{
+				$scope_target->max_health += $value;
+				break;
+			}
 		}
 		
 		if ($resource){

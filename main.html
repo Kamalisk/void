@@ -210,7 +210,38 @@
 	
 	{{#hex_map}}
 	<div id="main_header">
-		<h1 title="Super Special Space Hex Adventure"><img src="images/voidwars_small.png"></h1>
+		
+    
+    <div id="main_status_bar">
+	    <div id="player_resources">
+	    	{{>player_resources_template}}
+	    </div>
+	    <div id="player_status">
+	    	<p>
+	    	{{#player.done}}
+	    	Turn Complete. 
+	    	{{/player.done}}
+	    	{{#waiting_for_players.length > 1}}
+	    	<span decorator="tooltip" data-decorator="waiting_tooltip">Waiting for {{waiting_for_players.length+1}} players</span>    
+	    	{{/waiting_for_players.length > 1}}
+	    	{{#waiting_for_players.length == 1}}
+	    	Waiting for <span style="color : {{waiting_for_players.0.color.border}};">{{waiting_for_players.0.name}}</span>
+	    	{{/waiting_for_players.length == 1}}
+	    	{{^waiting_for_players}}
+	    	Waiting for you
+	    	{{/waiting_for_players}}
+	    	</p>
+	    	<div class="tooltip" id="waiting_tooltip">
+	    	<p>Waiting for:</p>
+	    	<ul>
+	    	{{#waiting_for_players}}
+	    		<li>{{name}}</li>
+	    	{{/waiting_for_players}}
+	    	</ul>
+	    	</div>
+	    </div>
+		</div>
+		
 		<nav class="primary">
 			<ul class="primary_menu">
 		    <!--<li class="active menu_item"><a href="#">Galactic Map</a></li>
@@ -227,33 +258,7 @@
 		  </ul>
 		  
     </nav>
-    <div id="player_resources">
-    	{{>player_resources_template}}
-    </div>
-    <div id="player_status">
-    	<p>
-    	{{#player.done}}
-    	Turn Complete. 
-    	{{/player.done}}
-    	{{#waiting_for_players.length > 1}}
-    	<span decorator="tooltip" data-decorator="waiting_tooltip">Waiting for {{waiting_for_players.length+1}} players</span>    
-    	{{/waiting_for_players.length > 1}}
-    	{{#waiting_for_players.length == 1}}
-    	Waiting for <span style="color : {{waiting_for_players.0.color.border}};">{{waiting_for_players.0.name}}</span>
-    	{{/waiting_for_players.length == 1}}
-    	{{^waiting_for_players}}
-    	Waiting for you
-    	{{/waiting_for_players}}
-    	</p>
-    	<div class="tooltip" id="waiting_tooltip">
-    	<p>Waiting for:</p>
-    	<ul>
-    	{{#waiting_for_players}}
-    		<li>{{name}}</li>
-    	{{/waiting_for_players}}
-    	</ul>
-    	</span>
-    </div>
+		
 	</div>
 	
 	<div id="view_container">
@@ -381,32 +386,15 @@
 	</div>
 	
 	{{#fleet_management}}
-	<div class="dialog">
-		<div class="dialog_body">
-			<div class="dialog_header">
-				<h2> Fleet Management
-				<button class="close_window" onclick="end_fleet_management()">Return to Map</button></h2>				
-			</div>
-			<div id="dialog_content" class="dialog_content">
-				<!-- show all ships in the current fleet and ships in the shipyard -->
-				<div data-fleet="{{fleet_selected.id}}" ondrop="fleet_management_drop(event)" ondragover="event.preventDefault();" class="fleet_management_fleet">
-				<h4>Fleet at {{fleet_selected.x}},{{fleet_selected.z}}</h4>
-				<ul>
-					{{#fleet_selected.ships:key}}
-					<li id="{{id}}" data-fleet="{{fleet_selected.id}}" data-index="{{key}}" ondragstart="fleet_management_drag(event)" draggable="true" class="fleet_management_ship fleet_management_ship_allowed system_view_selector" decorator="tooltip" data-decorator="ship-class-tooltip-{{class_id}}">
-						<img draggable="false" data-fleet="{{fleet_selected.id}}" src="images/ship.png">
-						<h4 draggable="false" data-fleet="{{fleet_selected.id}}">{{ship_class_cache[class_id].name}}</h4>
-					</li>										
-					{{/fleet_selected.ships}}
-				</ul>
-				</div>
-				
-				{{#hex_selected.space_dock}}
-				<div data-fleet="{{hex_selected.space_dock.fleet.id}}" ondrop="fleet_management_drop(event)" ondragover="event.preventDefault();" class="fleet_management_fleet">
+	<div class="dialog" style="width : 100%;">
+		{{#hex_selected.space_dock}}
+				<div data-fleet="{{hex_selected.space_dock.fleet.id}}" ondrop="fleet_management_drop(event)" ondragover="event.preventDefault();" class="fleet_management_fleet fleet_management_dock">
 				<h4>Space Dock</h4>
 				<ul>
 					{{#hex_selected.space_dock.fleet.ships:key}}
-					<li id="{{id}}" data-fleet="{{hex_selected.space_dock.fleet.id}}" data-index="{{key}}" ondragstart="fleet_management_drag(event)" draggable="true" class="fleet_management_ship fleet_management_ship_allowed system_view_selector" decorator="tooltip" data-decorator="ship-class-tooltip-{{class_id}}">
+					<li id="{{id}}" data-fleet="{{hex_selected.space_dock.fleet.id}}" data-index="{{key}}" 
+						ondragstart="fleet_management_drag(event)" draggable="true" 
+						class="{{#!from_fleet || from_fleet == fleet_selected.id}}fleet_management_ship_allowed{{/from_fleet}} fleet_management_ship system_view_selector" decorator="tooltip" data-decorator="ship-class-tooltip-{{class_id}}">
 						<img draggable="false" data-fleet="{{hex_selected.space_dock.fleet.id}}" src="images/ship.png">
 						<h4 draggable="false" data-fleet="{{hex_selected.space_dock.fleet.id}}">{{ship_class_cache[class_id].name}}</h4>						
 					</li>					
@@ -414,22 +402,61 @@
 				</ul>
 				</div>
 				{{/hex_selected.space_dock}}
+		<div>
+			<div class="dialog_header">
+				<h2> Fleet Management
+				<button class="close_window" onclick="end_fleet_management()">Return to Map</button></h2>				
+			</div>
+			<div>
+				
+				<div id="fleet_management_center">
+				<!-- show all ships in the current fleet and ships in the shipyard -->
+				<div data-fleet="{{fleet_selected.id}}" ondrop="fleet_management_drop(event)" ondragover="event.preventDefault();" class="fleet_management_fleet">
+				<h4>Fleet at {{fleet_selected.x}},{{fleet_selected.z}}</h4>
+				<ul>
+					{{#fleet_selected.ships:key}}
+					<li id="{{id}}" data-fleet="{{fleet_selected.id}}" data-index="{{key}}" 
+						ondragstart="fleet_management_drag(event)" draggable="true" 
+						class="{{#!from_fleet || from_fleet == fleet_selected.id}}fleet_management_ship_allowed{{/from_fleet}} fleet_management_ship system_view_selector"  decorator="tooltip" data-decorator="ship-class-tooltip-{{class_id}}">
+						<img draggable="false" data-fleet="{{fleet_selected.id}}" src="images/ship.png">
+						<h4 draggable="false" data-fleet="{{fleet_selected.id}}">{{ship_class_cache[class_id].name}}</h4>
+					</li>										
+					{{/fleet_selected.ships}}
+				</ul>
+				</div>								
+				</div>
+				
+				
 				
 				<!-- show all ships an adjacent sectors -->				
-				{{#fleet_management_hexes}}
-				{{#your_fleets.0}}
-				<div data-fleet="{{your_fleets.0.id}}" ondrop="fleet_management_drop(event)" ondragover="event.preventDefault();" class="fleet_management_fleet">
-				<h4>Adjacent Hex ({{x}}, {{z}})</h4>
-				<ul>
-					{{#your_fleets.0.ships:key}}
-					<li id="{{id}}" data-fleet="{{your_fleets.0.id}}"  data-index="{{key}}" ondragstart="fleet_management_drag(event)" draggable="{{#from_fleet}}true{{/from_fleet}}" class="{{#from_fleet}}fleet_management_ship_allowed{{/from_fleet}} fleet_management_ship system_view_selector" decorator="tooltip" data-decorator="ship-class-tooltip-{{class_id}}">
-						<img draggable="false" data-fleet="{{your_fleets.0.id}}" src="images/ship.png">
-						<h4 draggable="false" data-fleet="{{your_fleets.0.id}}">{{ship_class_cache[class_id].name}}</h4>						
-					</li>							
-					{{/your_fleets.0.ships}}
-				</ul>
-				</div>
-				{{/your_fleets.0}}
+				{{#fleet_management_hexes:i}}				
+					{{#.}}
+						{{^enemy_fleets}}
+							{{#your_fleets.0}}
+							<div data-fleet="{{your_fleets.0.id}}" ondrop="fleet_management_drop(event)" 
+								ondragover="event.preventDefault();" class="fleet_management_fleet fleet_management_fleet_{{i}}">
+							<h4>Adjacent Hex ({{x}}, {{z}})</h4>
+							<ul>
+								{{#your_fleets.0.ships:key}}
+								<li id="{{id}}" data-fleet="{{your_fleets.0.id}}"  data-index="{{key}}" ondragstart="fleet_management_drag(event)" 
+									draggable="{{#!from_fleet || from_fleet == fleet_selected.id}}true{{/from_fleet}}" 
+									class="{{#!from_fleet || from_fleet == fleet_selected.id}}fleet_management_ship_allowed{{/from_fleet}} fleet_management_ship system_view_selector" decorator="tooltip" data-decorator="ship-class-tooltip-{{class_id}}">
+									<img draggable="false" data-fleet="{{your_fleets.0.id}}" src="images/ship.png">
+									<h4 draggable="false" data-fleet="{{your_fleets.0.id}}">{{ship_class_cache[class_id].name}}</h4>						
+								</li>							
+								{{/your_fleets.0.ships}}
+							</ul>
+							</div>
+							{{/your_fleets.0}}
+							{{^your_fleets.0}}
+								<div data-direction="{{i}}" ondrop="fleet_management_drop(event)" 
+									ondragover="event.preventDefault();" class="fleet_management_fleet fleet_management_fleet_{{i}}">
+								<h4>Adjacent Hex ({{x}}, {{z}})</h4>
+								<p>No Fleet</p>
+								</div>
+							{{/your_fleets.0}}
+						{{/enemy_fleets}}
+					{{/.}}
 				{{/fleet_management_hexes}}
 				<!-- drag and drop ships between fleets respecting limits --> 
 			</div>
@@ -524,7 +551,7 @@
 		<div>
 			<ul>
 			{{#player.logs:key}}
-				<li class="event_log_item">
+				<li class="event_log_item" onclick="{{#sector}}show_sector({{x}}, {{z}}){{/sector}}" >				
 				{{# category == "ship"}}
 				<img src="images/icons/production.png" alt="ship" title="ship">
 				{{/category}}
@@ -544,6 +571,8 @@
 				<img src="images/icons/happy.png" alt="Generic" title="Generic">
 				{{/category}}
 				{{text}}
+				{{#sector}}({{x}}, {{z}}){{/sector}}
+				
 				</li>
 			{{/player.logs}}
 			</ul>
@@ -632,7 +661,7 @@
 					<span decorator="tooltip" data-decorator="power-class-tooltip-{{id}}"><img width="16" height="16" src="images/power.png"> {{name}}</span>
 					{{/power_classes}}
 					{{#upgrade_classes}}
-					<span decorator="tooltip" data-decorator="upgrade-class-tooltip-{{id}}"><img width="16" height="16" src="images/power.png"> {{name}}</span>
+					<span decorator="tooltip" data-decorator="upgrade-class-tooltip-{{id}}"><img width="16" height="16" src="images/upgrade.png"> {{name}}</span>
 					{{/upgrade_classes}}
 					{{#.traits_given:type}}
 					{{# type == "agriculture"}}
@@ -671,12 +700,14 @@
 	<script id="galactic_map_panel_fleet_template" type="text/ractive">		
 		<h3 class="map_panel_header">Your Fleet ({{x}}, {{z}})</h3>
 						
-		<span style="display : inline-block; width : 90%;"><voidprogress class="fleet_health" text="{{health}}" subtext="{{max_health}}" value="{{health}}" max="{{max_health}}"></voidprogress></span>
-		Attack: {{attack}}
-		Defense: {{defense}}
-		Damage : {{damage}}
-		<h4>Ships</h4>
-		{{#ships.length > 0}}			
+		{{#ships.length > 0}}
+		<span class="fleet_stats">
+		<span class="void_value">Attack: {{attack}}</span>
+		<span class="void_value">Defense: {{defense}}</span>
+		</span>
+		<span style="display : inline-block; width : 95%; padding : 2px;"><voidprogress class="fleet_health" text="{{health}}" subtext="{{max_health}}" value="{{health}}" max="{{max_health}}"></voidprogress></span>		
+		
+		<h4>Ships</h4>					
 			<table>
 			{{#ships}}
 			<tr>
@@ -693,18 +724,18 @@
 			</table>
 		{{/ships.length > 0}}
 		{{^ships}}
-			None
+			<p>Fleet will be removed</p>
 		{{/ships}}
 		
 		<h4>Actions</h4>
 		<p class="fleet_actions">
 		<button type="button" title="Move Fleet"  onclick="start_fleet_order_mode('{{id}}')"><img src="images/move.png"> Move</button>
 		<button type="button" title="Fleet Managements" onclick="start_fleet_management()"><img src="images/logistics.png"> Manage</button>
-		<button type="button" title="colonise" onclick="add_fleet_colonise_order_dialog()"><img src="images/colonise.png"> Colonise</button>
+		<button type="button" title="Colonise" onclick="add_fleet_colonise_order_dialog()"><img src="images/colonise.png"> Colonise</button>
 		<button type="button" title="Construct" onclick="add_fleet_construct_order_dialog()"><img src="images/construct.png"> Construct</button>
 		<button type="button" title="Attack" onclick=""><img src="images/attack.png"> Attack</button>
 		<button type="button" title="Assault" onclick=""><img src="images/assault.png"> Assault</button>
-		<button type="button" title="Siege" onclick="add_fleet_siege_order()"><img src="images/siege.png"> Siege</button>
+		<button type="button" title="Siege" onmouseover="show_siege_comparison()" onmouseout="hide_combat_comparison()" onclick="add_fleet_siege_order()"><img src="images/siege.png"> Siege</button>
 		
 		<button type="button" title="Cancel All Orders" onclick="cancel_fleet_orders()"><img src="images/cancel.png"> Cancel</button>
 		</p>
@@ -713,10 +744,14 @@
 	
 	<script id="galactic_map_panel_enemy_fleet_template" type="text/ractive">		
 		<h3 class="map_panel_header">Enemy Fleet ({{x}}, {{z}})</h3>
-		<span style="display : inline-block; width : 90%;"><voidprogress class="fleet_health" text="{{health}}" subtext="{{max_health}}" value="{{health}}" max="{{max_health}}"></voidprogress></span>
+		<span style="display : inline-block; width : 90%;">
+		<voidprogress class="fleet_health" text="{{health}}" subtext="{{max_health}}" value="{{health}}" max="{{max_health}}"></voidprogress>
+		</span>
+		
 		Attack: {{attack}}
 		Defense: {{defense}}
 		Damage : {{damage}}
+		
 		<h4>Ships</h4>
 		{{#ships.length > 0}}			
 			<table>
@@ -742,8 +777,16 @@
 	<script id="galactic_map_panel_sector_template" type="text/ractive">
 		<h3 class="map_panel_header">Sector {{x}}, {{z}}</h3>
 		<div class="map_panel_content">
-			{{#system}}
-			<button class="wide_button" type="button" onclick="show_system_view({{x}}, {{z}} );"><img width="16" height="16" src="images/default.png"> View System</button>		
+			{{#system}}				
+			<button class="wide_button" type="button" onclick="show_system_view({{x}}, {{z}} );"><img width="16" height="16" src="images/default.png"> View System</button>				
+			{{#system.owner}}			
+			<span class="fleet_stats">
+				<span class="void_value">Attack: {{attack}}</span>
+				<span class="void_value">Defense: {{defense}}</span>
+			</span>
+			<span style="display : inline-block; width : 98%;"><voidprogress class="system_health" text="{{health}}" subtext="{{max_health}}" value="{{health}}" max="{{max_health}}"></voidprogress></span>			
+			{{/system.owner}}
+						
 			{{/system}}
 			
 			<table class="data_block">
@@ -821,7 +864,9 @@
 					<th>Influence</th>
 					<td>
 					Level {{system.influence_level}}
+					<span style="width : 70%; display : inline-block; float : right;">
 					<voidprogress text="Growth in {{void.turns(system.influence_growth_turns)}}" class="influence" value="{{pool}}" max="{{system.influence_growth_threshold}}"></voidprogress>
+					</span>
 					</td>
 				</tr>
 				{{/system.influence}}
@@ -831,7 +876,9 @@
 					<th>Population</th>
 					<td> 
 					{{system.population}}
+					<span style="width : 70%; display : inline-block; float : right;">
 					<voidprogress text="Growth in {{void.turns(system.growth_turns)}}" class="food" value="{{system.food.pool}}" max="{{system.food_growth_threshold}}"></voidprogress> </td>					
+					</span>
 				</tr>
 				<tr>
 					<th>Output</th>
@@ -922,12 +969,24 @@
 	</script>
 	
 	<script id="combat_comparison_template" type="text/ractive">
-		<p style="color : red;">Damage done to you: {{incoming}}</p> 
-		<p style="color : green;">Damage done to them: {{outgoing}}</p> 
-		{{your_attack}}
-		{{enemy_attack}}
-		{{your_defense}}
-		{{enemy_defense}}
+		<h3 style="text-align : center;">Combat Comparison</h3>
+		<div class="your_combat_comparison">
+			<ul>
+				<li><voidprogress class="damage" value="{{incoming}}" max="{{health}}"></voidprogress></li>
+				<li>Damage done to you: {{incoming}}</li>
+				<li>Attack: {{your_attack}}</li>
+				<li>Defense: {{your_defense}}</li>
+			</ul>
+		</div>
+		<div class="their_combat_comparison">		
+			<ul>
+				<li><voidprogress class="damage" value="{{outgoing}}" max="{{enemy_health}}"></voidprogress></li>
+				<li>Damage done to them: {{outgoing}}</li>
+				<li>Attack: {{enemy_attack}}</li>
+				<li>Defense: {{enemy_defense}}</li>
+			</ul>
+		</div>
+
 	</script>
 	
 	<script id="planet_template" type="text/ractive">
@@ -1021,6 +1080,19 @@
 					{{#modifiers.influence_percent}}
 						<li class="influence modifier"><img src="images/icons/influence.png" alt="Influence" title="Influence"> Influence: {{void.per_turn_value(value)}}%</li>
 					{{/modifiers.influence_percent}}
+					
+					{{#modifiers.attack}}
+						<li class="influence modifier"><img src="images/icons/combat.png" alt="Attack" title="Attack"> Attack: +{{value}} </li>
+					{{/modifiers.attack}}
+					
+					{{#modifiers.defense}}
+						<li class="influence modifier"><img src="images/icons/defense.png" alt="Defense" title="Defense"> Defense: +{{value}} </li>
+					{{/modifiers.defense}}
+					
+					{{#modifiers.health}}
+						<li class="influence modifier"><img src="images/icons/health.png" alt="Health" title="Health"> Health: +{{value}} </li>
+					{{/modifiers.health}}
+					
 					</ul>					
 				{{/modifiers}}
 			</ul>
@@ -1033,7 +1105,7 @@
 	</script>
 	
 	<script id="upgrade_class_template" type="text/ractive">			
-			<h4>{{name}}</h4>
+			<h4>{{name}}</h4>			
 			<ul class="structure_class">				
 				{{#modifiers}}
 					<ul>
@@ -1058,6 +1130,7 @@
 					</ul>					
 				{{/modifiers}}
 			</ul>
+			<p>Sector upgrades provide their bonus to all systems which influence this sector</p>
 	</script>
 	
 	<script id="power_class_template" type="text/ractive">			
@@ -1117,7 +1190,13 @@
 		<div>
 			<ul>
 			{{#player.available_upgrade_classes:key}}
-				<li decorator="tooltip" data-decorator="upgrade-class-tooltip-{{id}}"><button onclick="add_fleet_construct_order({{id}})">{{upgrade_class_cache[id].name}}</button></li>
+			<li class="system_view_selector" decorator="tooltip" data-decorator="upgrade-class-tooltip-{{id}}">
+				<img src="images/upgrade.png">
+				<h4>{{upgrade_class_cache[id].name}}</h4>
+				<p>
+				<button onclick="add_fleet_construct_order('{{id}}')">Construct</button>
+				</p>
+			</li>
 			{{/player.available_upgrade_classes}}
 			</ul>
 		</div>
@@ -1159,7 +1238,7 @@
 			</ul>
 			
 			<div class="system_view_list available_items"  decorator="custom_scroll">
-			<h4>Available Ship Classes</h4>
+			<h4>Available Ships</h4>
 			<ul class="selector_list">
 			{{#player.available_ship_classes:key}}
 				<li class="system_view_selector" decorator="tooltip" data-decorator="ship-class-tooltip-{{id}}">
@@ -1174,12 +1253,17 @@
 			{{/player.available_ship_classes}}
 			</ul>
 			
-			<h4>Available Structure Classes</h4>
+			<h4>Available Structures</h4>
 			<ul class="selector_list">
 			{{#available_structure_classes}}				
 				
 				<li class="system_view_selector" decorator="tooltip" data-decorator="structure-class-tooltip-{{id}}">
+					{{#world_unique}}
+					<img height="38" width="38" src="images/wonder.png">
+					{{/world_unique}}
+					{{^world_unique}}
 					<img src="images/structure.png">
+					{{/world_unique}}
 					<h4>{{name}}</h4>
 					<p>
 					{{#../../production_per_turn}} {{void.turns(structure_class_cache[id].work_required, ../../production_per_turn)}} {{/../../production_per_turn}}					
@@ -1221,7 +1305,12 @@
 				{{/ type}}
 				{{# type == "structure"}}
 				<li class="system_view_selector" decorator="tooltip" data-decorator="structure-class-tooltip-{{target_id}}">		
+				{{#world_unique}}
+				<img height="38" width="38" src="images/wonder.png">
+				{{/world_unique}}
+				{{^world_unique}}
 				<img src="images/structure.png">
+				{{/world_unique}}
 				<h4>{{structure_class_cache[target_id].name}}</h4>
 				<p>
 				{{#purchased}}
@@ -1252,7 +1341,12 @@
 			<ul class="selector_list" >
 			{{#structures}}
 				<li class="system_view_selector" decorator="tooltip" data-decorator="structure-class-tooltip-{{class_id}}">
-				<img src="images/structure.png">
+				{{#world_unique}}
+					<img height="38" width="38" src="images/wonder.png">
+					{{/world_unique}}
+					{{^world_unique}}
+					<img src="images/structure.png">
+					{{/world_unique}}
 				<h4>{{name}}</h4>
 				
 				</li>

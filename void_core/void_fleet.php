@@ -166,8 +166,29 @@ class VOID_FLEET {
 			return false;
 		}
 		
-		$system->health = $system->health - $this->damage;
+		$modifier = 1;
+		if ($system->defense > 0){
+			if ($this->attack > $system->defense){
+				$modifier = $modifier + (($system->defense / $this->attack) * 0.5);
+			}else {
+				$modifier = $modifier - (($this->attack / $system->defense) * 0.5);
+			}
+		}
+		$system->health = $system->health - ($this->damage * $modifier);
+		VOID_LOG::write($this->owner->id, "[combat] Your fleet bombarded a system");
+		VOID_LOG::write($system->owner->id, "[combat] Your system has been bombarded");
 		$system->killer = $this->owner;
+		
+		$modifier = 1;
+		if ($this->defense > 0){
+			if ($system->attack > $this->defense){
+				$modifier = $modifier + (($this->defense / $system->attack) * 0.5);
+			}else {
+				$modifier = $modifier - (($system->attack / $this->defense) * 0.5);
+			}
+		}
+
+		$this->hit($system->damage * $modifier);
 	}
 	
 	public function has_orders(){
@@ -315,6 +336,7 @@ class VOID_FLEET {
 		// do damage to the ships in the fleet
 		// damage is split equally 
 		$damage = ceil($damage / count($this->ships));
+		
 		foreach($this->ships as $ship){
 			$ship->hit($damage);
 		}

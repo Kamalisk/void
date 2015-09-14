@@ -44,6 +44,9 @@ class VOID_MAP {
 		$this->map_height = $height;
 		for ($z = 0; $z < $height; $z++){
 			for ($x = -floor($z/2); $x < $width - floor($z/2); $x++){
+				if (rand(1,25) < 2){					
+					continue;
+				}
 				$this->sectors['x'.$x.'z'.$z] = new VOID_SECTOR($x, $z);
 				$current_sector =& $this->sectors['x'.$x.'z'.$z];
 				if (rand(1,10) < 4){
@@ -60,7 +63,7 @@ class VOID_MAP {
 						$this->sectors['x'.$x.'z'.$z]->add_planet($planet);	
 					}
 					
-					while (count($current_sector->system->planets) < rand(3,4)){
+					while (count($current_sector->system->planets) < rand(2,3)){
 						$planet = new VOID_PLANET();
 						$planet->name = "Awesome";
 						$planet->class = $void_planet_classes[mt_rand(2,6)];
@@ -69,14 +72,14 @@ class VOID_MAP {
 				}else if (rand(1,30) < 2){
 					$current_sector->set_type(6);
 					continue;
-				}else if (rand(1,20) < 2){
-					$current_sector->set_type(7);
-					continue;
+				}else {
+					if (rand(1,30) < 3){
+						$current_sector->add_ruin();
+					}
 				}
+				
 				$current_sector->set_type(1);
-				if (rand(1,30) < 3){
-					$current_sector->add_ruin();
-				}
+				
 				if (rand(1,11) < 3){
 					$current_sector->set_type(2);
 				}else {

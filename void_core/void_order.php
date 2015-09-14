@@ -17,6 +17,10 @@ class VOID_ORDER {
 	public $upgrade_id;
 	public $fleet_id;
 	public $ship_id;
+	public $from_x;
+	public $from_z;
+	public $to_x;
+	public $to_z;
 	
 	function __construct($type){
 		$this->type = $type;
@@ -40,6 +44,18 @@ class VOID_ORDER {
 		}
 		if (isset($params['ship_id'])){
 			$this->ship_id = $params['ship_id'];
+		}
+		if (isset($params['from_x'])){
+			$this->from_x = $params['from_x'];
+		}
+		if (isset($params['from_z'])){
+			$this->from_z = $params['from_z'];
+		}
+		if (isset($params['to_x'])){
+			$this->to_x = $params['to_x'];
+		}
+		if (isset($params['to_z'])){
+			$this->to_z = $params['to_z'];
 		}
 	}
 	

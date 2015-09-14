@@ -124,7 +124,7 @@ class VOID {
 		foreach($this->lobby->players as $player){
 			$this->add_player($player);			
 		}
-		$this->start(8, 8);
+		$this->start(16, 16);
 	}
 	
 	public function init(){
@@ -455,9 +455,9 @@ class VOID {
 			
 			
 			foreach($stalemates as $sector){
-				if (count($sector) > 1){
-					VOID_LOG::write($fleet->owner->id, "[movement] Several fleets tried to enter the same sector");
+				if (count($sector) > 1){					
 					foreach($sector as $fleet){						
+						VOID_LOG::write($fleet->owner->id, "[movement] Several fleets tried to enter the same sector [sector:".$fleet->x.":".$fleet->z."]");
 						$fleet->reset_orders();
 					}
 				}
@@ -493,10 +493,11 @@ class VOID {
 			}
 			
 			$check_sectors = [];
+			$has_moved = [];
 			foreach($temp_fleets_with_orders as $fleet){
 				// do the actual fleet moves
 				$order = $fleet->get_order();
-				if ($order && $order->type == "move" && $fleet->movement_points > 0){
+				if ($order && $order->type == "move" && $fleet->movement_points > 0){					
 					$sector1 = $this->map->get_sector($fleet->x, $fleet->z);
 					$sector2 = $this->map->get_sector($order->x, $order->z);
 					if ($sector1 && $sector2){
@@ -505,6 +506,7 @@ class VOID {
 							if ($fleet->move($order->x, $order->z, $this)){
 								$fleet->complete_order();
 								$check_sectors[] = $sector2;
+								$has_moved[$fleet->id] = 1;
 							}else {
 								$fleet->reset_orders();
 								$fleet->movement_points = 0;	
@@ -533,11 +535,32 @@ class VOID {
 					$fleet->complete_order();
 				}else if ($order && $order->type == "transfer"){						
 					$from_fleet = $fleet;
-					$to_fleet = $this->fleets[$order->fleet_id];
-					$from_fleet->transfer_ship($order->ship_id, $to_fleet);
+					if (isset($order->to_x) && isset($order->to_z)){
+						$sector = $this->map->get_sector($order->to_x, $order->to_z);						
+						$to_fleet = $sector->get_fleet();
+						if ($to_fleet && $to_fleet->owner->id != $from_fleet->owner->id){
+							unset($to_fleet);
+						}else if (!$to_fleet){
+							// no fleet was found. make one!
+							$to_fleet = new VOID_FLEET();
+							$to_fleet->owner = $from_fleet->owner;							
+							$sector->add_fleet($to_fleet);
+							$this->fleets[$to_fleet->id] = $to_fleet;
+						}
+					}else {
+						$sector = $this->map->get_sector($fleet->x, $fleet->z);	
+						if ($sector && $sector->system && $sector->system->docked_fleet){					
+							$to_fleet = $sector->system->docked_fleet;
+						}
+					}
+					
+					if (isset($to_fleet)){
+						$from_fleet->transfer_ship($order->ship_id, $to_fleet);						
+						$from_fleet->movement_points = 0;
+						$to_fleet->movement_points = 0;						
+					}					
 					$fleet->complete_order();
-					$from_fleet->movement_points = 0;
-					$to_fleet->movement_points = 0;
+					
 				}else if ($order && $order->type == "siege"){						
 					$sector = $this->map->get_sector($fleet->x, $fleet->z);
 					if ($sector->system){
@@ -576,9 +599,9 @@ class VOID {
 			// if fleet moved next to enemy fleet, prevent all further movement
 			foreach($temp_fleets_with_orders as $fleet){
 				$sector1 = $this->map->get_sector($fleet->x, $fleet->z);
-				if ($sector1 && !isset($shooty[$fleet->id]) && !isset($hitty[$fleet->id]) && $sector1->is_enemy_adjacent($fleet->owner->id, $this)){
-					$fleet->movement_points = 0;
-					VOID_LOG::write($fleet->owner->id, "[movement] Fleet stopped due to enemy contact");
+				if ($sector1 && isset($has_moved[$fleet->id]) && !isset($shooty[$fleet->id]) && !isset($hitty[$fleet->id]) && $sector1->is_enemy_adjacent($fleet->owner->id, $this)){
+					$fleet->movement_points = 0;					
+					VOID_LOG::write($fleet->owner->id, "[movement] Fleet stopped due to enemy contact [sector:".$fleet->x.":".$fleet->z."]");
 				}
 			}
 			
@@ -629,11 +652,10 @@ class VOID {
 			$system->resolve();
 		}
 		
-		$this->map->update_map($this);
+		
 		foreach($temp_fleet_cache as $fleet){
 			$fleet->resolve($this);
-		}		
-		
+		}				
 		
 		foreach($this->players as $player){
 			$player->update();
@@ -641,7 +663,12 @@ class VOID {
 		foreach($temp_systems as $system){
 			$system->update();
 		}
+		$this->map->update_map($this);
 		foreach($temp_fleet_cache as $fleet){
+			if ($fleet->clean_up() && !$fleet->docked){
+				$this->map->get_sector($fleet->x, $fleet->z)->clean_up();
+				$fleet->reset_orders();
+			}
 			if (!$fleet->docked){
 				$this->map->get_sector($fleet->x, $fleet->z)->clean_up();
 			}
@@ -706,13 +733,25 @@ class VOID {
 				if (isset($_POST['fleet_transfers'])){
 					$fleet_transfers = $_POST['fleet_transfers'];
 					foreach($fleet_transfers as $key => $transfer){
+						
 						// reset all orders again. no transfer and orders allowed
-						$this->fleets[$key]->reset_orders();
-						if ($transfer['fleet_id']){
-							$this->fleets[$transfer['fleet_id']]->reset_orders();
-							if ($transfer['ship_id']){
-								$this->fleets[$key]->add_order("transfer", array("ship_id"=>$transfer['ship_id'], "fleet_id"=>$transfer['fleet_id']));								
+						if (isset($transfer['from_x']) && isset($transfer['from_z']) ){
+							$sector = $this->map->get_sector($transfer['from_x'], $transfer['from_z']);
+							$fleet = $sector->get_fleet();
+																					
+							if ($fleet->owner->id == $player_id){
+								$fleet->reset_orders();
+								if ($transfer['ship_id']){									
+									if (isset($transfer['to_x']) && isset($transfer['to_z']) ){
+										$fleet->add_order("transfer", array("ship_id"=>$transfer['ship_id'], "to_x"=>$transfer['to_x'], "to_z"=>$transfer['to_z']));											
+									} else {
+										// transfer to space dock
+										$fleet->add_order("transfer", array("ship_id"=>$transfer['ship_id']));										
+									}
+								}
 							}
+							
+							
 						}
 					}
 				}

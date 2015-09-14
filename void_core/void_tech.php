@@ -147,37 +147,37 @@ class VOID_TECH_TREE {
 		
 		
 		
-		$tech = new VOID_TECH(8, "Subspace Refraction", 800);
+		$tech = new VOID_TECH(8, "Subspace Refraction", 400);
 		$tech->require_trait("military");
 		$tech->add_trait("science");
 		$tech->set_tier(2);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(9, "Organic Replication", 800);		
+		$tech = new VOID_TECH(9, "Organic Replication", 400);		
 		$tech->require_trait("agriculture");
 		$tech->add_trait("commerce");		
 		$tech->set_tier(2);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(10, "", 800);
+		$tech = new VOID_TECH(10, "", 400);
 		$tech->require_trait("science");
 		$tech->add_trait("industry");
 		$tech->set_tier(2);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(11, "Speculative Diplomacy", 800);
+		$tech = new VOID_TECH(11, "Speculative Diplomacy", 400);
 		$tech->require_trait("commerce");
 		$tech->add_trait("culture");
 		$tech->set_tier(2);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(12, "", 800);
+		$tech = new VOID_TECH(12, "", 400);
 		$tech->require_trait("industry");
 		$tech->add_trait("military");
 		$tech->set_tier(2);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(13, "", 800);
+		$tech = new VOID_TECH(13, "", 400);
 		$tech->require_trait("culture");
 		$tech->add_trait("agriculture");
 		$tech->set_tier(2);
@@ -185,42 +185,42 @@ class VOID_TECH_TREE {
 		
 		
 		
-		$tech = new VOID_TECH(14, "", 1200);
+		$tech = new VOID_TECH(14, "", 800);
 		$tech->require_trait("military");
 		$tech->require_trait("science");
 		$tech->add_trait("industry");
 		$tech->set_tier(3);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(15, "", 1200);		
+		$tech = new VOID_TECH(15, "", 800);		
 		$tech->require_trait("agriculture");
 		$tech->require_trait("commerce");
 		$tech->add_trait("culture");		
 		$tech->set_tier(3);
 		$this->add_tech($tech);		
 		
-		$tech = new VOID_TECH(16, "", 1200);
+		$tech = new VOID_TECH(16, "", 800);
 		$tech->require_trait("science");
 		$tech->require_trait("industry");
 		$tech->add_trait("military");
 		$tech->set_tier(3);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(17, "", 1200);
+		$tech = new VOID_TECH(17, "", 800);
 		$tech->require_trait("commerce");
 		$tech->require_trait("culture");
 		$tech->add_trait("agriculture");
 		$tech->set_tier(3);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(18, "", 1200);
+		$tech = new VOID_TECH(18, "", 800);
 		$tech->require_trait("industry");
 		$tech->require_trait("military");
 		$tech->add_trait("science");
 		$tech->set_tier(3);
 		$this->add_tech($tech);
 		
-		$tech = new VOID_TECH(19, "", 1200);
+		$tech = new VOID_TECH(19, "", 800);
 		$tech->require_trait("culture");
 		$tech->require_trait("agriculture");
 		$tech->add_trait("commerce");

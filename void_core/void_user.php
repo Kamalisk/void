@@ -11,7 +11,7 @@ class VOID_USER {
 	function __construct(){
 		
 		
-		
+		$this->db = new mysqli("localhost", "void", "v0idw4rs", "void");
 		if ($this->db->connect_errno) {
 		    
 		}
@@ -42,18 +42,37 @@ class VOID_USER {
 		
 	}
 	
-	public function get_games(){
+	public function get_own_games(){
 		$query = "
-			SELECT game.name, game.uuid, game.id, game.state, game_user.game_id as valid
+			SELECT game.name, game.uuid, game.id, game.state, game_user.game_id as joined
 			FROM game
-			LEFT JOIN game_user ON game_user.game_id = game.id AND game_user.user_id = '".$this->db->escape_string($this->id)."'
+			INNER JOIN game_user ON game_user.game_id = game.id AND game_user.user_id = '".$this->db->escape_string($this->id)."'
 			ORDER BY game.id DESC
 		";
 		$result = $this->db->query($query);
 		$return = [];
 		while ($row = $result->fetch_assoc()){
 			if ($row['state'] == "lobby"){
-				$row['valid'] = 1;
+				$row['joinable'] = 1;
+			}
+			$return[] = $row;
+		}
+		return $return;
+	}
+	
+	public function get_games(){
+		$query = "
+			SELECT game.name, game.uuid, game.id, game.state, game_user.game_id as joined
+			FROM game
+			LEFT JOIN game_user ON game_user.game_id = game.id AND game_user.user_id = '".$this->db->escape_string($this->id)."'
+			WHERE game_user.user_id IS NULL 
+			ORDER BY game.id DESC
+		";
+		$result = $this->db->query($query);
+		$return = [];
+		while ($row = $result->fetch_assoc()){
+			if ($row['state'] == "lobby"){
+				$row['joinable'] = 1;
 			}
 			$return[] = $row;
 		}
@@ -76,6 +95,15 @@ class VOID_USER {
 			}
 		}
 		return false;
+	}
+	
+	public function create_game($name){
+		$query = "
+			INSERT INTO game
+			SET name = '".$this->db->escape_string($name)."', uuid = '".void_unique_id()."', state = 'lobby'
+		";
+		$result = $this->db->query($query);		
+		return $this->db->insert_id;
 	}
 	
 	public function reset_game($game_id){

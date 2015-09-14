@@ -9,8 +9,12 @@ class VOID_UPGRADE_CLASS {
 	
 	public $modifiers;
 	
-	function __construct(){
-		
+	function __construct($id=""){
+		if (!$id){
+			$this->id = void_unique_id();
+		}else {
+			$this->id = $id;
+		}
 	}
 	
 	function get_modifier($type){
@@ -177,6 +181,7 @@ class VOID_SECTOR {
 	public $id;
 	
 	public $fleets = array();
+	
 	public $unknown = 0;
 	public $star = 0;
 	public $friendly = 0;

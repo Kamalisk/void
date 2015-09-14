@@ -67,6 +67,9 @@ class VOID_STRUCTURE_CLASS {
 		}
 	}
 	function set_modifier($type, $category, $value, $max=0, $scope="system"){
+		if ($this->work_required){
+			$this->rush_cost = $this->work_required * 3; 
+		}
 		//possibly handle custom function handlers for unique effects?
 		if ($max == 0){
 			$max = 0;
@@ -136,6 +139,7 @@ class VOID_STRUCTURE_CLASS {
 				$resource = $target->morale;
 				break;
 			}
+			
 		}
 		
 		if ($resource){

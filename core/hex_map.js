@@ -457,10 +457,13 @@ function redraw_overlay(){
 					last_hex = coords;
 				}else if (value.type == "colonise"){
 					var coords = hex_to_pixel(value, map_scroll_offset);
-					draw_hex(canvas, coords.x,  coords.y, hex_size-5, "pink", "rgba(240, 150, 40, 0.2)");
+					draw_hex(canvas, coords.x,  coords.y, hex_size-30, "pink", "rgba(240, 150, 40, 0.2)");
+				}else if (value.type == "siege"){
+					var coords = hex_to_pixel(value, map_scroll_offset);
+					draw_hex(canvas, coords.x,  coords.y, hex_size-25, "red", "rgba(240, 150, 40, 0.2)");
 				}else if (value.type == "construct"){
 					var coords = hex_to_pixel(value, map_scroll_offset);
-					draw_hex(canvas, coords.x,  coords.y, hex_size-5, "cyan", "rgba(240, 150, 40, 0.2)");
+					draw_hex(canvas, coords.x,  coords.y+10, hex_size-35, "cyan", "rgba(240, 150, 40, 0.2)");
 				}
 			});
 	
@@ -843,7 +846,7 @@ function draw_map_tile(canvas, map_tile, small){
 				//console.log("drawing ruin");
 				$(canvas).drawImage({
 				  source: image_cache['ruin'],
-				  x: x, y: y+28
+				  x: x, y: y
 				});
 			}
 			/*

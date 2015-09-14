@@ -21,7 +21,7 @@
 body {
 	background-color : @primary_background_color;
 	font-family : "verdana";
-	font-size : 0.7em!important;
+	font-size : 0.8em!important;
 	color : #afafaf;
 	line-height : 1.2;
 	vertical-align : center;
@@ -167,6 +167,15 @@ button:active {
 	}
 }
 
+
+.void_value {
+	background-color : black;
+	padding : 3px;
+	border-radius : 4px;
+	display : inline-block;
+	width : 130px;
+}
+
 /* tooltips */
 
 .tooltip {
@@ -198,17 +207,21 @@ button:active {
 
 .progress_bar, progress {
 	width : 100%;
-	height : 14px;
-	border : lighten(@primary_background_color, 20%) solid 2px;
-	border-radius : 5px;	
+	height : 15px;
+	border : darken(white, 40%) solid 2px;
+	box-shadow: 1px 4px 21px -2px rgba(0,0,0,0.75);
+	border-radius : 5px;
 	color : red;
 	position : relative;
 	display : inline-block;
+	background-color : black;
+	overflow : hidden;
+	
 }
 .progress_bar_inner {
 	width : 100%;
-	height : 14px;
-	border-radius : 1px;	
+	height : 15px;
+	
 	background-color : lighten(@primary_background_color, 10%);
 	display : inline-block;
 }
@@ -218,6 +231,7 @@ button:active {
 	position : absolute;
 	width : 100%;
 	display : inline-block;
+	vertical-align : middle;
 }
 
 /* generic dialog */
@@ -251,7 +265,7 @@ button:active {
 	top : 0px;
 	left : 0px;
 	right : 0px;
-	height : 30px;
+	height : 55px;
 	box-shadow : 2px 2px 5px #121212;
 	overflow : hidden;
 	h1 {
@@ -259,13 +273,29 @@ button:active {
 		padding-left : 0.4em;
 		margin : 0.1em;
 		display : inline-block;
-	}	
+	}
+	button {
+		width : 200px;
+	}
+}
+
+div#main_status_bar {
+	padding : 3px;
 }
 
 div#player_resources {
 	display : inline-block;	
 	padding : 0.2em;
 	
+	img {
+		vertical-align : middle;
+	}
+	> span {
+		margin-right : 15px;
+		background-color : black;
+		border-radius : 4px;
+		padding : 4px;
+	}	
 }
 
 div#player_status {
@@ -281,7 +311,7 @@ div#player_status {
 	overflow : hidden;
 	position : absolute;
 	
-	top : 32px;
+	top : 56px;
 	bottom : 0px;
 	right : 0px;
 	left : 0px;
@@ -429,7 +459,7 @@ div#player_status {
 	left : 0;
 	bottom : 0;
 	min-height : 150px;
-	width : 300px;
+	width : 320px;
 	border-top : solid grey 2px;
 	border-right : solid grey 2px;
 	border-radius : 0 5px 0 0;
@@ -457,8 +487,8 @@ div#player_status {
 	z-index : @back_layer;
 	position : absolute;
 	bottom : 0;
-	width : 150px;
-	left : 307px;
+	width : 400px;
+	left : 327px;
 	border-top : solid grey 2px;
 	border-right : solid grey 2px;
 	border-radius : 0 5px 0 0;
@@ -558,6 +588,13 @@ div#player_status {
 
 
 /* system view */	
+
+.system_health_progress_bar .progress_bar_inner {
+	background-color : rgba(20, 80, 20, 1);
+}
+.system_health_progress_bar .progress_bar_text {
+	display : none;
+}
 
 div.window_control {
 	position : absolute; 
@@ -850,11 +887,11 @@ div.window_control .close_window {
 	background-color : purple;
 }
 .research_progress_bar .progress_bar_inner {
-	background-color : blue;	
+	background-color : #233087;	
 }
 
 .player_research_progress {
-	width : 250px;
+	width : 350px;
 	display : inline-block;	
 	vertical-align : top;	
 }
@@ -942,6 +979,22 @@ div.window_control .close_window {
 	
 }
 
+.ship_health_progress_bar .progress_bar_inner, .fleet_health_progress_bar .progress_bar_inner {
+	background-color : rgba(20, 80, 20, 1);
+}
+.ship_health_progress_bar .progress_bar_text, .fleet_health_progress_bar .progress_bar_text {
+	display : none;
+}
+
+.fleet_stats {
+	text-align : center;
+	width : 100%;
+	display : inline-block;
+	background-color : rgba(20, 20, 20, 0.6);
+	padding : 1px;
+}
+
+
 .fleet_actions {
 	vertical-align : top;
 }
@@ -954,6 +1007,30 @@ div.window_control .close_window {
 	float : left;
 }
 
+
+.your_combat_comparison, .their_combat_comparison {
+	width : 190px;
+	display : inline-block;
+	float : left;
+}
+.your_combat_comparison {
+	text-align : right;
+	padding-right : 4px;	
+	border-right : 1px solid grey;
+}
+.their_combat_comparison {
+	text-align : left;
+	padding-left : 6px;
+}
+
+.damage_progress_bar {
+	background-color : green;
+	.progress_bar_inner {
+		background-color : red;
+	}
+}
+
+
 .fleet_management_fleet {
 	min-height : 150px;
 	border : solid grey 1px;
@@ -963,7 +1040,49 @@ div.window_control .close_window {
 	vertical-align : top;
 	margin : 0.3em;
 	padding : 0.1em;
-	
+	position : absolute;
+	left : 50%;
+	top : 50%;
+}
+
+#fleet_management_center {
+	position : absolute;
+	left : 50%;
+	top : 50%;
+	margin-left : -210px;
+	margin-top : -100px;
+}
+
+.fleet_management_dock {
+	top : 60px;
+	right : 40px;
+	margin : 0;
+	left : auto;
+}
+
+.fleet_management_fleet_0 {
+	margin-left : -330px;
+	margin-top : -270px;
+}
+.fleet_management_fleet_1 {
+	margin-left : -100px;
+	margin-top : -270px;
+}
+.fleet_management_fleet_2 {
+	margin-left : 50px;
+	margin-top : -100px;
+}
+.fleet_management_fleet_3 {
+	margin-left : -100px;
+	margin-top : 80px;
+}
+.fleet_management_fleet_4 {
+	margin-left : -330px;
+	margin-top : 80px;
+}
+.fleet_management_fleet_5 {
+	margin-left : -430px;
+	margin-top : -100px;
 }
 
 .fleet_management_ship {

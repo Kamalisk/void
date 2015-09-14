@@ -36,6 +36,11 @@ class VOID_SYSTEM_VIEW {
 	public $influenced_sectors;
 	
 	public $health;
+	public $max_health;
+	
+	public $attack;
+	public $defense;
+	public $damage;
 	
 	function __construct($system, $player){
 		$player_id = $player->id;
@@ -51,6 +56,11 @@ class VOID_SYSTEM_VIEW {
 			$this->production_per_turn = $system->production->per_turn;
 			
 			$this->health = $system->health;
+			$this->max_health = $system->max_health;
+			
+			$this->attack = $system->attack;
+			$this->defense = $system->defense;
+			$this->damage = $system->damage;
 			
 			if ($this->owner == $player_id){
 				$this->food_pool = $system->food->pool;
@@ -165,6 +175,7 @@ class VOID_SYSTEM {
 	public $influenced_sectors;
 	
 	public $health;
+	public $max_health;
 	
 	public $killer;
 	
@@ -194,8 +205,15 @@ class VOID_SYSTEM {
 		$this->production = new VOID_RESOURCE("production");
 		$this->influence = new VOID_RESOURCE("influence");
 		
-		$this->health = 50;
+		$this->ship_production = new VOID_RESOURCE("ship_production");
+		
+		$this->health = 100;
+		$this->max_health = 100;
 		$this->killer = false;
+		
+		$this->attack = 50;
+		$this->defense = 50;
+		$this->damage = 50;
 	}
 	
 	public function add_planet($planet){
@@ -280,15 +298,19 @@ class VOID_SYSTEM {
 	
 	// recalcuate static income from this system
 	public function update(){
+		if (!$this->killer){
+			$this->health = $this->health + 10;
+			if ($this->health > $this->max_health){
+				$this->health = $this->max_health;
+			}
+		}
 		if ($this->health <= 0){
 			$this->owner = false;
 			$this->health = 10;
 			if ($this->killer){
 				$this->owner = $this->killer;
-			}
-			return false;
-		}
-		
+			}			
+		}		
 		$this->killer = false;
 		$this->food->reset();
 		$this->production->reset();
@@ -296,8 +318,13 @@ class VOID_SYSTEM {
 		$this->credits->reset();
 		$this->influence->reset();
 		
+		$this->attack = 0;
+		$this->defense = 0;
+		$this->max_health = 100;
+		
 		$this->food->per_turn = $this->get_food_income();
 		$this->production->per_turn = $this->get_production_income();
+		$this->ship_production->per_turn = $this->get_production_income();
 		$this->credits->per_turn = $this->get_credits_income();
 		$this->research->per_turn = $this->get_research_income();
 		$this->influence->per_turn = $this->get_influence_income();

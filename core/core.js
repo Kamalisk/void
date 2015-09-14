@@ -175,7 +175,11 @@ $(document).ready(function (){
 	    max: 500,
 	    percent : function (a, b){
 	    	if (b > 0){
-	    		return Math.floor(a / b * 100);
+	    		var percent = Math.floor(a / b * 100);
+	    		if (percent >= 100){
+	    			percent = 100;
+	    		}
+	    		return percent;
 	    	}else {
 	    		return 0;
 	    	}
@@ -212,7 +216,7 @@ $(document).ready(function (){
 		  		}
 		  	},
 		  	percent : function (value, max){
-		  		console.log(value);
+		  		//console.log(value);
 		  		return " "+Math.floor(value / max * 100);
 		  	}
 	  	}
@@ -471,14 +475,24 @@ function parse_logs(lines){
 		var log_obj = {};
 		log_obj.text = value;
 		
-		var matches = log_obj.text.match(/^\[(.+)\]/i, "");
+		var matches = log_obj.text.match(/^\[([^\[]+)\]/i, "");
+		//console.log(matches);
 		if (matches && matches[1]){
 			log_obj.category = matches[1];
 			//log_obj.category = "generic";
 		}else {
 			log_obj.category = "generic";
 		}
-		log_obj.text = log_obj.text.replace(/^\[.+\]/i, "");
+		log_obj.text = log_obj.text.replace(/^\[[^\[]+\]/i, "");
+		
+		log_obj.sector = null;
+		var matches = log_obj.text.match(/\[sector:(\-?[0-9]+):(\-?[0-9]+)\]/);
+		if (matches && matches[1]){
+			log_obj.sector = {"x": matches[1], "z": matches[1]};
+			console.log(matches);
+		}
+		
+		log_obj.text = log_obj.text.replace(/\[sector:(\-?[0-9]+):(\-?[0-9]+)\]/, "");
 		
 		logs.push(log_obj);
 	});	
@@ -776,6 +790,7 @@ function start_fleet_management(){
 	adj_hexes.push(get_adjacent_hex(hex_selected, 5));	
 	void_view.set("fleet_management", fleet_selected);
 	void_view.set("fleet_management_hexes", adj_hexes);
+	void_view.set("fleet_management_valid", true);
 }
 function end_fleet_management(){
 	if (!void_view.get("fleet_management_valid")){
@@ -783,6 +798,7 @@ function end_fleet_management(){
 		return false;
 	}
 	void_view.set('fleet_management', null);
+	draw_map("galactic_map");
 }
 
 function fleet_management_drag(event){
@@ -801,13 +817,43 @@ function fleet_management_drop(event){
 	var from_fleet = fleet_cache[event.dataTransfer.getData("from_fleet")];
 	var from_ship_index = event.dataTransfer.getData("from_ship")
 	
-	console.log(event.target);
+	//console.log(event.target);
+	var to_fleet_id = $(event.target).attr("data-fleet");
 	
-	var to_fleet = fleet_cache[$(event.target).attr("data-fleet")];
+	if (!to_fleet_id){
+		var hex = get_adjacent_hex(hex_selected, $(event.target).attr("data-direction"));
+		var ship = from_fleet.ships[from_ship_index];
+		
+		if (hex.movement_cost > ship.class.movement_capacity){
+			show_error("Cannot create fleet in sector that ship cannot reach");
+			return false;
+		}
+		
+		// make a new fleet
+		var to_fleet = {};
+		to_fleet.id = "fleet_"+new Date().toString();
+		to_fleet.x = hex.x;
+		to_fleet.z = hex.z;
+		to_fleet.is_new = true;
+		to_fleet.orders = [];
+		to_fleet.ships = [];
+		to_fleet.owner = from_fleet.owner.id;
+		fleet_cache[to_fleet.id] = to_fleet;
+		hex.your_fleets.push(to_fleet);
+	} else {
+		var to_fleet = fleet_cache[to_fleet_id];	
+	}
+	
 	//var to_ship_index = $(event.target).attr("data-index");
 	if (from_fleet.id == to_fleet.id){
 		return false;
 	}
+	
+	if (from_fleet.id != fleet_selected.id && to_fleet.id != fleet_selected.id){
+		show_error("Can only move between the active fleet and adjacent fleets");
+		return false;
+	}
+	
 	//console.log($(event.target).attr("data-fleet"));
 	if (!to_fleet.ships){
 		to_fleet.ships = [];
@@ -822,23 +868,89 @@ function fleet_management_drop(event){
 	}else {
 		void_view.set("fleet_management_valid", true);
 	}
-	if (!from_fleet.ships[from_ship_index].from_fleet){
-		from_fleet.ships[from_ship_index].from_fleet = from_fleet.id;
-	}
-	from_fleet.transfer = true;
-	to_fleet.transfer = true;
 	
-	if (!changes.fleet_transfers[from_fleet.id]){
-		changes.fleet_transfers[from_fleet.id] = {};
+	if (from_fleet.ships[from_ship_index].from_fleet && to_fleet.id != from_fleet.ships[from_ship_index].from_fleet){
+		show_error("Cannot chain fleet management");
+		return false;
 	}
-	changes.fleet_transfers[from_fleet.id].ship_id = from_fleet.ships[from_ship_index].id;
-	changes.fleet_transfers[from_fleet.id].fleet_id = to_fleet.id;
+	
+	if (from_fleet.ships[from_ship_index].from_fleet && from_fleet.ships[from_ship_index].from_fleet == to_fleet.id){
+		from_fleet.ships[from_ship_index].from_fleet = "";
+	}else {
+		from_fleet.ships[from_ship_index].from_fleet = from_fleet.id;		
+	}
+	
+	
+	var ship = from_fleet.ships[from_ship_index];
+	
+	if (!changes.fleet_transfers[ship.id]){
+		changes.fleet_transfers[ship.id] = {};
+	}
+		
+	changes.fleet_transfers[ship.id].ship_id = ship.id;
+	changes.fleet_transfers[ship.id].from_x = from_fleet.x;
+	changes.fleet_transfers[ship.id].from_z = from_fleet.z;
+	changes.fleet_transfers[ship.id].to_x = to_fleet.x;
+	changes.fleet_transfers[ship.id].to_z = to_fleet.z;	
+	
+	//console.log(changes);
 	
 	to_fleet.ships.push(from_fleet.ships[from_ship_index]);
 	from_fleet.ships.splice(from_ship_index, 1);
 	
+	from_fleet.transfer = true;
+	if (from_fleet.ships.length <= 0){
+		from_fleet.transfer = true;
+	}
+	if (to_fleet.ships.length <= 0){
+		to_fleet.transfer = true;
+	}
+	
+	$.each(from_fleet.ships, function (key, value){
+		console.log(value);
+		if (value.from_fleet){			
+			from_fleet.transfer = true;
+		}
+	});
+	$.each(to_fleet.ships, function (key, value){
+		console.log(value);
+		if (value.from_fleet){
+			to_fleet.transfer = true;
+		}
+	});
+	
+	console.log(from_fleet.transfer);
+	console.log(to_fleet.transfer);
+	//
+	//to_fleet.transfer = true;
+	
 	void_view.update();
 	
+}
+
+
+function create_fleet(){
+	
+}
+
+
+function fleet_transfer(fleet1, ship1_index, fleet2){
+	if (fleet1 && fleet1.ships[ship1_index]){
+		var ship1 = fleet1.ships[ship1_index];
+		
+		if (fleet2 && !fleet2.ships){
+			// create a fleet
+			var fleet2 = create_fleet(fleet2.x, fleet2.z);
+		}
+		
+		fleet2.ships.push(ship1);
+		fleet1.ships.splice(ship1_index, 1);
+		
+		if (fleet1.ships.length <= 0){
+			return true;
+		}
+		
+	}
 }
 
 function start_fleet_order_mode(id){
@@ -909,6 +1021,10 @@ function add_fleet_order(start, end){
 }
 
 function add_fleet_colonise_order_dialog(){
+	if (!fleet_check_special(fleet_selected, "colony")){
+		show_error("At least one colony ship is required");
+		return false;
+	}
 	if (fleet_orders[fleet_selected.id] && fleet_orders[fleet_selected.id].length > 0){
 		var previous_order = fleet_orders[fleet_selected.id][fleet_orders[fleet_selected.id].length-1];
 	}else {
@@ -920,6 +1036,10 @@ function add_fleet_colonise_order_dialog(){
 function add_fleet_colonise_order(pid){
 	if (!allow_actions()){
 		return;
+	}
+	if (!fleet_check_special(fleet_selected, "colony")){
+		show_error("At least one colony ship is required");
+		return false;
 	}
 	if (fleet_orders[fleet_selected.id] && fleet_orders[fleet_selected.id].length > 0){
 		var previous_order = fleet_orders[fleet_selected.id][fleet_orders[fleet_selected.id].length-1];
@@ -934,6 +1054,10 @@ function add_fleet_colonise_order(pid){
 }
 
 function add_fleet_construct_order_dialog(){
+	if (!fleet_check_special(fleet_selected, "construct")){
+		show_error("At least one construction ship is required");
+		return false;
+	}
 	if (fleet_orders[fleet_selected.id] && fleet_orders[fleet_selected.id].length > 0){
 		var previous_order = fleet_orders[fleet_selected.id][fleet_orders[fleet_selected.id].length-1];
 	}else {
@@ -963,6 +1087,12 @@ function add_fleet_siege_order(){
 	if (!allow_actions()){
 		return;
 	}
+	/*
+	if (!fleet_check_special(fleet_selected, "siege")){
+		show_error("At least one siege ship is required");
+		return false;
+	}
+	*/
 	if (fleet_orders[fleet_selected.id] && fleet_orders[fleet_selected.id].length > 0){
 		var previous_order = fleet_orders[fleet_selected.id][fleet_orders[fleet_selected.id].length-1];
 	}else {
@@ -986,6 +1116,44 @@ function cancel_fleet_orders(){
 	redraw_overlay();
 }
 
+
+function fleet_check_special(fleet, special_string){
+	if (fleet && fleet.ships){
+		var can = false;
+		$.each(fleet.ships, function (key, value){
+			console.log(value.class.special[special_string]);
+			if (value.class.special && value.class.special[special_string] == special_string){				
+				can = true;
+				return;
+			}
+		});
+	}	
+	return can;
+}
+
+function show_siege_comparison(){
+	if (fleet_orders[fleet_selected.id]){
+		var order = fleet_orders[fleet_selected.id][fleet_orders[fleet_selected.id].length-1];
+		var hex = get_hex(order.x, order.z);
+		if (hex && hex.system && hex.system.owner && !hex.system.yours){
+			show_combat_comparison(fleet_selected, hex.system);			
+		}
+		return;
+	}
+	if (fleet_selected.orders && fleet_selected.orders.length > 0){
+		var order = fleet_selected.orders[fleet_selected.orders.length-1];
+		var hex = get_hex(order.x, order.z);
+		if (hex && hex.system && hex.system.owner && !hex.system.yours){
+			show_combat_comparison(fleet_selected, hex.system);			
+		}
+		return;
+	}
+	if (hex_selected.system){
+		show_combat_comparison(fleet_selected, hex_selected.system);
+		return;
+	}
+}
+
 function show_combat_comparison(fleet1, fleet2){
 	// calculate comparison?
 	var combat_comparison = {};
@@ -998,6 +1166,9 @@ function show_combat_comparison(fleet1, fleet2){
 	combat_comparison.your_defense = fleet1.defense;
 	combat_comparison.enemy_defense = fleet2.defense;
 	
+	combat_comparison.health = fleet1.health;
+	combat_comparison.enemy_health = fleet2.health;
+	
 	var your_modifier = 1;
 	if (fleet1.attack > fleet2.defense){
 		your_modifier = your_modifier + ((fleet2.defense / fleet1.attack) * 0.5);
@@ -1006,13 +1177,13 @@ function show_combat_comparison(fleet1, fleet2){
 	}
 	var enemy_modifier = 1;
 	if (fleet2.attack > fleet1.defense){
-		enemy_modifier = your_modifier + ((fleet1.defense / fleet2.attack) * 0.5);
+		enemy_modifier = enemy_modifier + ((fleet1.defense / fleet2.attack) * 0.5);
 	}else {
-		enemy_modifier = your_modifier - ((fleet2.attack / fleet1.defense) * 0.5);
+		enemy_modifier = enemy_modifier - ((fleet2.attack / fleet1.defense) * 0.5);
 	}
 	
-	combat_comparison.outgoing = combat_comparison.outgoing * your_modifier;
-	combat_comparison.incoming = combat_comparison.incoming * enemy_modifier;
+	combat_comparison.outgoing = Math.floor(combat_comparison.outgoing * your_modifier);
+	combat_comparison.incoming = Math.floor(combat_comparison.incoming * enemy_modifier);
 	
 	void_view.set("combat_comparison", combat_comparison)
 }
@@ -1178,7 +1349,7 @@ function click_to_hex(x, y, param, event){
 			fleet_order_mode = false;
 			
 			hex_selected = get_hex(coords[0], coords[2]);
-
+			console.log(hex_selected);
 			hex_hover_history.push(hex_selected);
 			if (hex_hover_history.length > 5){
 				hex_hover_history.pop();
