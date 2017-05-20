@@ -350,7 +350,7 @@ function check_lobby_status(){
 				player_colors = data.colors;				
 				void_view.set("player_colors", player_colors);
 			}
-			setTimeout(check_lobby_status, 3000);
+			setTimeout(check_lobby_status, 20000);
 		}
 		if (data && data.state == "game"){
 			// reload the page
@@ -679,7 +679,7 @@ function show_map_panel_fleet(id){
 	map_context_menu_type = "default";
 }
 
-function show_system_view(x, z){		
+function show_system_view(x, z){
 	var hex = hex_map['x'+x+'z'+z];
 	if (hex.system && hex.system.build_queue && hex.system.build_queue.items){
 		$.each(hex.system.build_queue.items, function (){
@@ -710,6 +710,7 @@ function show_system_view(x, z){
 			}
 		});
 	}	
+	console.log(hex.system);
 	void_view.set("system_view.system", hex.system);
 	void_view.set("system_view.mode", "full");	
 }

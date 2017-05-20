@@ -528,6 +528,8 @@ class VOID_SHIP_CLASS {
 	public $hull;
 	public $max_health;
 	
+	public $description;
+	
 	// possibly a damage value
 	public $damage;
 	
@@ -544,6 +546,7 @@ class VOID_SHIP_CLASS {
 		$this->work_required = 10;
 		$this->vision_range = 1;
 		$this->rush_cost = 20;
+		$this->rush_cost = $this->work_required * 3;
 		$this->movement_capacity = 4;
 		$this->hull = 100;
 		$this->shields = 10;

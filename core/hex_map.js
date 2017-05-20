@@ -117,7 +117,8 @@ function initialize_map(width, height){
 			"x": event.pageX, "y": event.pageY,
 			"target_x": $("#galactic_map_hexes").position().left, "target_y": $("#galactic_map_hexes").position().top,
 			"adjust_x": map_scroll_offset.adjust_x, "adjust_y": map_scroll_offset.adjust_y
-		};		
+		};
+		console.log ("current pos", $("#galactic_map_hexes").position().left);
 		event.preventDefault();
 	});
 	
@@ -149,32 +150,100 @@ function initialize_map(width, height){
 	$('#galactic_map_dragger').bind('mousewheel',function(event){
 		
 		
-		var offset_x = $("#galactic_map_hexes").position().left + map_buffer;
-		var offset_y = $("#galactic_map_hexes").position().top + map_buffer;
+		
+		
+		var offset_x = $("#galactic_map_hexes").position().left;
+		var offset_y = $("#galactic_map_hexes").position().top;
 		
 		var old_map_scale = map_scale;
 				
 		var start_x = (event.offsetX - offset_x) / map_scale - map_scroll_offset.x;
 		var start_y = (event.offsetY - offset_y) / map_scale - map_scroll_offset.y;
 		
-		console.log(start_x);
-		console.log(start_y);
+		//console.log(event.offsetX);
+		//console.log(event.offsetY);
+		var offset_x = $("#galactic_map_hexes").position().left + map_buffer;
+		var offset_y = $("#galactic_map_hexes").position().top + map_buffer;
+		var click_x = event.pageX - $(this).offset().left;// + offset_x/hex_size/2;
+		var click_y = event.pageY - $(this).offset().top;// + offset_y/hex_size/2;
+		var blah_x = (click_x - offset_x) / map_scale - map_scroll_offset.x;
+		var blah_y = (click_y - offset_y) / map_scale - map_scroll_offset.y;
+		
+		var mouse_offset_x = event.offsetX;
+		var mouse_offset_y = event.offsetY;
 		
 		var zoom_offset = {};
 		if (event.deltaY > 0){
-			map_scale = map_scale += 0.1;
-			var factor = -0.15;
-			
+			map_scale = map_scale += 0.2;
+			var factor = 0.2 / old_map_scale;
 		}else {
-			map_scale = map_scale -= 0.1;
-			var factor = +0.15;
+			map_scale = map_scale -= 0.2;
+			var factor = -0.2 / old_map_scale;
 		}
-		//console.log(event);
-		draw_map("galactic_map");
-		redraw_overlay();	
 		
-		var new_x = hexes_layer.position().left + (event.offsetX)*factor;
-		var new_y = hexes_layer.position().top + (event.offsetY)*factor;
+		
+		//console.log(offset_x);
+		//click_to_hex( , (click_y - offset_y) / , 'click', event);
+		jump_map(blah_x, blah_y, (click_x - offset_x), (click_y - offset_y));
+		
+		//console.log(mouse_offset_x * 0.2, mouse_offset_y * 0.2);
+		//map_scroll_offset.x = map_scroll_offset.x - mouse_offset_x * 0.2;
+		// 768 -156 1.14 800 -800
+		//var blahx = ((mouse_offset_x + map_scroll_offset.x) * factor) - mouse_offset_x;
+		//var blahy = ((mouse_offset_y + map_scroll_offset.y) * factor) - mouse_offset_y;
+		
+		//console.log(mouse_offset_x, "map scroll offset", map_scroll_offset.x, factor, map_buffer, "offsetx", offset_x, "blah", blahx, blahy);
+		
+		//map_scroll_offset.x = blahx;
+		//map_scroll_offset.y = blahy;
+		
+		//map_scroll_offset.x = map_scroll_offset.x + (factor * start_x);
+		//map_scroll_offset.y = map_scroll_offset.y + (factor * start_y);
+		//console.log(factor);
+		//console.log("offset x", event.offsetX - offset_x);
+		//console.log("position x", $("#galactic_map_hexes").position().left);
+		//console.log("map buffer", map_buffer);
+		//var coords = pixel_to_hex(event.pageX - $(this).offset().left, event.pageY - $(this).offset().top);
+		//jump_map(coords[0], coords[2]);
+		//console.log(coords);
+		//console.log(event);
+		
+		//var new_x = ($("#galactic_map_hexes").position().left - mouse_offset_x)* factor + (mouse_offset_x * factor);
+		//var new_y = ($("#galactic_map_hexes").position().top - mouse_offset_y)* factor + (mouse_offset_y * factor);
+		
+		//map_scroll_offset.x = mouse_offset_x;
+		//map_scroll_offset.y = mouse_offset_y;
+		
+		/*
+		var new_x = $("#galactic_map_hexes").position().left - mouse_offset_x;
+		var new_y = $("#galactic_map_hexes").position().top - mouse_offset_y;
+		*/
+		
+		//$("#galactic_map_hexes").css({left: new_x, top: new_y});
+		//$("#galactic_map_objects").css({left: new_x, top: new_y});
+		//$("#galactic_map_overlay").css({left: new_x, top: new_y});
+		//console.log ("current pos", $("#galactic_map_hexes").position().left, "new x", new_x);
+		
+		//console.log("pos before", $("#galactic_map_hexes").position().left);
+		//draw_map("galactic_map");
+		//redraw_overlay();	
+		
+		/*
+		var new_x = $("#galactic_map_hexes").position().left - (mouse_offset_x*factor);
+		var new_y = $("#galactic_map_hexes").position().top - (mouse_offset_y*factor);
+		console.log ("current pos", $("#galactic_map_hexes").position().left, "map scroll offset x", map_scroll_offset.x);
+		$("#galactic_map_hexes").css({left: new_x, top: new_y});
+		$("#galactic_map_objects").css({left: new_x, top: new_y});
+		$("#galactic_map_overlay").css({left: new_x, top: new_y});
+		*/
+		
+		//$("#galactic_map_hexes").css({left: new_x, top: new_y});
+		//$("#galactic_map_objects").css({left: new_x, top: new_y});
+		//$("#galactic_map_overlay").css({left: new_x, top: new_y});
+		//console.log("pos after", $("#galactic_map_hexes").position().left);
+		
+		//var new_x = hexes_layer.position().left + (event.offsetX)*factor;
+		//var new_y = hexes_layer.position().top + (event.offsetY)*factor;
 		
 		//var start_x = (event.offsetX - offset_x) / map_scale - map_scroll_offset.x;
 		//var start_y = (event.offsetY - offset_y) / map_scale - map_scroll_offset.y;
@@ -188,9 +257,9 @@ function initialize_map(width, height){
 		
 		//console.log(-new_offset_x + start_offset_x);
 		
-		hexes_layer.css({"left": new_x, "top": new_y});	
-		overlay_layer.css({"left": new_x , "top": new_y });
-		objects_layer.css({"left": new_x , "top": new_y });
+		//hexes_layer.css({"left": new_x, "top": new_y});	
+		//overlay_layer.css({"left": new_x , "top": new_y });
+		//objects_layer.css({"left": new_x , "top": new_y });
 		
 		
 		
@@ -319,7 +388,7 @@ function initialize_map(width, height){
 }
 
 
-function jump_map(x, y){	
+function jump_map(x, y, mouse_x, mouse_y){	
 //	x = x;// - $("#galactic_map_container").width()/2/map_scale;
 //	y = y;// - $("#galactic_map_container").height()/2/map_scale;
 //	var new_x = Math.floor(x / map_buffer) * map_buffer;
@@ -337,8 +406,14 @@ function jump_map(x, y){
 //	$("#galactic_map_objects").css({"top": -diff_y , "left": -diff_x });
 //	map_scroll_offset.x = ( -new_x );
 //	map_scroll_offset.y = ( -new_y );
-	map_scroll_offset.x = (-x + $("#galactic_map_container").width()/2/map_scale);
-	map_scroll_offset.y = (-y + $("#galactic_map_container").height()/2/map_scale);
+	if (mouse_x && mouse_y){
+		map_scroll_offset.x = (-x + (mouse_x/map_scale));
+		map_scroll_offset.y = (-y + (mouse_y/map_scale));
+	} else {
+		map_scroll_offset.x = (-x + $("#galactic_map_container").width()/2/map_scale);
+		map_scroll_offset.y = (-y + $("#galactic_map_container").height()/2/map_scale);	
+	}
+	
 	//map_scroll_offset.adjust_x = -$("#galactic_map_container").width()/2;
 	//map_scroll_offset.adjust_y = -$("#galactic_map_container").height()/2;
 	draw_map("galactic_map");

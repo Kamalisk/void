@@ -122,7 +122,7 @@
 			<p>Select a color for your empire</p>
 			<ul class="color_selector" >
 			{{#player_colors:i}}
-				<li class="" onclick="select_color({{i}})" style="background-color : {{background}}; border : solid 2px {{border}}">{{#.selected}} X {{/.selected}}</li>
+				<li class="{{#.selected}}selected{{/.selected}}" onclick="select_color({{i}})" style="background-color : {{background}}; border : solid 2px {{border}}"> {{#.selected}} X {{/.selected}}</li>
 			{{/player_colors}}
 			</ul>
 			
@@ -493,6 +493,10 @@
 	<script id="diplomacy_template" type="text/ractive">
 		<div id="diplomacy_player_list_container">
 			<ul class="diplomacy_player_list">
+				<li class="diplomacy_player_item">
+				<h3>Galactic Overview</h3>
+				<p>Text</p>
+				</li>
 				{{#players:key}}
 				{{#player.id != key && is_player}}
 				<li class="diplomacy_player_item" onclick="show_diplomacy_detail({{id}})" style="background-color : {{color.background}}; border-color : {{color.border}}">
@@ -539,7 +543,19 @@
 			{{/war}}
 			
 			<p>Sectors controlled:{{sector_count}}</p>
-			<h3>Trade</h3>
+			<h3>Relationship</h3>
+			<p>You are X with them</p>
+			<p>They are X with you</p>
+			<p>
+			<select>
+				<option value="">Stop colonising near me</option>
+				<option value="">Stop attacking</option>
+				<option value="">Please attack</option>
+			</select>
+			<button>Send Event</button>
+			</p>
+			
+			<h3>Events</h3>
 			{{/met}}
 			{{^met}}
 			<p>You have not yet met this empire</p>
@@ -845,8 +861,7 @@
 						{{# planet_class_cache[class_id] }}
 						<li class="{{#terraformed}} terraformed{{/terraformed}}{{^terraformed}}{{#terraformable}} terraformable{{/terraformable}}{{^terraformable}} unterraformable{{/terraformable}}{{/terraformed}}">
 							<img decorator="tooltip" data-decorator="planet-class-tooltip-{{id}}-{{class.id}}" width="30" height="30" src="{{#terraformed}}{{image_populated}}{{/terraformed}}{{^terraformed}}{{image}}{{/terraformed}}" alt="{{name}}">
-							<div class="tooltip" id="planet-class-tooltip-{{id}}-{{class.id}}">						
-								<h4>{{name}}</h4>	
+							<div class="tooltip" id="planet-class-tooltip-{{id}}-{{class.id}}">	
 								{{> planet_template}}
 							</div>
 						</li>
@@ -989,17 +1004,21 @@
 
 	</script>
 	
-	<script id="planet_template" type="text/ractive">
-		<img src="{{#terraformed}}{{image_populated}}{{/terraformed}}{{^terraformed}}{{image}}{{/terraformed}}" alt="{{name}}" title="{{name}}" oncontextmenu="context_menu(event, {})">
-			<ul class="planet_class_output">
-				<li class="food"><img src="images/icons/food.png" alt="Food" title="Food"> +{{output.food}}</li>
-				<li class="production"><img src="images/icons/production.png" alt="Production" title="Production"> +{{output.production}}</li>
-				<li class="research"><img src="images/icons/research.png" alt="Research" title="Research"> +{{output.research}}</li>
-				<li class="credits"><img src="images/icons/credits.png" alt="Credits" title="Credits"> +{{output.credits}}</li>
-			</ul>
-			<li class="{{#terraformed}} terraformed{{/terraformed}}">
-						
-			<p>{{#terraformed}}Terraformed{{/terraformed}}{{^terraformed}}{{#terraformable}} Available{{/terraformable}}{{^terraformable}} Unavailable{{/terraformable}}{{/terraformed}}</p>
+	<script id="planet_template" type="text/ractive">		
+		<div class="planet_class_image{{^terraformed}}{{#terraformable}} planet_class_available{{/terraformable}}{{^terraformable}} planet_class_unavailable{{/terraformable}}{{/terraformed}}">
+			<img src="{{#terraformed}}{{image_populated}}{{/terraformed}}{{^terraformed}}{{image}}{{/terraformed}}" alt="{{name}}" title="{{name}}" oncontextmenu="context_menu(event, {})">
+		</div>
+		<ul class="planet_class_output">
+			<li>{{name}}</li>
+			{{#output.food}}<li class="food"><img src="images/icons/food.png" alt="Food" title="Food"> +{{output.food}} per <img src="images/icons/population.png" alt="Population" title="Population"> </li>{{/output.food}}
+			{{#output.production}}<li class="production"><img src="images/icons/production.png" alt="Production" title="Production"> +{{output.production}} per <img src="images/icons/population.png" alt="Population" title="Population"> </li>{{/output.production}}
+			{{#output.research}}<li class="research"><img src="images/icons/research.png" alt="Research" title="Research"> +{{output.research}} per <img src="images/icons/population.png" alt="Population" title="Population"> </li>{{/output.research}}
+			{{#output.credits}}<li class="credits"><img src="images/icons/credits.png" alt="Credits" title="Credits"> +{{output.credits}} per <img src="images/icons/population.png" alt="Population" title="Population"> </li>{{/output.credits}}
+			<li><img src="images/icons/population.png" alt="Population" title="Population"> capacity +{{max_population}}</li>
+		</ul>
+		
+		<!--<li class="{{#terraformed}} terraformed{{/terraformed}}">
+		<p>{{#terraformed}}Terraformed{{/terraformed}}{{^terraformed}}{{#terraformable}} Available{{/terraformable}}{{^terraformable}} Unavailable{{/terraformable}}{{/terraformed}}</p>-->
 	</script>
 	
 	<script id="ship_class_template" type="text/ractive">			
@@ -1221,7 +1240,8 @@
 		{{/planets}}
 
 		{{#yours}}
-			<ul class="planet_output">			
+			<ul class="planet_output">
+			<li decorator="tooltip" data-decorator="system-view-happy-tooltip">Population <span class="{{#population > population_capacity}}overcrowded{{/}}">{{population}} / {{population_capacity}}</span> {{#population > population_capacity}}<img src="images/icons/happy.png" alt="Morale" title="Morale"> {{population_capacity - population}} {{/}}</li>
 			<li><img src="images/icons/food.png" alt="Food" title="Food"> {{void.per_turn_value(food.per_turn)}}</li>
 			<li class="planet_output_bar">
 				<voidprogress text="Growth in {{void.turns(growth_turns)}}" class="food" value="{{food.pool}}" max="{{food_growth_threshold}}"></voidprogress>
@@ -1236,6 +1256,12 @@
 			<voidprogress text="Growth in {{void.turns(influence_growth_turns)}}" class="influence" value="{{influence.pool}}" max="{{influence_growth_threshold}}"></voidprogress>
 			</li>
 			</ul>
+			
+			<div class="tooltip" id="system-view-happy-tooltip">
+			<h4>Population capacity</h4>
+			<p>Population in excess of capacity will reduce happiness</p>
+			{{#population > population_capacity}}<p><img src="images/icons/happy.png" alt="Morale" title="Morale"> {{population_capacity - population}}</p>{{/}}
+			</div>
 			
 			<div class="system_view_list available_items"  decorator="custom_scroll">
 			<h4>Available Ships</h4>
@@ -1285,46 +1311,47 @@
 			<div class="selector_list">
 			<ul class="selector_list" >
 			{{# build_queue.items.length > 0}}
+	
 				{{#build_queue.items}}
-						
-				{{# type == "ship"}}
-				<li class="system_view_selector" decorator="tooltip" data-decorator="ship-class-tooltip-{{target_id}}">		
-				<img src="images/ship.png">
-				<h4>{{ship_class_cache[target_id].name}}</h4>
-				<p>
-				{{#purchased}}
-				1 turn
-				{{/purchased}}
-				
-				{{^purchased}}
-				{{#production_per_turn}} {{void.turns(progress, production_per_turn)}} {{/production_per_turn}} 
-				<button disabled="{{#player.credits < ship_class_cache[target_id].rush_cost}}disabled{{/player}}" type="button" onclick="buy_queue_item('{{id}}', {{ship_class_cache[target_id].rush_cost}})">Rush {{ship_class_cache[target_id].rush_cost}} <img src="images/icons/credits.png"></button>
-				{{/purchased}}
-				</p>
-				</li>
-				{{/ type}}
-				{{# type == "structure"}}
-				<li class="system_view_selector" decorator="tooltip" data-decorator="structure-class-tooltip-{{target_id}}">		
-				{{#world_unique}}
-				<img height="38" width="38" src="images/wonder.png">
-				{{/world_unique}}
-				{{^world_unique}}
-				<img src="images/structure.png">
-				{{/world_unique}}
-				<h4>{{structure_class_cache[target_id].name}}</h4>
-				<p>
-				{{#purchased}}
-				1 turn
-				{{/purchased}}
-				
-				{{^purchased}}
-				{{#production_per_turn}} {{void.turns(progress, production_per_turn)}} {{/production_per_turn}}
-				<button type="button" onclick="buy_queue_item('{{id}}', {{structure_class_cache[target_id].rush_cost}})">Rush {{structure_class_cache[target_id].rush_cost}} <img src="images/icons/credits.png"></button>
-				{{/purchased}}
-				</p>
-				</li>
-				{{/ type}}				
-				
+
+					{{# type == "ship"}}
+					<li class="system_view_selector" decorator="tooltip" data-decorator="ship-class-tooltip-{{target_id}}">		
+					<img src="images/ship.png">
+					<h4>{{ship_class_cache[target_id].name}}</h4>
+					<p>
+					{{#purchased}}
+					1 turn
+					{{/purchased}}
+					
+					{{^purchased}}
+					{{#production_per_turn}} {{void.turns(progress, production_per_turn)}} {{/production_per_turn}} 
+					<button disabled="{{#player.credits < ship_class_cache[target_id].rush_cost}}disabled{{/player}}" type="button" onclick="buy_queue_item('{{id}}', {{ship_class_cache[target_id].rush_cost}})">Rush {{ship_class_cache[target_id].rush_cost}} <img src="images/icons/credits.png"></button>
+					{{/purchased}}
+					</p>
+					</li>
+					{{/ type}}
+					{{# type == "structure"}}
+					<li class="system_view_selector" decorator="tooltip" data-decorator="structure-class-tooltip-{{target_id}}">		
+					{{#world_unique}}
+					<img height="38" width="38" src="images/wonder.png">
+					{{/world_unique}}
+					{{^world_unique}}
+					<img src="images/structure.png">
+					{{/world_unique}}
+					<h4>{{structure_class_cache[target_id].name}}</h4>
+					<p>
+					{{#purchased}}
+					1 turn
+					{{/purchased}}
+					
+					{{^purchased}}
+					{{#production_per_turn}} {{void.turns(progress, production_per_turn)}} {{/production_per_turn}}
+					<button type="button" onclick="buy_queue_item('{{id}}', {{structure_class_cache[target_id].rush_cost}})">Rush {{structure_class_cache[target_id].rush_cost}} <img src="images/icons/credits.png"></button>
+					{{/purchased}}
+					</p>
+					</li>
+					{{/ type}}				
+
 				{{/build_queue.items}}			
 			{{/build_queue.items}}
 			{{^build_queue.items}}
@@ -1366,6 +1393,7 @@
 		
 		</div>
 	</script>
+
 	
 	<script id="map_context_menu_default" type="text/x-handlebars-template">
 		

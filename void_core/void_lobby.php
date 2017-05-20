@@ -40,6 +40,7 @@ class VOID_LOBBY {
 			}
 		}
 		$this->colors[$color_id]['selected'] = $player_id;
+		$this->players[$player_id]->set_color($this->colors[$color_id]);
 	}
 	public function reset(){
 		global $player_colors;

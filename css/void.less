@@ -620,24 +620,60 @@ div.window_control .close_window {
 	
 	background : url('../images/back2.png') repeat;
 	text-align : center;
+	vertical-align : top;
+	overflow : overflow-x;
+}
+.system_view_planet_list li {
+	vertical-align : top;
 }
 .system_view_planet {
 	padding : 0.8em;
 	margin : 0.3em;
 	display : inline-block;
+	width : 250px;
+}
+.system_view_planet .planet_class_image {
 	width : 110px;
+	height : 110px;
+	border-radius : 57px;
+	vertical-align : middle;
+	position : relative;
+	display : inline-block;
+}
+.system_view_planet .planet_class_available {
+	border : solid rgba(20, 200, 20, 0.3) 4px;
+}
+.system_view_planet .planet_class_unavailable {
+	border : solid rgba(200, 20, 20, 0.3) 4px;
+}
+
+.system_view_planet .planet_class_image img {
+	max-height: 100%;  
+	max-width: 100%; 
+	width: auto;
+	height: auto;
+	position: absolute;  
+	top: 0;  
+	bottom: 0;  
+	left: 0;  
+	right: 0;  
+	margin: auto;
 }
 .planet_class_output {
 	list-style-type : none;
 	margin : 0;
 	padding : 0;
-	width : 105px;	
+	width : 125px;
+	display : inline-block;
+	vertical-align : middle;
 }
 .planet_class_output li {
 	margin : 0;
-	padding : 0;
+	padding : 3px;
 	display : inline-block;
-	width : 50px;
+	width : 125px;
+	font-weight : bold;
+	text-align : left;
 }
 
 .planet_output {
@@ -941,9 +977,12 @@ div.window_control .close_window {
 	display : inline-block;
 	vertical-align : top;
 	position : absolute;
-	top : 0;
+	top : 7px;
 	left : 320px;
-	
+	right : 0;
+	bottom : 0;
+	border : solid black 2px;
+	border-radius : 4px;
 }
 
 .diplomacy_detail_view {
@@ -951,8 +990,9 @@ div.window_control .close_window {
 	border : solid black 2px;
 	border-radius : 4px;
 	margin : 0.8em;
-	min-width : 500px;
 	padding : 0.5em;
+	width : 95%;
+	height : 95%;
 }
 
 /* errors */
@@ -1058,6 +1098,7 @@ div.window_control .close_window {
 	right : 40px;
 	margin : 0;
 	left : auto;
+	background-color : black;
 }
 
 .fleet_management_fleet_0 {
@@ -1249,6 +1290,9 @@ table.portal_list tr:hover td {
 	li.selected {
 		text-align : center;
 		vertical-align : middle;
+		font-size : 40px;
+		text-align : center;
+		font-weight : bold;
 	}
 }
 

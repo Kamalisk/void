@@ -817,7 +817,7 @@ class VOID {
 				$this->lobby->select_race($player_id, $race, $empire, $leader);
 			} else if ($input['action'] == "color"){
 				global $player_colors;
-				//$this->lobby->set_color($player_id, $input['color_id']);				
+				$this->lobby->set_color($player_id, $input['color_id']);				
 			} else if ($input['action'] == "reset_lobby"){
 				$user->reset_game($this->game_id);
 				$this->setup();

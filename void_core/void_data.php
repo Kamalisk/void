@@ -94,48 +94,40 @@ $void_system_types['space'] = array(
 
 
 $player_colors = [
-				[], 
-				[
+				1 => [
 					"background" => "rgba(0,155,0,0.2)", 
 					"border"=>"rgba(0,155,0,1)", 
-					"fleet"=> "images/fleets/fleet_f.png"
+					"fleet"=> "images/fleets/fleet_f.png",
+					"color_id" => 1
 				],
-				[
-					"background" => "rgba(155,0,0,0.2)", "border" => "rgba(155,0,0,1)", "fleet"=> "images/fleets/fleet_e.png"
+				2 => [
+					"background" => "rgba(155,0,0,0.2)", "border" => "rgba(155,0,0,1)", "fleet"=> "images/fleets/fleet_e.png",
+					"color_id" => 2
 				],
-				[
-					"background" => "rgba(0,71,251,0.2)", "border" => "rgba(0,71,251,1)", "fleet"=> "images/fleets/fleet_blue.png"
+				3 => [
+					"background" => "rgba(0,71,251,0.2)", "border" => "rgba(0,71,251,1)", "fleet"=> "images/fleets/fleet_blue.png",
+					"color_id" => 3
 				],
-				[
-					"background" => "rgba(255,174,0,0.2)", "border" => "rgba(255,174,0,1)", "fleet"=> "images/fleets/fleet_f.png"
+				4 => [
+					"background" => "rgba(255,174,0,0.2)", "border" => "rgba(255,174,0,1)", "fleet"=> "images/fleets/fleet_orange.png",
+					"color_id" => 4
 				],
-				[
-					"background" => "rgba(162,0,186,0.2)", "border" => "rgba(162,0,186,1)", "fleet"=> "images/fleets/fleet_f.png"
+				5 => [
+					"background" => "rgba(162,0,186,0.2)", "border" => "rgba(162,0,186,1)", "fleet"=> "images/fleets/fleet_purple.png",
+					"color_id" => 5
 				],
-				[
-					"background" => "rgba(7,245,231,0.2)", "border" => "rgba(7,245,231,1)", "fleet"=> "images/fleets/fleet_f.png"
+				6 => [
+					"background" => "rgba(7,245,231,0.2)", "border" => "rgba(7,245,231,1)", "fleet"=> "images/fleets/fleet_cyan.png",
+					"color_id" => 6
 				],
-				[
-					"background" => "rgba(255,246,0,0.2)", "border" => "rgba(255,246,0,1)", "fleet"=> "images/fleets/fleet_f.png"
+				7 => [
+					"background" => "rgba(255,246,0,0.2)", "border" => "rgba(255,246,0,1)", "fleet"=> "images/fleets/fleet_yellow.png",
+					"color_id" => 7
 				],
-				[
-					"background" => "rgba(250,147,254,0.2)", "border" => "rgba(250,147,254,1)", "fleet"=> "images/fleets/fleet_f.png"
-				],
-				[
-					"background" => "rgba(161,255,151,0.2)", "border" => "rgba(161,255,151,1)", "fleet"=> "images/fleets/fleet_f.png"
-				],
-				[
-					"background" => "rgba(244,169,169,0.2)", "border" => "rgba(244,169,169,1)", "fleet"=> "images/fleets/fleet_f.png"
-				],
-				[
-					"background" => "rgba(72,44,0,0.2)", "border" => "rgba(118,78,31,1)", "fleet"=> "images/fleets/fleet_f.png"
-				],
-				[
-					"background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)", "fleet"=> "images/fleets/fleet_f.png"
-				],
-				[
-					"background" => "rgba(255,255,0,0.2)", "border" => "rgba(255,255,0,0.6)", "fleet"=> "images/fleets/fleet_f.png"
-				],
+				8 => [
+					"background" => "rgba(250,147,254,0.2)", "border" => "rgba(250,147,254,1)", "fleet"=> "images/fleets/fleet_pink.png",
+					"color_id" => 8
+				]
 			];
 
 // resources
@@ -156,10 +148,10 @@ $void_planet_classes[1] = [
 	"name" => "Class M (Terran)",
 	"id" => 1,
 	"output" => [
-		"food" => 2,
+		"food" => 1,
 		"production" => 1, 
-		"research" => 1,
-		"credits" => 1
+		"research" => 0,
+		"credits" => 0
 	],
 	"morale" => 0, 
 	"develop_per_turn" => 0.2, 
@@ -172,24 +164,24 @@ $void_planet_classes[2] = [
 	"name" => "Class J (Jungle)",
 	"id" => 2, 
 	"output" => [
-		"food" => 2,
-		"production" => 1, 
-		"research" => 2,
+		"food" => 1,
+		"production" => 0, 
+		"research" => 1,
 		"credits" => 0
 	],
 	"morale" => 0, 
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_j.png", 
 	"image_populated" => "images/planets/class_j_populated.png", 
-	"max_population" => 5
+	"max_population" => 4
 ];
 
 $void_planet_classes[3] = [
 	"name" => "Class X (Arid)",
 	"id" => 3, 
 	"output" => [
-		"food" => 1,
-		"production" => 4, 
+		"food" => 0,
+		"production" => 2, 
 		"research" => 0,
 		"credits" => 0
 	],
@@ -197,15 +189,15 @@ $void_planet_classes[3] = [
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_x.png", 
 	"image_populated" => "images/planets/class_x_populated.png", 
-	"max_population" => 6
+	"max_population" => 5
 ];
 
 $void_planet_classes[4] = [
 	"name" => "Class P (Ocean)",
 	"id" => 4, 
 	"output" => [
-		"food" => 4,
-		"production" => 1, 
+		"food" => 2,
+		"production" => 0, 
 		"research" => 0,
 		"credits" => 0
 	],
@@ -213,39 +205,39 @@ $void_planet_classes[4] = [
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_p.png", 
 	"image_populated" => "images/planets/class_p_populated.png", 
-	"max_population" => 6
+	"max_population" => 5
 ];
 
 $void_planet_classes[5] = [
 	"name" => "Class C",
 	"id" => 5, 
 	"output" => [
-		"food" => 1,
-		"production" => 1, 
+		"food" => 0,
+		"production" => 0, 
 		"research" => 0,
-		"credits" => 3
+		"credits" => 2
 	],
 	"morale" => -1, 
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_c.png", 
 	"image_populated" => "images/planets/class_c_populated.png", 
-	"max_population" => 6
+	"max_population" => 4
 ];
 
 $void_planet_classes[6] = [
 	"name" => "Class Y",
 	"id" => 6, 
 	"output" => [
-		"food" => 1,
+		"food" => 0,
 		"production" => 1, 
-		"research" => 3,
+		"research" => 2,
 		"credits" => 0
 	],
 	"morale" => -2, 
 	"develop_per_turn" => 0.2, 
 	"image" => "images/planets/class_y.png", 
 	"image_populated" => "images/planets/class_y_populated.png", 
-	"max_population" => 6
+	"max_population" => 2
 ];
 
 

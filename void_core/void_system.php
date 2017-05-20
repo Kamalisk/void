@@ -19,6 +19,7 @@ class VOID_SYSTEM_VIEW {
 	public $growth_turns;
 	
 	public $population;
+	public $population_capacity;
 	
 	public $research_per_turn;
 	public $credits_per_turn;
@@ -115,6 +116,8 @@ class VOID_SYSTEM_VIEW {
 			}
 		}
 		$this->population = $system->population;
+		$this->population_capacity = $system->population_capacity;
+		
 		$this->credits_per_turn = $system->credits->per_turn;
 		$this->research_per_turn = $system->research->per_turn;
 		
@@ -159,6 +162,7 @@ class VOID_SYSTEM {
 	public $influence_size;
 	
 	public $population;
+	public $population_capacity;
 	
 	public $orders;
 	
@@ -187,6 +191,7 @@ class VOID_SYSTEM {
 		$this->influence_per_turn = 0;
 		$this->influence_pool = 0;
 		$this->population = 0;
+		$this->population_capacity = 0;
 		$this->food_pool = 0;
 		$this->food_growth_threshold = 10;
 		$this->influence_growth_threshold = 10;
@@ -328,8 +333,10 @@ class VOID_SYSTEM {
 		$this->credits->per_turn = $this->get_credits_income();
 		$this->research->per_turn = $this->get_research_income();
 		$this->influence->per_turn = $this->get_influence_income();
-							
-		$this->owner->apply_morale(-$this->population, "population");
+
+		if ($this->population > $this->population_capacity){
+			$this->owner->apply_morale($this->population_capacity - $this->population, "population");
+		}
 		$this->owner->apply_morale(-3, "system");
 		
 		//VOID_DEBUG::write("system update: ".$this->credits_per_turn);
@@ -343,6 +350,7 @@ class VOID_SYSTEM {
 	}
 	
 	// apply any % modifiers and morale and such
+	// "apply" functions are for % modifiers in general
 	public function apply(){
 		if (!$this->owner){
 			return false;
@@ -590,6 +598,7 @@ class VOID_SYSTEM {
 				
 		if (!$this->owner){
 			$this->population = 1;
+			$this->population_capacity = $planet->class['max_population'];
 			$this->influence_level = 1;
 			$this->owner = $owner;
 			$structure = new VOID_STRUCTURE($core->structure_classes["colony_hub"]);
@@ -598,6 +607,7 @@ class VOID_SYSTEM {
 			if (!$this->owner->has_property_index("terraformable", $planet->class['id'])){
 				return false;
 			}
+			$this->population_capacity += $planet->class['max_population'];
 		}
 						
 		$planet->colonise();

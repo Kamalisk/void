@@ -1,4 +1,3 @@
-
 function get_hex(x, z){
 	if (hex_map['x'+x+'z'+z]){
 		return hex_map['x'+x+'z'+z];

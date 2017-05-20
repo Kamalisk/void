@@ -20,6 +20,7 @@ $ship_class->movement_capacity = 4;
 $ship_class->attack = 10;
 $ship_class->defense = 10;
 $ship_class->rush_cost = 50;
+$ship_class->description = "Basic scout vessel for exploration";
 $tech->add_ship_class($ship_class);
 $this->ship_classes[$ship_class->id] = $ship_class;
 
@@ -32,6 +33,7 @@ $ship_class->vision_range = 2;
 $ship_class->movement_capacity = 6;
 $ship_class->attack = 20;
 $ship_class->defense = 20;
+$ship_class->description = "Basic scout vessel for exploration";
 //$this->tech_tree->get_tech(1)->add_ship_class($ship_class);
 $this->ship_classes[$ship_class->id] = $ship_class;
 
@@ -43,6 +45,7 @@ $ship_class->vision_range = 3;
 $ship_class->movement_capacity = 8;
 $ship_class->attack = 40;
 $ship_class->defense = 40;
+$ship_class->description = "Basic scout vessel for exploration";
 //$this->tech_tree->get_tech(1)->add_ship_class($ship_class);
 $this->ship_classes[$ship_class->id] = $ship_class;
 
@@ -57,6 +60,7 @@ $ship_class->movement_capacity = 4;
 $ship_class->attack = 0;
 $ship_class->defense = 20;
 $ship_class->damage = 0;
+$ship_class->description = "Can colonise other planets";
 $tech->add_ship_class($ship_class);
 $this->ship_classes[$ship_class->id] = $ship_class;
 
@@ -70,6 +74,7 @@ $ship_class->movement_capacity = 5;
 $ship_class->attack = 0;
 $ship_class->defense = 40;
 $ship_class->damage = 0;
+$ship_class->description = "Can colonise other planets";
 //$this->tech_tree->get_tech(1)->add_ship_class($ship_class);
 $this->ship_classes[$ship_class->id] = $ship_class;
 
@@ -83,6 +88,7 @@ $ship_class->movement_capacity = 5;
 $ship_class->attack = 0;
 $ship_class->defense = 80;
 $ship_class->damage = 0;
+$ship_class->description = "Can colonise other planets";
 //$this->tech_tree->get_tech(1)->add_ship_class($ship_class);
 $this->ship_classes[$ship_class->id] = $ship_class;
 
@@ -94,6 +100,7 @@ $ship_class->vision_range = 1;
 $ship_class->movement_capacity = 4;
 $ship_class->attack = 20;
 $ship_class->defense = 20;
+$ship_class->description = "Basic attack ship";
 $tech = $this->tech_tree->get_tech(2);
 $tech->add_ship_class($ship_class);
 $this->ship_classes[$ship_class->id] = $ship_class;
@@ -106,6 +113,7 @@ $ship_class->vision_range = 1;
 $ship_class->movement_capacity = 4;
 $ship_class->attack = 10;
 $ship_class->defense = 40;
+$ship_class->description = "Ship designed to improve the defense of a fleet";
 $tech = $this->tech_tree->get_tech(16);
 $tech->add_ship_class($ship_class);
 $this->ship_classes[$ship_class->id] = $ship_class;
@@ -119,6 +127,7 @@ $ship_class->vision_range = 1;
 $ship_class->movement_capacity = 4;
 $ship_class->attack = 40;
 $ship_class->defense = 40;
+$ship_class->description = "Ship designed to take over weakend planetary systems";
 //$this->tech_tree->get_tech(1)->add_ship_class($ship_class);
 $this->ship_classes[$ship_class->id] = $ship_class;
 
@@ -132,6 +141,7 @@ $ship_class->vision_range = 1;
 $ship_class->movement_capacity = 4;
 $ship_class->attack = 80;
 $ship_class->defense = 80;
+$ship_class->description = "Ship designed to take over weakend planetary systems";
 $this->tech_tree->get_tech(12)->add_ship_class($ship_class);
 $this->ship_classes[$ship_class->id] = $ship_class;
 
@@ -146,6 +156,7 @@ $ship_class->movement_capacity = 4;
 $ship_class->hull = 100;
 $ship_class->shields = 0;
 $ship_class->damage = 0;
+$ship_class->description = "Ship designed to attack enemy fleets at a distance";
 //$this->tech_tree->get_tech(1)->add_ship_class($ship_class);
 $this->ship_classes[$ship_class->id] = $ship_class;
 
@@ -170,6 +181,7 @@ $ship_class->attack = 10;
 $ship_class->defense = 20;
 $ship_class->movement_capacity = 4;
 $tech = $this->tech_tree->get_tech(6);
+$ship_class->description = "Ship designed to move quickly around the galaxy";
 //$tech->add_ship_class($ship_class);
 $this->ship_classes[$ship_class->id] = $ship_class;
 
@@ -328,6 +340,15 @@ $structure_class->set_modifier("credits", "per_turn", -4);
 $this->tech_tree->get_tech(22)->add_structure_class($structure_class);
 $this->structure_classes[$structure_class->id] = $structure_class;
 
+
+$structure_class = new VOID_STRUCTURE_CLASS();
+$structure_class->name = "Communication Hub";
+$structure_class->work_required = 40;
+$structure_class->set_modifier("influence", "per_turn", 5);
+$structure_class->set_modifier("credits", "per_turn", -2);
+$tech = $this->tech_tree->get_tech(1);
+$tech->add_structure_class($structure_class);
+$this->structure_classes[$structure_class->id] = $structure_class;
 
 $structure_class = new VOID_STRUCTURE_CLASS(8);
 $structure_class->name = "Galactic Radio I";

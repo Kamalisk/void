@@ -23,8 +23,7 @@ if (isset($_GET['action']) && $_GET['action'] == "auth"){
 	echo json_encode($return, JSON_NUMERIC_CHECK);
 	exit();
 }
-if (isset($_POST['action']) && $_POST['action'] == "auth"){	
-	
+if (isset($_POST['action']) && $_POST['action'] == "auth"){		
 	if ($user->auth($_POST['username'], $_POST['password'])){	
 		// auth the player
 		header("Content-type: application/json");

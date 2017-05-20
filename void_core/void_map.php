@@ -107,8 +107,12 @@ class VOID_MAP {
 			
 			$core->neutral_player->declare_war($player);
 			
-			$color = array_shift($colors);
-			$player->set_color($color);
+			if ($player->color){
+				unset($colors[$player->color['color_id']]);
+			}else {
+				$color = array_shift($colors);
+				$player->set_color($color);
+			}
 			//$this->views[$player->id] = new VOID_VIEW();
 			while(true){
 				$key = array_rand($this->sectors,1);
@@ -130,8 +134,8 @@ class VOID_MAP {
 				$player->empire = $player->race->empires[array_rand($player->race->empires)];
 			}
 			//print_r($player->race);
-			$color = array_shift($colors);
-			$player->set_color($color);
+			//$color = array_shift($colors);
+			//$player->set_color($color);
 			
 			global $void_planet_classes;
 			$planet = new VOID_PLANET();
@@ -143,7 +147,7 @@ class VOID_MAP {
 			$player->home = array('x'=> $this->sectors[$key]->x, 'z'=>$this->sectors[$key]->z);
 			
 			$this->sectors[$key]->system->colonise($player, $core, $planet->id);
-			
+			$this->sectors[$key]->system->influence_level = 2;
 			//$this->sectors[$key]->system->influence_per_turn = mt_rand(5,10);
 			
 			//$this->sectors[$key]->system->add_order();
