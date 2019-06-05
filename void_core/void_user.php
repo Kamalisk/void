@@ -1,5 +1,7 @@
 <?php
 
+require_once(".constants.php");
+
 class VOID_USER {
 	public $name;
 	public $uuid;	
@@ -9,9 +11,9 @@ class VOID_USER {
 	public $db;
 	
 	function __construct(){
+		global $DBUSER, $DBPASSWORD;
 		
-		
-		$this->db = new mysqli("localhost", "void", "v0idw4rs", "void");
+		$this->db = new mysqli("localhost", $DBUSER, $DBPASSWORD, "void");
 		if ($this->db->connect_errno) {
 		    
 		}
